@@ -15,6 +15,7 @@ descartes==1.1.0
 entrypoints==0.3
 Fiona==1.8.13.post1
 folium==0.11.0
+gym
 idna==2.9
 ipykernel==5.3.0
 ipython==7.16.1
