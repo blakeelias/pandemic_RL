@@ -28,19 +28,19 @@ class PandemicEnv(gym.Env):
     # They must be gym.spaces objects
     # Example when using discrete actions
     self.actions_r = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.5, 2.0, 2.5])
-    num_actions = self.actions_r.shape[0]
-    self.action_space = spaces.Discrete(num_actions)
+    self.num_actions = self.actions_r.shape[0]
+    self.action_space = spaces.Discrete(self.num_actions)
     
     # assumes num_population = 1000
     self.states_num_infected = sum([list(range(100*i, 100*(i+1), i+1)) for i in range(10)], []) + [1_000]
-    num_states = len(self.states_num_infected)
-    self.lookup = dict([(x, i) for i in range(num_states - 1) for x in range(self.states_num_infected[i], self.states_num_infected[i+1])] + [(num_population, num_states - 1)])
+    self.num_states = len(self.states_num_infected)
+    self.lookup = dict([(x, i) for i in range(self.num_states - 1) for x in range(self.states_num_infected[i], self.states_num_infected[i+1])] + [(num_population, self.num_states - 1)])
 
     # Use entire state space
     #self.observation_space = spaces.Box(low=0,
     #                                    high=num_population,
     #                                    shape=(1,), dtype=np.uint16)  # maximum infected = 2**16 == 65536
-    self.observation_space = spaces.Discrete(num_states)
+    self.observation_space = spaces.Discrete(self.num_states)
 
     self.state = [self._bucket_state_index(self.initial_num_cases)]
     self.done = 0
@@ -71,8 +71,9 @@ class PandemicEnv(gym.Env):
   def reset(self):
     # Reset the state of the environment to an initial state
     self.state = [self._bucket_state_index(self.initial_num_cases)]
-    
-    # return self._next_observation()
+    obs = self.state
+
+    return obs
     
   def render(self, mode='human', close=False):
     # Render the environment to the screen
