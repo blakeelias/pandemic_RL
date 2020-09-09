@@ -49,6 +49,10 @@ class PandemicEnv(gym.Env):
                                             shape=(1,), dtype=np.uint16)  # maximum infected = 2**16 == 65536
         # self.observation_space = spaces.Discrete(self.nS)
 
+        self.dynamics_param_str = f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping}'
+
+        self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor}'
+        
         self.P = self._transition_probabilities()
         
         self.state = [self.initial_num_cases]
@@ -131,7 +135,7 @@ class PandemicEnv(gym.Env):
             return nbinom(r, 1-p)
 
     def _transition_probabilities(self, **kwargs):
-        file_name = f'lookup_tables/transitions/transition_probs_distr={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping}.pickle'
+        file_name = f'../lookup_tables/{self.dynamics_param_str}/transition_dynamics_{self.dynamics_param_str}.pickle'
         try:
             P = load_pickle(file_name)
             print('Loaded transition_probs')

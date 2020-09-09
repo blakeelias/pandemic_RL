@@ -1,7 +1,9 @@
 import pickle
+from pathlib import Path
 
 
 def save_pickle(obj, file_name):
+    Path(Path(file_name).parent).mkdir(parents=True)
     with open(file_name, 'w') as f:
         s = pickle.dumps(obj, protocol=0)
         f.write(s.decode('latin-1'))
