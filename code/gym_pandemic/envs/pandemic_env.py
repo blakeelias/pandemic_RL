@@ -23,7 +23,8 @@ class PandemicEnv(gym.Env):
                scale_factor=100,
                distr_family='nbinom',
                dynamics='SIS',
-               time_lumping=False):
+               time_lumping=False,
+               init_transition_probs=False):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
         self.initial_num_cases = initial_num_cases
@@ -53,7 +54,9 @@ class PandemicEnv(gym.Env):
 
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor}'
         
-        self.P = self._transition_probabilities()
+        self.P = None
+        if init_transition_probs:
+            self._set_transition_probabilities()
         
         self.state = [self.initial_num_cases]
         self.done = 0
@@ -134,16 +137,16 @@ class PandemicEnv(gym.Env):
             p = lam / (r + lam)
             return nbinom(r, 1-p)
 
-    def _transition_probabilities(self, **kwargs):
+    def _set_transition_probabilities(self, **kwargs):
         file_name = f'../lookup_tables/{self.dynamics_param_str}/transition_dynamics_{self.dynamics_param_str}.pickle'
         try:
-            P = load_pickle(file_name)
+            self.P = load_pickle(file_name)
             print('Loaded transition_probs')
-            return P
+            return self.P
         except:
-            P = []
+            self.P = []
         
-        P = [[ [] for j in range(self.nA)] for i in range(self.nS)]
+        self.P = [[ [] for j in range(self.nA)] for i in range(self.nS)]
 
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
@@ -160,7 +163,7 @@ class PandemicEnv(gym.Env):
                     reward = self._reward(new_state, self.actions_r[action])
 
                     outcome = (prob, new_state, reward, done)
-                    P[state][action].append(outcome)
+                    self.P[state][action].append(outcome)
 
-        save_pickle(P, file_name)
-        return P
+        save_pickle(self.P, file_name)
+        return self.P
