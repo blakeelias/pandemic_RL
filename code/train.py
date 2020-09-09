@@ -15,7 +15,7 @@ def train_environment(env, theta=0.0001, discount_factor=0.99):
         return policy, V
     except:
         policy, V = value_iteration(env, theta=theta, discount_factor=discount_factor)
-        save_pickle((policy, V))
+        save_pickle((policy, V), file_name)
         return policy, V
 
 
@@ -42,5 +42,11 @@ def test_environment(env, policy):
 
 if __name__ == '__main__':
     env = gym.make('pandemic-v0')
-    policy, V = value_iteration(env)
-    test_environment(env)
+    policy, V = train_environment(env)
+    test_environment(env, policy)
+
+
+
+# python main.py --power_scale_factors 0.25 1.0 --imported_cases_per_step_range 0 0.5 --powers 0.1 0.25 0.5 1.0 1.5
+
+# python main.py --power_scale_factors 0.25 1.0 --imported_cases_per_step_range 1.0 5.0 10.0 --powers 0.1 0.25 0.5 1.0 1.5
