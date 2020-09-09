@@ -21,7 +21,9 @@ class PandemicEnv(gym.Env):
                imported_cases_per_step=0.5,
                power=2,
                scale_factor=100,
-               distr_family='nbinom'):
+               distr_family='nbinom',
+               dynamics='SIS',
+               time_lumping=False):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
         self.initial_num_cases = initial_num_cases
@@ -30,11 +32,13 @@ class PandemicEnv(gym.Env):
         self.power = power
         self.scale_factor = scale_factor
         self.distr_family = distr_family
-
+        self.dynamics = dynamics
+        self.time_lumping = time_lumping
+        
         # Define action and observation space
         # They must be gym.spaces objects
         # Example when using discrete actions
-        self.actions_r = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.5, 2.0, 2.5])
+        self.actions_r = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0, 2.5])
         self.nA = self.actions_r.shape[0]
         self.action_space = spaces.Discrete(self.nA)
 
@@ -127,8 +131,9 @@ class PandemicEnv(gym.Env):
             return nbinom(r, 1-p)
 
     def _transition_probabilities(self, **kwargs):
+        file_name = f'lookup_tables/transitions/transition_probs_distr={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping}.pickle'
         try:
-            P = load_pickle(f'transition_probs_distr={self.distr_family}.pickle')
+            P = load_pickle(file_name)
             print('Loaded transition_probs')
             return P
         except:
@@ -153,4 +158,5 @@ class PandemicEnv(gym.Env):
                     outcome = (prob, new_state, reward, done)
                     P[state][action].append(outcome)
 
+        save_pickle(P, file_name)
         return P
