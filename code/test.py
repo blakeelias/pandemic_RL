@@ -29,7 +29,7 @@ def test_environment(env, policy, V=None):
         action = policy[observation].argmax()
         actions_taken.append(env.actions_r[action])
         observation, reward, done, info = env.step(action)
-        num_infected.append(observation)
+        num_infected.append(observation[-1])
         
         if done:
             print("Episode finished after {} timesteps".format(t+1))
