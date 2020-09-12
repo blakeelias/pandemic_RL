@@ -159,7 +159,12 @@ class PandemicEnv(gym.Env):
                 feasible_range = range(floor(low), ceil(high))
                 
                 for new_state in feasible_range: # range(self.nS):
-                    prob = distr.pmf(new_state)
+                    prob = 0
+                    if new_state == self.nS - 1:
+                        # probability of landing on new_state or anything above
+                        prob = 1 - distr.cdf(new_state - 1)
+                    else:
+                        prob = distr.pmf(new_state)
                     done = False
                     reward = self._reward(new_state, self.actions_r[action])
 
