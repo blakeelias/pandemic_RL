@@ -24,7 +24,8 @@ class PandemicEnv(gym.Env):
                distr_family='nbinom',
                dynamics='SIS',
                time_lumping=False,
-               init_transition_probs=False):
+               init_transition_probs=False,
+               **kwargs):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
         self.initial_num_cases = initial_num_cases

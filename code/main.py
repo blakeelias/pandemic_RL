@@ -1,13 +1,16 @@
 from itertools import product
 from collections import namedtuple
+from pdb import set_trace as b
 
 import gym
 from tqdm import tqdm
 import argparse
+import replicate
 
 from train import train_environment
 from test import test_environment
 from gym_pandemic.envs.pandemic_env import PandemicEnv
+from utils import combine_dicts
 
 
 Params = namedtuple('Params', ['imported_cases_per_step', 'power', 'extra_scale'])
@@ -16,8 +19,8 @@ Params = namedtuple('Params', ['imported_cases_per_step', 'power', 'extra_scale'
 def parse_args():
     parser = argparse.ArgumentParser(description='Boolean command-line')
 
-    parser.add_argument('--imported_cases_per_step',
-                        metavar='imported_cases_per_step',
+    parser.add_argument('--imported_cases_per_step_range',
+                        metavar='imported_cases_per_step_range',
                         type=float,
                         nargs='+',
                         default=[0.0, 0.5, 1.0, 5.0, 10.0], help='')
@@ -46,37 +49,46 @@ power_scale_factor = {
 }
 
 
-def main(imported_cases_per_step_range=[0.0, 0.5, 1.0, 5.0, 10.0],
-         powers=[0.1, 0.25, 0.5, 1.0, 1.5],
-         extra_scale=[0.25, 1.0]):
+def main(args = {
+        'imported_cases_per_step_range': [0.0, 0.5, 1.0, 5.0, 10.0],
+        'powers': [0.1, 0.25, 0.5, 1.0, 1.5],
+        'extra_scale': [0.25, 1.0]
+         }):
 
-    params_sweep = [Params(*params)
-                    for params in product(imported_cases_per_step_range, powers, extra_scale)]
+    experiment_parameters = {
+        'distr_family': 'poisson',
+        'dynamics': 'SIS',
+        'time_lumping': False,
+        'num_population': 1000,
+        'initial_num_cases': 100,
+        'R_0': 2.5
+    }
+    
+    experiment = replicate.init(combine_dicts(args, experiment_parameters))
+    
+    parameters_sweep = [
+        Params(*parameters)._asdict() for parameters in product(
+            args['imported_cases_per_step_range'],
+            args['powers'],
+            args['extra_scale']
+        )
+    ]
 
     policies = {}
     Vs = {}
     
-    for params in tqdm(params_sweep):
-        env = make_environment(params)
+    for particular_parameters in tqdm(parameters_sweep):
+        parameters = combine_dicts(particular_parameters, experiment_parameters)
+        env = PandemicEnv(**parameters)
         policy, V = train_environment(env)
-        policies[params] = policy
-        Vs[params] = V
+        policies[particular_parameters] = policy
+        Vs[particular_parameters] = V
 
-    for params in params_sweep:
-        env = make_environment(params)
-        print('params', params)
-        test_environment(env, policies[params], Vs[params])
-        
-    
-def make_environment(params: 'Params'):
-    return PandemicEnv(imported_cases_per_step=params.imported_cases_per_step,
-                       power=params.power,
-                       scale_factor=power_scale_factor[params.power] * params.extra_scale)
-    
+        print(particular_parameters)
+        test_environment(env, policies[particular_parameters], Vs[particular_parameters])
+
+    experiment.checkpoint(path="lookup_tables")
 
 if __name__ == '__main__':
     args = parse_args()
-
-    main(imported_cases_per_step_range=args.imported_cases_per_step,
-         powers=args.powers,
-         extra_scale=args.extra_scale)
+    main(args.__dict__)

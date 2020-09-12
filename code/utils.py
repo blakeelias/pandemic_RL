@@ -13,3 +13,9 @@ def load_pickle(file_name):
         s = f.read()
         obj = pickle.loads(s.encode('latin-1'))
     return obj
+
+
+def combine_dicts(a: dict, b: dict):
+    c = dict(a)
+    c.update(b)
+    return c
