@@ -49,11 +49,9 @@ power_scale_factor = {
 }
 
 
-def main(args = {
-        'imported_cases_per_step_range': [0.0, 0.5, 1.0, 5.0, 10.0],
-        'powers': [0.1, 0.25, 0.5, 1.0, 1.5],
-        'extra_scale': [0.25, 1.0]
-         }):
+def main(imported_cases_per_step_range=[0.0, 0.5, 1.0, 5.0, 10.0],
+        powers=[0.1, 0.25, 0.5, 1.0, 1.5],
+        extra_scale=[0.25, 1.0]):
 
     experiment_parameters = {
         'distr_family': 'poisson',
@@ -91,4 +89,4 @@ def main(args = {
 
 if __name__ == '__main__':
     args = parse_args()
-    main(args.__dict__)
+    main(**args.__dict__)
