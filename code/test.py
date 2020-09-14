@@ -1,3 +1,5 @@
+from pdb import set_trace as b
+
 from matplotlib import pyplot as plt
 
 
@@ -21,6 +23,7 @@ def test_environment(env, policy, V=None):
     gamma_cum = 1
 
     print(f'initial num infected: {env.state}')
+    b()
     
     for t in range(100):
         # Get best action
