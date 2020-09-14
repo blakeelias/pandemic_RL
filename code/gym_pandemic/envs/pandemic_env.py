@@ -59,13 +59,15 @@ class PandemicEnv(gym.Env):
         if init_transition_probs:
             self._set_transition_probabilities()
         
-        self.state = [self.initial_num_cases]
+        self.state = self.initial_num_cases
         self.done = 0
         self.reward = 0
-    
+
+        self.reset()
+        
     def step(self, action):
         # Execute one time step within the environment
-        prev_cases = self.state[-1]
+        prev_cases = self.state
         r = self.actions_r[action]
 
         distr = self._new_state_distribution(prev_cases, r, imported_cases_per_step=self.imported_cases_per_step)
@@ -76,9 +78,7 @@ class PandemicEnv(gym.Env):
         reward = self._reward(new_state, self.actions_r[action])
 
         # Add new observation to state array
-        self.state.append(new_state)
-        # Remove oldest observation from state array
-        self.state.pop(0)
+        self.state = new_state
 
         obs = self.state
         done = self.done
@@ -87,7 +87,7 @@ class PandemicEnv(gym.Env):
     
     def reset(self):
         # Reset the state of the environment to an initial state
-        self.state = [self.initial_num_cases]
+        self.state = self.initial_num_cases
         obs = self.state
 
         return obs

@@ -67,7 +67,7 @@ def main(args={
     experiment = replicate.init(combine_dicts(args, experiment_parameters))
     
     parameters_sweep = [
-        Params(*parameters)._asdict() for parameters in product(
+        Params(*parameters) for parameters in product(
             args['imported_cases_per_step_range'],
             args['powers'],
             args['extra_scale']
@@ -78,14 +78,14 @@ def main(args={
     Vs = {}
     
     for particular_parameters in tqdm(parameters_sweep):
-        parameters = combine_dicts(particular_parameters, experiment_parameters)
+        parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
         env = PandemicEnv(**parameters)
         policy, V = train_environment(env)
         policies[particular_parameters] = policy
         Vs[particular_parameters] = V
 
         print(particular_parameters)
-        test_environment(env, policies[particular_parameters], Vs[particular_parameters])
+        test_environment(env, policy, V)
 
     experiment.checkpoint(path="lookup_tables")
 

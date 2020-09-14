@@ -2,34 +2,34 @@ from matplotlib import pyplot as plt
 
 
 def test_environment(env, policy, V=None):
-    env.reset()
-    gamma = 0.99
-
-    num_infected = []
-    actions_taken = []
-
+    # Plot policy
     actions_policy = [env.actions_r[policy[i].argmax()] for i in range(env.nS)]
-
     print('policy')
     plt.plot(range(env.nS), actions_policy)
     plt.show()
 
+    # Plot value function
     print('value function')
     plt.plot(range(env.nS), V)
     plt.show()
     
+    gamma = 0.99
+    num_infected = []
+    actions_taken = []
     observation = env.reset()
     total_reward = 0
     gamma_cum = 1
 
-    print(f'initial num infected: {env.state[0]}')
+    print(f'initial num infected: {env.state}')
     
     for t in range(100):
         # Get best action
+        observation = min(observation, env.nS - 1) # max number infected
         action = policy[observation].argmax()
         actions_taken.append(env.actions_r[action])
+        num_infected.append(observation)
         observation, reward, done, info = env.step(action)
-        num_infected.append(observation[-1])
+
         
         if done:
             print("Episode finished after {} timesteps".format(t+1))
