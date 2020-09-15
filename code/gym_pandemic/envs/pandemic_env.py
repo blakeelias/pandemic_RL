@@ -155,7 +155,7 @@ class PandemicEnv(gym.Env):
                 
                 k = 3
                 low = min(max(distr.mean() - k * distr.std(), 0), self.nS - 1)
-                high = min(distr.mean() + k * distr.std(), self.nS)
+                high = max(min(distr.mean() + k * distr.std(), self.nS), 1)
                 feasible_range = range(floor(low), ceil(high))
                 
                 for new_state in feasible_range: # range(self.nS):
