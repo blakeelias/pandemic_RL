@@ -70,7 +70,8 @@ class PandemicImmunityEnv(gym.Env):
 
         prev_num_infected = self.state[-1]
         prev_num_immune = sum(self.state[:-1])
-        num_susceptible = self.num_population - prev_num_immune
+        new_num_immune = sum(self.state)
+        num_susceptible = self.num_population - new_num_immune
         
         r = self.actions_r[action]
 
@@ -78,9 +79,7 @@ class PandemicImmunityEnv(gym.Env):
         new_num_infected = distr.rvs()
         new_num_infected = min(new_num_infected, num_susceptible)
 
-        new_num_immune = prev_num_immune + prev_num_infected
-        
-        new_state = [new_num_immune, new_num_infected]
+        new_state = (new_num_immune, new_num_infected)
 
         reward = self._reward(self.state, self.actions_r[action])
 
@@ -95,7 +94,7 @@ class PandemicImmunityEnv(gym.Env):
     def reset(self):
         # Reset the state of the environment to an initial state
         initial_num_immune = 0
-        self.state = [initial_num_immune, self.initial_num_cases]
+        self.state = (initial_num_immune, self.initial_num_cases)
         obs = self.state
 
         return obs
@@ -172,13 +171,14 @@ class PandemicImmunityEnv(gym.Env):
             state = states_list[state_idx]
             prev_num_infected = state[-1]
             prev_num_immune = sum(state[:-1])
-
-            #if prev_num_immune + prev_num_infected > self.num_population:
-            #    continue
-
-            num_susceptible = self.num_population - prev_num_immune
+            new_num_immune = sum(state)
             
-            new_num_immune = prev_num_immune + prev_num_infected
+            if prev_num_immune + prev_num_infected > self.num_population:
+                continue
+
+            num_susceptible = self.num_population - new_num_immune
+            
+
             
             for action in range(self.nA):
                 distr = self._new_infected_distribution(state, self.actions_r[action], **kwargs)
@@ -192,7 +192,7 @@ class PandemicImmunityEnv(gym.Env):
                     new_state = (new_num_immune, new_num_infected)
                     
                     prob = 0
-                    if new_num_infected == self.num_population - 1:
+                    if new_num_infected == num_susceptible:
                         # probability of landing on new_state or anything above
                         prob = 1 - distr.cdf(new_num_infected - 1)
                     else:
