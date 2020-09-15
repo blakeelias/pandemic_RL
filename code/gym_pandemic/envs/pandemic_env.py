@@ -154,7 +154,7 @@ class PandemicEnv(gym.Env):
                 distr = self._new_state_distribution(state, self.actions_r[action], **kwargs)
                 
                 k = 3
-                low = max(distr.mean() - k * distr.std(), 0)
+                low = min(max(distr.mean() - k * distr.std(), 0), self.nS - 1)
                 high = min(distr.mean() + k * distr.std(), self.nS)
                 feasible_range = range(floor(low), ceil(high))
                 
@@ -166,7 +166,7 @@ class PandemicEnv(gym.Env):
                     else:
                         prob = distr.pmf(new_state)
                     done = False
-                    reward = self._reward(new_state, self.actions_r[action])
+                    reward = self._reward(state, self.actions_r[action])
 
                     outcome = (prob, new_state, reward, done)
                     self.P[state][action].append(outcome)
