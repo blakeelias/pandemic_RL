@@ -27,7 +27,7 @@ class PandemicImmunityEnv(gym.Env):
                time_lumping=False,
                init_transition_probs=False,
                **kwargs):
-        super(PandemicEnv, self).__init__()
+        super(PandemicImmunityEnv, self).__init__()
         self.num_population = num_population
         self.initial_num_cases = initial_num_cases
         self.R_0 = R_0
@@ -45,7 +45,7 @@ class PandemicImmunityEnv(gym.Env):
         self.nA = self.actions_r.shape[0]
         self.action_space = spaces.Discrete(self.nA)
 
-        self.nS = num_population * num_population
+        self.nS = (num_population + 1) * (num_population + 1)
         # Use entire state space
         self.observation_space = spaces.Box(low=0,
                                             high=num_population,
@@ -60,23 +60,29 @@ class PandemicImmunityEnv(gym.Env):
         if init_transition_probs:
             self._set_transition_probabilities()
         
-        self.state = self.initial_num_cases
         self.done = 0
         self.reward = 0
 
-        self.reset()
+        self.state = self.reset()
         
     def step(self, action):
         # Execute one time step within the environment
+
+        prev_num_infected = self.state[-1]
+        prev_num_immune = sum(self.state[:-1])
+        num_susceptible = self.num_population - prev_num_immune
         
         r = self.actions_r[action]
 
-        distr = self._new_state_distribution(self.state, r, imported_cases_per_step=self.imported_cases_per_step)
-        new_cases = distr.rvs()
-        new_cases = min(new_cases, self.num_population)
-        new_state = new_cases
+        distr = self._new_infected_distribution(self.state, r, imported_cases_per_step=self.imported_cases_per_step)
+        new_num_infected = distr.rvs()
+        new_num_infected = min(new_num_infected, num_susceptible)
 
-        reward = self._reward(new_state, self.actions_r[action])
+        new_num_immune = prev_num_immune + prev_num_infected
+        
+        new_state = [new_num_immune, new_num_infected]
+
+        reward = self._reward(self.state, self.actions_r[action])
 
         # Add new observation to state array
         self.state = new_state
@@ -88,7 +94,8 @@ class PandemicImmunityEnv(gym.Env):
     
     def reset(self):
         # Reset the state of the environment to an initial state
-        self.state = self.initial_num_cases
+        initial_num_immune = 0
+        self.state = [initial_num_immune, self.initial_num_cases]
         obs = self.state
 
         return obs
@@ -135,7 +142,7 @@ class PandemicImmunityEnv(gym.Env):
         prev_num_infected = state[-1]
         prev_num_immune = sum(state[:-1])
         
-        lam = self._expected_new_state(num_infected, prev_num_immune, r, **kwargs)
+        lam = self._expected_new_infected(prev_num_infected, prev_num_immune, r, **kwargs)
 
         if self.distr_family == 'poisson':
             return poisson(lam)
@@ -154,31 +161,32 @@ class PandemicImmunityEnv(gym.Env):
             self.P = []
 
         states = itertools.product(range(self.observation_space.low[0],
-                                         self.observation_space.high[0]),
+                                         self.observation_space.high[0] + 1),
                                    range(self.observation_space.low[1],
-                                         self.observation_space.high[1]))
-        state_to_idx = {states[idx]: idx for idx in range(len(states))}
-        self.P = {state:
-                  {action: [] for action in range(self.nA)}
-                  for state in states}
+                                         self.observation_space.high[1] + 1))
+        states_list = list(states)
+        state_to_idx = {states_list[idx]: idx for idx in range(len(states_list))}
+        self.P = [ [[] for action in range(self.nA)] for state in range(self.nS)]
 
-        for state_idx in range(self.nS):
-            state = states[state_idx]
+        for state_idx in tqdm(range(self.nS)):
+            state = states_list[state_idx]
             prev_num_infected = state[-1]
             prev_num_immune = sum(state[:-1])
 
-            if prev_num_immune + prev_num_infected > self.num_population:
-                continue
+            #if prev_num_immune + prev_num_infected > self.num_population:
+            #    continue
 
+            num_susceptible = self.num_population - prev_num_immune
+            
             new_num_immune = prev_num_immune + prev_num_infected
             
             for action in range(self.nA):
                 distr = self._new_infected_distribution(state, self.actions_r[action], **kwargs)
                 
                 k = 3
-                low = max(distr.mean() - k * distr.std(), 0)
-                high = min(distr.mean() + k * distr.std(), self.nS)
-                feasible_range = range(floor(low), ceil(high))
+                low = max(floor(distr.mean() - k * distr.std()), 0)
+                high = min(ceil(distr.mean() + k * distr.std()), num_susceptible)
+                feasible_range = range(low, high + 1)
                 
                 for new_num_infected in feasible_range: # range(self.nS):
                     new_state = (new_num_immune, new_num_infected)
@@ -186,7 +194,7 @@ class PandemicImmunityEnv(gym.Env):
                     prob = 0
                     if new_num_infected == self.num_population - 1:
                         # probability of landing on new_state or anything above
-                        prob = 1 - distr.cdf(new_state - 1)
+                        prob = 1 - distr.cdf(new_num_infected - 1)
                     else:
                         prob = distr.pmf(new_num_infected)
                     done = False

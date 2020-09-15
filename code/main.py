@@ -10,6 +10,7 @@ import replicate
 from train import train_environment
 from test import test_environment
 from gym_pandemic.envs.pandemic_env import PandemicEnv
+from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
@@ -53,11 +54,12 @@ def main(args={
           'imported_cases_per_step_range': [0.0, 0.5, 1.0, 5.0, 10.0],
           'powers': [0.1, 0.25, 0.5, 1.0, 1.5],
           'extra_scale': [0.25, 1.0]
-         }):
+         },
+):
 
     experiment_parameters = {
         'distr_family': 'poisson',
-        'dynamics': 'SIS',
+        'dynamics': 'SIR',
         'time_lumping': False,
         'num_population': 1000,
         'initial_num_cases': 100,
@@ -79,7 +81,7 @@ def main(args={
     
     for particular_parameters in tqdm(parameters_sweep):
         parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
-        env = PandemicEnv(**parameters)
+        env = PandemicImmunityEnv(**parameters)
         policy, V = train_environment(env)
         policies[particular_parameters] = policy
         Vs[particular_parameters] = V
