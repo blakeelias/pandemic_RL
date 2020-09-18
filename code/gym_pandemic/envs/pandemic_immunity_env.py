@@ -156,25 +156,25 @@ class PandemicImmunityEnv(gym.Env):
         else:
             return n
 
-    def _expected_new_infected(self, num_infected, num_immune, r, **kwargs):    
+    def _expected_new_infected(self, num_infected, num_susceptible, r, **kwargs):
         fraction_susceptible = 1 # (num_population - current_cases) / num_population
         # TODO: may need better way to bound susceptible population,
         # to account for immunity
         # One option: fraction_susceptible = 1 always, and just bound new_state by num_population
 
         # Better solution: keep track of how many people are susceptible NOW, based on some immunity time
-        fraction_susceptible = 1.0 - (num_immune * 1.0 / self.num_population)
+        fraction_susceptible = num_susceptible / self.num_population
         expected_new_cases = (num_infected * r) * fraction_susceptible + self.imported_cases_per_step
 
         return expected_new_cases
-
-    def _new_infected_distribution(self, state, r, **kwargs):
+    
+    def _new_infected_distribution(self, unpacked_state, r, **kwargs):
         # distr_family: 'poisson' or 'nbinom'
 
-        prev_num_infected = state[-1]
-        new_num_immune = sum(state)
+        prev_num_susceptible = unpacked_state[0]
+        prev_num_infected = unpacked_state[1]
         
-        lam = self._expected_new_infected(prev_num_infected, new_num_immune, r, **kwargs)
+        lam = self._expected_new_infected(prev_num_infected, prev_num_susceptible, r, **kwargs)
 
         if self.distr_family == 'poisson':
             return poisson(lam)
@@ -182,7 +182,7 @@ class PandemicImmunityEnv(gym.Env):
             r = 100000000000000.0
             p = lam / (r + lam)
             return nbinom(r, 1-p)
-
+    
     def _set_transition_probabilities(self, **kwargs):
         file_name = f'../lookup_tables/{self.dynamics_param_str}/transition_dynamics_{self.dynamics_param_str}.pickle'
         try:
@@ -201,7 +201,7 @@ class PandemicImmunityEnv(gym.Env):
         assert len(states_list) == self.nS
         
         state_to_idx = {states_list[idx]: idx for idx in range(len(states_list))}
-        self.P = [ [[] for action in self._allowed_rs(state)] for state in states_list]
+        self.P = [ [[] for action in self._allowed_rs(self._unpack_state(packed_state))] for packed_state in states_list]
 
         for state_idx in tqdm(range(self.nS)):
             packed_state = states_list[state_idx]
