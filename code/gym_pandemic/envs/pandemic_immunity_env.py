@@ -1,4 +1,4 @@
-from math import floor, ceil
+from math import floor, ceil, sqrt
 import itertools
 
 import numpy as np
@@ -26,6 +26,7 @@ class PandemicImmunityEnv(gym.Env):
                dynamics='SIR',
                time_lumping=False,
                init_transition_probs=False,
+               max_infected_desired=100,
                **kwargs):
         super(PandemicImmunityEnv, self).__init__()
         self.num_population = num_population
@@ -37,6 +38,8 @@ class PandemicImmunityEnv(gym.Env):
         self.distr_family = distr_family
         self.dynamics = dynamics
         self.time_lumping = time_lumping
+        self.max_infected_desired = max_infected_desired
+        self.num_stdevs = 3
         
         # Define action and observation space
         # They must be gym.spaces objects
@@ -45,13 +48,16 @@ class PandemicImmunityEnv(gym.Env):
         self.nA = self.actions_r.shape[0]
         self.action_space = spaces.Discrete(self.nA)
 
-        self.nS = (num_population + 1) * (num_population + 1)
         # Use entire state space
-        self.observation_space = spaces.Box(low=0,
-                                            high=num_population,
+        self.observation_space = spaces.Box(low=np.array([0, 0]),
+                                            high=np.array([
+                                                self.num_population,
+                                                self.max_infected_desired
+                                            ]),
                                             shape=(2,), dtype=np.uint16)  # maximum infected = 2**16 == 65536
         # self.observation_space = spaces.Discrete(self.nS)
-
+        self.nS = (self.num_population + 1) * (self.max_infected_desired + 1)
+        
         self.dynamics_param_str = f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping}'
 
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor}'
@@ -139,9 +145,9 @@ class PandemicImmunityEnv(gym.Env):
         # distr_family: 'poisson' or 'nbinom'
 
         prev_num_infected = state[-1]
-        prev_num_immune = sum(state[:-1])
+        new_num_immune = sum(state)
         
-        lam = self._expected_new_infected(prev_num_infected, prev_num_immune, r, **kwargs)
+        lam = self._expected_new_infected(prev_num_infected, new_num_immune, r, **kwargs)
 
         if self.distr_family == 'poisson':
             return poisson(lam)
@@ -164,8 +170,11 @@ class PandemicImmunityEnv(gym.Env):
                                    range(self.observation_space.low[1],
                                          self.observation_space.high[1] + 1))
         states_list = list(states)
+
+        assert len(states_list) == self.nS
+        
         state_to_idx = {states_list[idx]: idx for idx in range(len(states_list))}
-        self.P = [ [[] for action in range(self.nA)] for state in range(self.nS)]
+        self.P = [ [[] for action in self._allowed_rs(state)] for state in states_list]
 
         for state_idx in tqdm(range(self.nS)):
             state = states_list[state_idx]
@@ -178,12 +187,9 @@ class PandemicImmunityEnv(gym.Env):
 
             num_susceptible = self.num_population - new_num_immune
             
-
-            
-            for action in range(self.nA):
-                distr = self._new_infected_distribution(state, self.actions_r[action], **kwargs)
-                
-                k = 3
+            for action_idx, action_r in enumerate(self._allowed_rs(state)):
+                distr = self._new_infected_distribution(state, action_r, **kwargs)
+                k = self.num_stdevs
                 low = max(floor(distr.mean() - k * distr.std()), 0)
                 high = min(ceil(distr.mean() + k * distr.std()), num_susceptible)
                 feasible_range = range(low, high + 1)
@@ -198,11 +204,45 @@ class PandemicImmunityEnv(gym.Env):
                     else:
                         prob = distr.pmf(new_num_infected)
                     done = False
-                    reward = self._reward(new_num_infected, self.actions_r[action])
+                    reward = self._reward(new_num_infected, action_r)
 
                     new_state_idx = state_to_idx[new_state]
                     outcome = (prob, new_state_idx, reward, done)
-                    self.P[state_idx][action].append(outcome)
+                    self.P[state_idx][action_idx].append(outcome)
 
         save_pickle(self.P, file_name)
         return self.P
+
+    
+    def _max_allowed_r(self, state):
+        prev_num_infected = state[-1]
+        new_num_immune = sum(state)
+        
+        # E[new_num_infected] = (num_population - new_num_immune) / num_population * prev_num_infected * r
+        # max_new_num_infected = E[new_num_infected] + k * sqrt(E[new_num_infected])
+        # max_infected_desired = 100
+        # E[new_num_infected] + k * sqrt(E[new_num_infected]) < max_infected_desired
+        # x + k * sqrt(x) < max_infected_desired (== M)
+        # sqrt(x) * (sqrt(x) + k) < M
+        # a * (a + k) < M
+        # a**2 + k*a < M
+        # a**2 + k*a - M < 0
+        # a = (-k +/- sqrt(k^2 + 4*1*M))/(2)
+        # x = a ** 2
+
+        k = self.num_stdevs
+        a = (-k + sqrt(k * k + 4 * self.max_infected_desired))/2
+        target_expected_new_num_infected = a * a
+
+        if prev_num_infected > 0 and (self.num_population - new_num_immune > 0):
+            r = target_expected_new_num_infected * self.num_population / ((self.num_population - new_num_immune) * prev_num_infected)
+        else:
+            r = np.inf
+        
+        return r
+
+    def _allowed_rs(self, state):
+        max_r = self._max_allowed_r(state)
+        allowed = [r for r in self.actions_r if r <= max_r]
+        # Note: the indices of `allowed` can also be used to index into self.actions_r
+        return allowed
