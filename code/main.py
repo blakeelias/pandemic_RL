@@ -92,5 +92,12 @@ def main(args={
     experiment.checkpoint(path="lookup_tables")
 
 if __name__ == '__main__':
-    args = parse_args()
-    main(**args.__dict__)
+    # args = parse_args()
+    # main(**args.__dict__)
+
+    main(args={
+        'imported_cases_per_step_range': [0.0],
+        'powers': [1.0],
+        'extra_scale': [10.0/7]
+    })
+
