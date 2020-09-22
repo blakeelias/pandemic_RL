@@ -192,6 +192,7 @@ class PandemicImmunityEnv(gym.Env):
         except:
             self.P = []
 
+        print('Computing transition probabilities')
         states = itertools.product(range(self.observation_space.low[0],
                                          self.observation_space.high[0] + 1),
                                    range(self.observation_space.low[1],
@@ -217,10 +218,15 @@ class PandemicImmunityEnv(gym.Env):
                 k = self.num_stdevs
                 low = max(floor(distr.mean() - k * distr.std()), 0)
                 high = min(ceil(distr.mean() + k * distr.std()), prev_num_susceptible)
-                feasible_range = range(low, high + 1)
+                feasible_range = list(range(low, high + 1))
+
+                new_num_infected_probs = distr.pmf(feasible_range)
+                if high == prev_num_susceptible:
+                    new_num_infected_probs[-1] = 1 - distr.cdf(prev_num_susceptible - 1)
                 
-                for new_num_infected in feasible_range: # range(self.nS):
-                    
+                reward = self._reward(prev_num_infected, action_r)
+                
+                for idx, new_num_infected in enumerate(feasible_range):
                     expected_new_num_susceptible = prev_num_susceptible - new_num_infected
                     new_num_susceptible_distr = self._new_num_susceptible_distr(expected_new_num_susceptible)
                     
@@ -232,20 +238,15 @@ class PandemicImmunityEnv(gym.Env):
                         new_unpacked_state = (new_num_susceptible, new_num_infected)
                         new_packed_state = self._pack_state(new_unpacked_state)
                         
-                        prob = 0
-                        if new_num_infected == prev_num_susceptible:
-                            # probability of landing on new_state or anything above
-                            prob = 1 - distr.cdf(new_num_infected - 1)
-                        else:
-                            prob = distr.pmf(new_num_infected)
                         done = False
-                        reward = self._reward(new_num_infected, action_r)
 
                         new_state_idx = state_to_idx[new_packed_state]
-                        outcome = (prob * prob_new_num_susceptible, new_state_idx, reward, done)
+                        outcome = (new_num_infected_probs[idx] * prob_new_num_susceptible, new_state_idx, reward, done)
                         self.P[state_idx][action_idx].append(outcome)
 
+        print('saving transition probabilities...')
         save_pickle(self.P, file_name)
+        print('saved')
         return self.P
 
     
