@@ -1,5 +1,6 @@
 from math import floor, ceil, sqrt
 import itertools
+from pdb import set_trace as b
 
 import numpy as np
 from scipy.stats import poisson, nbinom, rv_discrete
@@ -26,7 +27,7 @@ class PandemicImmunityEnv(gym.Env):
                dynamics='SIR',
                time_lumping=False,
                init_transition_probs=False,
-               max_infected_desired=100,
+               max_infected_desired=None,
                **kwargs):
         super(PandemicImmunityEnv, self).__init__()
         self.num_population = num_population
@@ -38,7 +39,7 @@ class PandemicImmunityEnv(gym.Env):
         self.distr_family = distr_family
         self.dynamics = dynamics
         self.time_lumping = time_lumping
-        self.max_infected_desired = max_infected_desired
+        self.max_infected_desired = max_infected_desired if max_infected_desired else int(0.1 * self.num_population)
         self.num_stdevs = 3
         self.susceptible_increment = int(self.num_population * 0.01)
         
@@ -108,7 +109,7 @@ class PandemicImmunityEnv(gym.Env):
 
     def _pack_state(self, state):
         prev_num_susceptible = state[0] // self.susceptible_increment
-        prev_num_infected = self.state[1]
+        prev_num_infected = state[1]
         return (prev_num_susceptible, prev_num_infected)
 
         
@@ -199,17 +200,20 @@ class PandemicImmunityEnv(gym.Env):
                                          self.observation_space.high[1] + 1))
         states_list = list(states)
 
+        itertools.product(range(self.observation_space.low[0],                 self.observation_space.high[0] + 1), range(self.observation_space.low[1],  self.observation_space.high[1] + 1))
+
         assert len(states_list) == self.nS
         
         state_to_idx = {states_list[idx]: idx for idx in range(len(states_list))}
         self.P = [ [[] for action in self._allowed_rs(self._unpack_state(packed_state))] for packed_state in states_list]
 
+        
         for state_idx in tqdm(range(self.nS)):
             packed_state = states_list[state_idx]
             unpacked_state = self._unpack_state(packed_state)
             prev_num_susceptible = unpacked_state[0]
             prev_num_infected = unpacked_state[1]
-            
+
             if prev_num_susceptible + prev_num_infected > self.num_population:
                 continue
 
@@ -242,7 +246,9 @@ class PandemicImmunityEnv(gym.Env):
 
                         new_state_idx = state_to_idx[new_packed_state]
                         outcome = (new_num_infected_probs[idx] * prob_new_num_susceptible, new_state_idx, reward, done)
+                        # b()
                         self.P[state_idx][action_idx].append(outcome)
+
 
         print('saving transition probabilities...')
         save_pickle(self.P, file_name)

@@ -61,12 +61,12 @@ def main(args={
         'distr_family': 'poisson',
         'dynamics': 'SIR',
         'time_lumping': False,
-        'num_population': 1000,
-        'initial_num_cases': 100,
+        'num_population': 100,
+        'initial_num_cases': 10,
         'R_0': 2.5
     }
     
-    experiment = replicate.init(combine_dicts(args, experiment_parameters))
+    # experiment = replicate.init(combine_dicts(args, experiment_parameters))
     
     parameters_sweep = [
         Params(*parameters) for parameters in product(
@@ -89,15 +89,19 @@ def main(args={
         print(particular_parameters)
         test_environment(env, policy, V)
 
-    experiment.checkpoint(path="lookup_tables")
+    # experiment.checkpoint(path="lookup_tables")
 
 if __name__ == '__main__':
     # args = parse_args()
     # main(**args.__dict__)
 
+    #try:
     main(args={
         'imported_cases_per_step_range': [0.0],
         'powers': [1.0],
         'extra_scale': [10.0/7]
     })
+    #except:
+    #    pass
+    #    # b()
 
