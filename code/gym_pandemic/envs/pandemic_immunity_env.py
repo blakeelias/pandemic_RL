@@ -57,7 +57,14 @@ class PandemicImmunityEnv(gym.Env):
                                             ]),
                                             shape=(2,), dtype=np.uint16)  # maximum infected = 2**16 == 65536
         # Observation: (num_susceptible, num_infected)
-        self.nS = (self.observation_space.high[0] + 1) * (self.observation_space.high[1] + 1)
+
+        self.states = list(
+            itertools.product(
+                range(self.observation_space.low[0], self.observation_space.high[0] + 1),
+                range(self.observation_space.low[1], self.observation_space.high[1] + 1),
+            )) + [(np.inf, np.inf)] # last state is the "saturated state" -- we consider this the state where more people are infected than we wanted to allow
+        
+        self.nS = len(self.states)
         
         self.dynamics_param_str = f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping}'
 
@@ -139,6 +146,7 @@ class PandemicImmunityEnv(gym.Env):
 
     def _reward(self, num_infected, r, **kwargs):
         return -self._cost_of_n(num_infected, **kwargs) - self._cost_of_r(r, **kwargs)
+
     
     def _cost_of_r(self, r, **kwargs):
         baseline = 1/(self.R_0 ** self.power)
@@ -194,34 +202,57 @@ class PandemicImmunityEnv(gym.Env):
             self.P = []
 
         print('Computing transition probabilities')
-        states = itertools.product(range(self.observation_space.low[0],
-                                         self.observation_space.high[0] + 1),
-                                   range(self.observation_space.low[1],
-                                         self.observation_space.high[1] + 1))
-        states_list = list(states)
 
-        itertools.product(range(self.observation_space.low[0],                 self.observation_space.high[0] + 1), range(self.observation_space.low[1],  self.observation_space.high[1] + 1))
-
+        states_list = self.states
         assert len(states_list) == self.nS
         
         state_to_idx = {states_list[idx]: idx for idx in range(len(states_list))}
-        self.P = [ [[] for action in self._allowed_rs(self._unpack_state(packed_state))] for packed_state in states_list]
-
+        # self.P = [ [[] for action in self._allowed_rs(self._unpack_state(packed_state))] for packed_state in states_list]
+        self.P = [ [[] for action in self.actions_r] for packed_state in states_list]
         
         for state_idx in tqdm(range(self.nS)):
+            
+            # "Saturated state"
+            if state_idx == self.nS - 1:
+                for action_idx in range(self.nA):
+                    prob = 1.0
+                    new_state_idx = self.nS - 1
+                    reward = -np.inf
+                    done = False
+                    
+                    outcome = (prob, new_state_idx, reward, done)
+                    self.P[state_idx][action_idx].append(outcome)
+                    
+                    continue
+
+            # All other states    
             packed_state = states_list[state_idx]
             unpacked_state = self._unpack_state(packed_state)
             prev_num_susceptible = unpacked_state[0]
             prev_num_infected = unpacked_state[1]
 
+            # Un-reachable states
             if prev_num_susceptible + prev_num_infected > self.num_population:
                 continue
 
-            for action_idx, action_r in enumerate(self._allowed_rs(unpacked_state)):
+            max_allowed_r = max(self._allowed_rs(unpacked_state))
+            for action_idx, action_r in enumerate(self.actions_r):
+                if action_r > max_allowed_r:
+                    prob = 1.0
+                    new_state_idx = self.nS - 1
+                    reward = -np.inf
+                    done = False
+                    
+                    outcome = (prob, new_state_idx, reward, done)
+                    self.P[state_idx][action_idx].append(outcome)
+                    
+                    continue
                 distr = self._new_infected_distribution(unpacked_state, action_r, **kwargs)
                 k = self.num_stdevs
                 low = max(floor(distr.mean() - k * distr.std()), 0)
-                high = min(ceil(distr.mean() + k * distr.std()), prev_num_susceptible)
+                high = min(ceil(distr.mean() + k * distr.std()),
+                           prev_num_susceptible,
+                           self.max_infected_desired)
                 feasible_range = list(range(low, high + 1))
 
                 new_num_infected_probs = distr.pmf(feasible_range)

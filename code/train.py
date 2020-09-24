@@ -17,19 +17,11 @@ def train_environment(env, theta=0.0001, discount_factor=0.99):
         return policy, V
     except:
         if not env.P:
-            try:
-                b()
-                env._set_transition_probabilities()
-            except:
-                b()
-        try:
-            b()
-            policy, V = value_iteration(env, theta=theta, discount_factor=discount_factor)
-            save_pickle((policy, V), file_name)
-            return policy, V
-        except:
-            b()
-
+            env._set_transition_probabilities()
+        b()
+        policy, V = value_iteration(env, theta=theta, discount_factor=discount_factor)
+        save_pickle((policy, V), file_name)
+        return policy, V
 
 
 
