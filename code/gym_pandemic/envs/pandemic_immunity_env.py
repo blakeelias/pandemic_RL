@@ -18,7 +18,7 @@ class PandemicImmunityEnv(gym.Env):
 
     def __init__(self,
                num_population=1000,
-               initial_num_cases=100,
+               initial_fraction_infected=0.1,
                R_0=2.5,
                imported_cases_per_step=0.5,
                power=2,
@@ -31,7 +31,7 @@ class PandemicImmunityEnv(gym.Env):
                **kwargs):
         super(PandemicImmunityEnv, self).__init__()
         self.num_population = num_population
-        self.initial_num_cases = initial_num_cases
+        self.initial_num_cases = int(initial_fraction_infected * num_population)
         self.R_0 = R_0
         self.imported_cases_per_step = imported_cases_per_step
         self.power = power

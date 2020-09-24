@@ -27,7 +27,7 @@ def test_environment(env, policy, V=None):
     
     for t in range(100):
         # Get best action
-        observation = min(observation, env.nS - 1) # max number infected
+        # observation = min(observation, env.nS - 1) # max number infected
         action = policy[observation].argmax()
         actions_taken.append(env.actions_r[action])
         num_infected.append(observation)

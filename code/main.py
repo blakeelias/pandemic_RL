@@ -14,7 +14,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['imported_cases_per_step', 'power', 'extra_scale'])
+Params = namedtuple('Params', ['imported_cases_per_step', 'power', 'extra_scale', 'num_population'])
 
 
 def parse_args():
@@ -53,7 +53,8 @@ power_scale_factor = {
 def main(args={
           'imported_cases_per_step_range': [0.0, 0.5, 1.0, 5.0, 10.0],
           'powers': [0.1, 0.25, 0.5, 1.0, 1.5],
-          'extra_scale': [0.25, 1.0]
+          'extra_scale': [0.25, 1.0],
+          'num_population': [100],
          },
 ):
 
@@ -61,8 +62,8 @@ def main(args={
         'distr_family': 'poisson',
         'dynamics': 'SIR',
         'time_lumping': False,
-        'num_population': 100,
-        'initial_num_cases': 10,
+        #'num_population': args['num_population'],
+        'initial_fraction_infected': 0.1,
         'R_0': 2.5
     }
     
@@ -72,7 +73,8 @@ def main(args={
         Params(*parameters) for parameters in product(
             args['imported_cases_per_step_range'],
             args['powers'],
-            args['extra_scale']
+            args['extra_scale'],
+            args['num_population'],
         )
     ]
 
@@ -99,7 +101,8 @@ if __name__ == '__main__':
     main(args={
         'imported_cases_per_step_range': [0.0],
         'powers': [1.0],
-        'extra_scale': [10.0/7]
+        'extra_scale': [10.0/7],
+        'num_population': [1000]
     })
     #except:
     #    pass
