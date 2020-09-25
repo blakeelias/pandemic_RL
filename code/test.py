@@ -27,9 +27,11 @@ def test_environment(env, policy, V=None):
     gamma_cum = 1
 
     print(f'initial num infected: {env.state}')
-    b()
+
+    plot_value_function(env, policy, V)
     
-    '''for t in range(100):
+    
+    for t in range(100):
         # Get best action
         # observation = min(observation, env.nS - 1) # max number infected
         state_idx = env.state_to_idx[observation]
@@ -44,8 +46,7 @@ def test_environment(env, policy, V=None):
             print("Episode finished after {} timesteps".format(t+1))
             break
         total_reward += gamma_cum * reward
-        gamma_cum *= gamma'''
-
+        gamma_cum *= gamma
 
     
     print('num susceptible')
@@ -62,8 +63,6 @@ def test_environment(env, policy, V=None):
 
     print(f'total reward: {total_reward}')
 
-    plot_value_function(env, policy, V)
-    
     env.close()
 
 
@@ -81,7 +80,8 @@ def plot_value_function(env, policy, V):
         h = env.observation_space.high[0] - env.observation_space.low[0] + 1
         relevant_array = array[:-1] # remove last entry, for 'saturated state'
         return rearrange(relevant_array, '(h w) -> h w', h=h)
-        
+
+    b()
     unpacked_states = [env._unpack_state(packed_state) for packed_state in env.states]
     X = reshape(np.array([state[0] for state in unpacked_states]))
     Y = reshape(np.array([state[1] for state in unpacked_states]))
@@ -94,11 +94,11 @@ def plot_value_function(env, policy, V):
 
     #print('Value function')
     # Plot a basic wireframe.
-    #ax.plot_wireframe(X, Y, Z_value, rstride=10, cstride=10)
-    #plt.show()
-
-    print('Policy')
-    ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
+    ax.plot_wireframe(X, Y, Z_value, rstride=10, cstride=10)
     plt.show()
+
+    #print('Policy')
+    #ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
+    #plt.show()
 
     

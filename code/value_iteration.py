@@ -9,7 +9,7 @@ if "../" not in sys.path:
     sys.path.append("../")
 
 
-def value_iteration(env, theta=0.0001, discount_factor=1.0):
+def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0):
     """
     Value Iteration Algorithm.
     
@@ -43,7 +43,7 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0):
                 A[a] += prob * (reward + discount_factor * V[next_state])
         return A
     
-    V = np.zeros(env.nS)
+    V = np.zeros(env.nS) * initial_value
     while True:
         # Stopping condition
         delta = 0

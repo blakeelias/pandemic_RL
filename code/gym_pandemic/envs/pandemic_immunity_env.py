@@ -235,9 +235,11 @@ class PandemicImmunityEnv(gym.Env):
             prev_num_infected = unpacked_state[1]
 
             # Un-reachable states
-            if prev_num_susceptible + prev_num_infected > self.num_population:
+            total_num_people = prev_num_susceptible + prev_num_infected
+            if not (self.num_population - 2 * self.susceptible_increment - 2 < total_num_people < self.num_population + 2 * self.susceptible_increment + 2):
                 continue
 
+            
             max_allowed_r = max(self._allowed_rs(unpacked_state))
             for action_idx, action_r in enumerate(self.actions_r):
                 if action_r > max_allowed_r:
