@@ -31,7 +31,7 @@ class PandemicImmunityEnv(gym.Env):
                **kwargs):
         super(PandemicImmunityEnv, self).__init__()
         self.num_population = num_population
-        self.initial_num_cases = int(initial_fraction_infected * num_population)
+        self.initial_num_infected = int(initial_fraction_infected * num_population)
         self.R_0 = R_0
         self.imported_cases_per_step = imported_cases_per_step
         self.power = power
@@ -62,9 +62,9 @@ class PandemicImmunityEnv(gym.Env):
             itertools.product(
                 range(self.observation_space.low[0], self.observation_space.high[0] + 1),
                 range(self.observation_space.low[1], self.observation_space.high[1] + 1),
-            )) + [(np.inf, np.inf)] # last state is the "saturated state" -- we consider this the state where more people are infected than we wanted to allow
-        
+            )) + [(np.inf, np.inf)] # last state is the "saturated state" -- we consider this the state where more people are infected than we wanted to allow        
         self.nS = len(self.states)
+        self.state_to_idx = {self.states[idx]: idx for idx in range(len(self.states))}
         
         self.dynamics_param_str = f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping}'
 
@@ -81,17 +81,18 @@ class PandemicImmunityEnv(gym.Env):
         
     def step(self, action):
         '''Execute one time step within the environment'''
-        prev_num_susceptible, prev_num_infected = self._unpack_state(self.state)
+        unpacked_state = self._unpack_state(self.state)
+        prev_num_susceptible, prev_num_infected = unpacked_state
         r = self.actions_r[action]
-
+        
         # calculate new number of infected
-        distr = self._new_infected_distribution(self.state, r, imported_cases_per_step=self.imported_cases_per_step)
+        distr = self._new_infected_distribution(unpacked_state, r, imported_cases_per_step=self.imported_cases_per_step)
         new_num_infected = distr.rvs()
-        new_num_infected = min(new_num_infected, num_susceptible)
+        new_num_infected = min(new_num_infected, prev_num_susceptible)
 
         # calculate new number susceptible
         expected_new_num_susceptible = prev_num_susceptible - new_num_infected
-        new_num_susceptible_distr = self._new_num_susceptible_distr(new_num_susceptible)
+        new_num_susceptible_distr = self._new_num_susceptible_distr(expected_new_num_susceptible)
         new_num_susceptible = new_num_susceptible_distr.rvs()
         
         # new state
@@ -102,7 +103,7 @@ class PandemicImmunityEnv(gym.Env):
 
         
         # Add new observation to state array
-        self.state = self._pack_state(new_state)
+        self.state = self._pack_state(new_unpacked_state)
         obs = self.state
         done = self.done
 
@@ -134,10 +135,12 @@ class PandemicImmunityEnv(gym.Env):
     
     def reset(self):
         # Reset the state of the environment to an initial state
-        initial_num_immune = 0
-        self.state = (initial_num_immune, self.initial_num_cases)
+        initial_num_susceptible = self.num_population - self.initial_num_infected
+        initial_num_infected = self.initial_num_infected
+        unpacked_state = (initial_num_susceptible, initial_num_infected)
+        
+        self.state = self._pack_state(unpacked_state)
         obs = self.state
-
         return obs
     
     def render(self, mode='human', close=False):
@@ -206,7 +209,7 @@ class PandemicImmunityEnv(gym.Env):
         states_list = self.states
         assert len(states_list) == self.nS
         
-        state_to_idx = {states_list[idx]: idx for idx in range(len(states_list))}
+        
         # self.P = [ [[] for action in self._allowed_rs(self._unpack_state(packed_state))] for packed_state in states_list]
         self.P = [ [[] for action in self.actions_r] for packed_state in states_list]
         
@@ -275,7 +278,7 @@ class PandemicImmunityEnv(gym.Env):
                         
                         done = False
 
-                        new_state_idx = state_to_idx[new_packed_state]
+                        new_state_idx = self.state_to_idx[new_packed_state]
                         outcome = (new_num_infected_probs[idx] * prob_new_num_susceptible, new_state_idx, reward, done)
                         # b()
                         self.P[state_idx][action_idx].append(outcome)
