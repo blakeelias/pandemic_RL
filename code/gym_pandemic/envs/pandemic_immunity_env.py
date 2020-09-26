@@ -189,11 +189,37 @@ class PandemicImmunityEnv(gym.Env):
         lam = self._expected_new_infected(prev_num_infected, prev_num_susceptible, r, **kwargs)
 
         if self.distr_family == 'poisson':
-            return poisson(lam)
+            distr = poisson(lam)
         elif self.distr_family == 'nbinom':
             r = 100000000000000.0
             p = lam / (r + lam)
-            return nbinom(r, 1-p)
+            distr = nbinom(r, 1-p)
+
+        distr = self.chop(distr)
+
+        low = int(min(distr.support()))
+        high = int(min(max(distr.support()),
+                       prev_num_susceptible))
+        feasible_range = list(range(low, high + 1))
+        
+        new_num_infected_probs = distr.pmf(feasible_range)
+        if high == prev_num_susceptible:
+            new_num_infected_probs[-1] = 1 - distr.cdf(prev_num_susceptible - 1)
+
+        distr = rv_discrete(values=(feasible_range, new_num_infected_probs))
+            
+        return distr
+                
+
+    def chop(self, distr):
+        low = floor(max(0, distr.mean() - self.num_stdevs * distr.std()))
+        high = int(distr.mean() + self.num_stdevs * distr.std())
+
+        values = np.arange(low, high + 1)
+        probs = distr.pmf(values)
+        probs = probs / sum(probs)
+
+        return rv_discrete(values=(values, probs))
     
     def _set_transition_probabilities(self, **kwargs):
         file_name = f'../lookup_tables/{self.dynamics_param_str}/transition_dynamics_{self.dynamics_param_str}.pickle'
@@ -252,21 +278,13 @@ class PandemicImmunityEnv(gym.Env):
                     self.P[state_idx][action_idx].append(outcome)
                     
                     continue
-                distr = self._new_infected_distribution(unpacked_state, action_r, **kwargs)
-                k = self.num_stdevs
-                low = max(floor(distr.mean() - k * distr.std()), 0)
-                high = min(ceil(distr.mean() + k * distr.std()),
-                           prev_num_susceptible,
-                           self.max_infected_desired)
-                feasible_range = list(range(low, high + 1))
 
-                new_num_infected_probs = distr.pmf(feasible_range)
-                if high == prev_num_susceptible:
-                    new_num_infected_probs[-1] = 1 - distr.cdf(prev_num_susceptible - 1)
+                distr = self._new_infected_distribution(unpacked_state, action_r, **kwargs)
+                new_num_infected_probs = distr.rvs(distr.support())
                 
                 reward = self._reward(prev_num_infected, action_r)
                 
-                for idx, new_num_infected in enumerate(feasible_range):
+                for idx, new_num_infected in enumerate(distr.support()):
                     expected_new_num_susceptible = prev_num_susceptible - new_num_infected
                     new_num_susceptible_distr = self._new_num_susceptible_distr(expected_new_num_susceptible)
                     
@@ -293,9 +311,9 @@ class PandemicImmunityEnv(gym.Env):
 
     
     def _max_allowed_r(self, state):
-        prev_num_infected = state[-1]
-        new_num_immune = sum(state)
-        
+        num_susceptible = state[0]
+        num_infected = state[1]
+                        
         # E[new_num_infected] = (num_population - new_num_immune) / num_population * prev_num_infected * r
         # max_new_num_infected = E[new_num_infected] + k * sqrt(E[new_num_infected])
         # max_infected_desired = 100
@@ -312,8 +330,8 @@ class PandemicImmunityEnv(gym.Env):
         a = (-k + sqrt(k * k + 4 * self.max_infected_desired))/2
         target_expected_new_num_infected = a * a
 
-        if prev_num_infected > 0 and (self.num_population - new_num_immune > 0):
-            r = target_expected_new_num_infected * self.num_population / ((self.num_population - new_num_immune) * prev_num_infected)
+        if num_infected > 0 and num_susceptible > 0:
+            r = target_expected_new_num_infected * self.num_population / (num_susceptible * num_infected)
         else:
             r = np.inf
         
