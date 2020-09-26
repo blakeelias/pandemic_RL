@@ -262,7 +262,16 @@ class PandemicImmunityEnv(gym.Env):
 
             # Un-reachable states
             total_num_people = prev_num_susceptible + prev_num_infected
-            if not (self.num_population - 2 * self.susceptible_increment - 2 < total_num_people < self.num_population + 2 * self.susceptible_increment + 2):
+            if total_num_people > self.num_population + self.susceptible_increment:
+                for action_idx, _ in enumerate(self.actions_r):
+                    prob = 1.0
+                    new_state_idx = state_idx
+                    reward = -np.inf
+                    done = False
+                    
+                    outcome = (prob, new_state_idx, reward, done)
+                    self.P[state_idx][action_idx].append(outcome)
+                
                 continue
 
             

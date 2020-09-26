@@ -23,7 +23,7 @@ def train_environment(env, theta=0.0001, discount_factor=0.99):
         policy, V = value_iteration(env,
                                     theta=theta,
                                     discount_factor=discount_factor,
-                                    initial_value=-np.inf)
+                                    initial_value=0)
         save_pickle((policy, V), file_name)
         return policy, V
 
