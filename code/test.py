@@ -81,7 +81,6 @@ def plot_value_function(env, policy, V):
         relevant_array = array[:-1] # remove last entry, for 'saturated state'
         return rearrange(relevant_array, '(h w) -> h w', h=h)
 
-    b()
     unpacked_states = [env._unpack_state(packed_state) for packed_state in env.states]
     X = reshape(np.array([state[0] for state in unpacked_states]))
     Y = reshape(np.array([state[1] for state in unpacked_states]))
@@ -92,13 +91,15 @@ def plot_value_function(env, policy, V):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    #print('Value function')
-    # Plot a basic wireframe.
+    print('Value function')
     ax.plot_wireframe(X, Y, Z_value, rstride=10, cstride=10)
     plt.show()
 
-    #print('Policy')
-    #ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
-    #plt.show()
+    b()
+
+    fig = plt.figure()
+    print('Policy')
+    ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
+    plt.show()
 
     
