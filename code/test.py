@@ -30,13 +30,13 @@ def test_environment(env, policy, V=None):
 
     plot_value_function(env, policy, V)
     
-    
     for t in range(100):
         # Get best action
         # observation = min(observation, env.nS - 1) # max number infected
         state_idx = env.state_to_idx[observation]
         action = policy[state_idx].argmax()
         actions_taken_t.append(env.actions_r[action])
+        
         num_susceptible, num_infected = env._unpack_state(observation)
         num_infected_t.append(num_infected)
         num_susceptible_t.append(num_susceptible)
@@ -82,6 +82,7 @@ def plot_value_function(env, policy, V):
         return rearrange(relevant_array, '(h w) -> h w', h=h)
 
     unpacked_states = [env._unpack_state(packed_state) for packed_state in env.states]
+
     X = reshape(np.array([state[0] for state in unpacked_states]))
     Y = reshape(np.array([state[1] for state in unpacked_states]))
     Z_value = reshape(np.array([state_to_value[state] for state in unpacked_states]))
@@ -92,14 +93,14 @@ def plot_value_function(env, policy, V):
     ax = fig.add_subplot(111, projection='3d')
 
     print('Value function')
+    
     ax.plot_wireframe(X, Y, Z_value, rstride=10, cstride=10)
     plt.show()
 
-    b()
-
-    fig = plt.figure()
-    print('Policy')
-    ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
-    plt.show()
+    
+    #fig = plt.figure()
+    #print('Policy')
+    #ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
+    #plt.show()
 
     

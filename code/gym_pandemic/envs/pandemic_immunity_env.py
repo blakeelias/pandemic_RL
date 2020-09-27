@@ -323,7 +323,7 @@ class PandemicImmunityEnv(gym.Env):
         num_susceptible = state[0]
         num_infected = state[1]
                         
-        # E[new_num_infected] = (num_population - new_num_immune) / num_population * prev_num_infected * r
+        # Let x = E[new_num_infected] = (num_population - new_num_immune) / num_population * prev_num_infected * r + self.imported_cases_per_step
         # max_new_num_infected = E[new_num_infected] + k * sqrt(E[new_num_infected])
         # max_infected_desired = 100
         # E[new_num_infected] + k * sqrt(E[new_num_infected]) < max_infected_desired
@@ -334,13 +334,14 @@ class PandemicImmunityEnv(gym.Env):
         # a**2 + k*a - M < 0
         # a = (-k +/- sqrt(k^2 + 4*1*M))/(2)
         # x = a ** 2
+        # r = (x - self.imported_cases_per_step) * num_population / (num_susceptible * prev_num_infected)
 
         k = self.num_stdevs
         a = (-k + sqrt(k * k + 4 * self.max_infected_desired))/2
         target_expected_new_num_infected = a * a
 
         if num_infected > 0 and num_susceptible > 0:
-            r = target_expected_new_num_infected * self.num_population / (num_susceptible * num_infected)
+            r = (target_expected_new_num_infected - self.imported_cases_per_step) * self.num_population / (num_susceptible * num_infected)
         else:
             r = np.inf
         
