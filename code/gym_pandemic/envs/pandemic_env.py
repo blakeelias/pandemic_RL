@@ -50,7 +50,12 @@ class PandemicEnv(gym.Env):
                                             high=num_population,
                                             shape=(1,), dtype=np.uint16)  # maximum infected = 2**16 == 65536
         # self.observation_space = spaces.Discrete(self.nS)
+        self.states = list(range(self.observation_space.low[0],
+                                 self.observation_space.high[0] + 1))
+        self.state_to_idx = {self.states[idx]: idx for idx in range(len(self.states))}
 
+
+        
         self.dynamics_param_str = f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping}'
 
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor}'
@@ -96,6 +101,9 @@ class PandemicEnv(gym.Env):
         # Render the environment to the screen
         print(self.state)
 
+    def _unpack_state(self, packed_state):
+        return packed_state
+        
     def _reward(self, num_infected, r, **kwargs):
         return -self._cost_of_n(num_infected, **kwargs) - self._cost_of_r(r, **kwargs)
     

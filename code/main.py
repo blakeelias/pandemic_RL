@@ -60,7 +60,7 @@ def main(args={
 
     experiment_parameters = {
         'distr_family': 'poisson',
-        'dynamics': 'SIR',
+        'dynamics': 'SIS',
         'time_lumping': False,
         #'num_population': args['num_population'],
         'initial_fraction_infected': 0.1,
@@ -83,7 +83,10 @@ def main(args={
     
     for particular_parameters in tqdm(parameters_sweep):
         parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
-        env = PandemicImmunityEnv(**parameters)
+        if parameters['dynamics'] == 'SIR':
+            env = PandemicImmunityEnv(**parameters)
+        else:
+            env = PandemicEnv(**parameters)
         policy, V = train_environment(env)
         policies[particular_parameters] = policy
         Vs[particular_parameters] = V

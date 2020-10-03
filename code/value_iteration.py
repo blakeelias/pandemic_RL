@@ -23,25 +23,7 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0):
         
     Returns:
         A tuple (policy, V) of the optimal policy and the optimal value function.
-    """
-    
-    def one_step_lookahead(state, V):
-        """
-        Helper function to calculate the value for all action in a given state.
-        
-        Args:
-            state: The state to consider (int)
-            V: The value to use as an estimator, Vector of length env.nS
-        
-        Returns:
-            A vector of length env.nA containing the expected value of each action.
-        """
-        A = np.zeros(env.nA)
-        for a in range(env.nA):
-            for prob, next_state, reward, done in env.P[state][a]:
-                # b()
-                A[a] += prob * (reward + discount_factor * V[next_state])
-        return A
+    """    
     
     V = np.zeros(env.nS) * initial_value
     while True:
@@ -50,7 +32,7 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0):
         # Update each state...
         for s in range(env.nS):
             # Do a one-step lookahead to find the best action
-            A = one_step_lookahead(s, V)
+            A = one_step_lookahead(env, s, V)
             best_action_value = np.max(A)
             # Calculate delta across all states seen so far
             delta = max(delta, np.abs(best_action_value - V[s]))
@@ -64,9 +46,28 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0):
     policy = np.zeros([env.nS, env.nA])
     for s in range(env.nS):
         # One step lookahead to find the best action for this state
-        A = one_step_lookahead(s, V)
+        A = one_step_lookahead(env, s, V)
         best_action = np.argmax(A)
         # Always take the best action
         policy[s, best_action] = 1.0
     
     return policy, V
+
+
+def one_step_lookahead(env, state, V, discount_factor=0.99):
+    """
+    Helper function to calculate the value for all action in a given state.
+        
+    Args:
+        state: The state to consider (int)
+        V: The value to use as an estimator, Vector of length env.nS
+        
+    Returns:
+        A vector of length env.nA containing the expected value of each action.
+    """
+    A = np.zeros(env.nA)
+    for a in range(env.nA):
+        for prob, next_state, reward, done in env.P[state][a]:
+            # b()
+            A[a] += prob * (reward + discount_factor * V[next_state])
+    return A

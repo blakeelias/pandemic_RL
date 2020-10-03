@@ -5,6 +5,8 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 from einops import rearrange
 
+from value_iteration import one_step_lookahead
+
 
 def test_environment(env, policy, V=None):
     # Plot policy
@@ -28,7 +30,19 @@ def test_environment(env, policy, V=None):
 
     print(f'initial num infected: {env.state}')
 
-    plot_value_function(env, policy, V)
+    # plot_value_function(env, policy, V)
+
+    print('Best action?')
+    env._set_transition_probabilities()
+    state_idx = 0
+    packed_state = env.states[state_idx]
+    unpacked_state = env._unpack_state(packed_state)
+    print(f'State: {unpacked_state}')
+    expected_action_values = one_step_lookahead(env, state_idx, V)
+    print(f'expected_action_values: {expected_action_values}')
+    print(f'best action: {expected_action_values.argmax()}')
+
+    b()
     
     for t in range(100):
         # Get best action
@@ -37,9 +51,14 @@ def test_environment(env, policy, V=None):
         action = policy[state_idx].argmax()
         actions_taken_t.append(env.actions_r[action])
         
-        num_susceptible, num_infected = env._unpack_state(observation)
-        num_infected_t.append(num_infected)
-        num_susceptible_t.append(num_susceptible)
+        new_state = env._unpack_state(observation)
+        if type(new_state) == tuple:
+            num_susceptible, num_infected = new_state
+            num_infected_t.append(num_infected)
+            num_susceptible_t.append(num_susceptible)
+        else:
+            num_infected_t.append(new_state)
+            
         observation, reward, done, info = env.step(action)
         
         if done:
@@ -48,17 +67,37 @@ def test_environment(env, policy, V=None):
         total_reward += gamma_cum * reward
         gamma_cum *= gamma
 
+    # Duration of each time step:
+    time_step_days = 4
     
-    print('num susceptible')
-    plt.plot(range(len(num_susceptible_t)), num_susceptible_t)
+    # print('num susceptible')
+    fig = plt.figure()
+    # fig.subplots_adjust(top=0.8)
+    ax1 = fig.add_subplot()
+    ax1.set_ylabel('Number Susceptible')
+    ax1.set_xlabel('Time (days)')
+    ax1.set_title('Number of Individuals Susceptible ($S_t$)')
+    ax1.plot([time_step_days * t for t in range(len(num_susceptible_t))], num_susceptible_t)
     plt.show()
     
-    print('num infected')
-    plt.plot(range(len(num_infected_t)), num_infected_t)
+    # print('num infected')
+    fig = plt.figure()
+    # fig.subplots_adjust(top=0.8)
+    ax1 = fig.add_subplot()
+    ax1.set_ylabel('Number Infected')
+    ax1.set_xlabel('Time (days)')
+    ax1.set_title('Number of Individuals Infected ($I_t$)')
+    ax1.plot([time_step_days * t for t in range(len(num_infected_t))], num_infected_t)
     plt.show()
 
-    print('action taken')
-    plt.plot(range(len(actions_taken_t)), actions_taken_t)
+    # print('action taken')
+    fig = plt.figure()
+    # fig.subplots_adjust(top=0.8)
+    ax1 = fig.add_subplot()
+    ax1.set_ylabel('Level of Lockdown, $R_t$')
+    ax1.set_xlabel('Time (days)')
+    ax1.set_title('Intervention Taken ($R_t$)')
+    ax1.plot([time_step_days * t for t in range(len(actions_taken_t))], actions_taken_t)
     plt.show()
 
     print(f'total reward: {total_reward}')
@@ -97,6 +136,7 @@ def plot_value_function(env, policy, V):
     ax.plot_wireframe(X, Y, Z_value, rstride=10, cstride=10)
     plt.show()
 
+    b()
     
     #fig = plt.figure()
     #print('Policy')
