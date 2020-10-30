@@ -142,7 +142,8 @@ class PandemicEnv(gym.Env):
         if self.distr_family == 'poisson':
             return poisson(lam)
         elif self.distr_family == 'nbinom':
-            r = 100000000000000.0
+            # r = 100000000000000.0
+            r = 0.17
             p = lam / (r + lam)
             return nbinom(r, 1-p)
 

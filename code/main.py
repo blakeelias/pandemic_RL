@@ -59,7 +59,7 @@ def main(args={
 ):
 
     experiment_parameters = {
-        'distr_family': 'poisson',
+        'distr_family': 'nbinom',
         'dynamics': 'SIS',
         'time_lumping': False,
         #'num_population': args['num_population'],
