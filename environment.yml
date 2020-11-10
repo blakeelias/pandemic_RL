@@ -1,0 +1,4 @@
+name: pandemic-rl-env
+dependencies:
+  - python>=3.5
+  - pip
