@@ -191,15 +191,20 @@ class PandemicImmunityEnv(gym.Env):
         if self.distr_family == 'poisson':
             distr = poisson(lam)
         elif self.distr_family == 'nbinom':
-            r = 100000000000000.0
+            r = 0.17
             p = lam / (r + lam)
             distr = nbinom(r, 1-p)
 
         distr = self.chop(distr)
 
         low = int(min(distr.support()))
-        high = int(min(max(distr.support()),
-                       prev_num_susceptible))
+        high = int(
+            min(
+                max(distr.support()),
+                prev_num_susceptible,
+                self.max_infected_desired
+            )
+        )
         feasible_range = list(range(low, high + 1))
         
         new_num_infected_probs = distr.pmf(feasible_range)
@@ -212,11 +217,14 @@ class PandemicImmunityEnv(gym.Env):
                 
 
     def chop(self, distr):
-        low = floor(max(0, distr.mean() - self.num_stdevs * distr.std()))
-        high = int(distr.mean() + self.num_stdevs * distr.std())
+        low = floor(max(0,
+                        distr.mean() - self.num_stdevs * distr.std()))
+        high = floor(min(self.max_infected_desired,
+                         distr.mean() + self.num_stdevs * distr.std()))
 
         values = np.arange(low, high + 1)
         probs = distr.pmf(values)
+        probs[-1] = 1 - distr.cdf(high - 1)  # P(x >= high)
         probs = probs / sum(probs)
 
         return rv_discrete(values=(values, probs))

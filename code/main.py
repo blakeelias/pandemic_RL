@@ -60,7 +60,7 @@ def main(args={
 
     experiment_parameters = {
         'distr_family': 'nbinom',
-        'dynamics': 'SIS',
+        'dynamics': 'SIR',
         'time_lumping': False,
         #'num_population': args['num_population'],
         'initial_fraction_infected': 0.1,
@@ -105,7 +105,7 @@ if __name__ == '__main__':
         'imported_cases_per_step_range': [0.0],
         'powers': [1.0],
         'extra_scale': [10.0/7],
-        'num_population': [1000]
+        'num_population': [100]
     })
     #except:
     #    pass
