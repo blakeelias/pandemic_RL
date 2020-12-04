@@ -1,7 +1,8 @@
 from math import floor, ceil
+from pdb import set_trace as b
 
 import numpy as np
-from scipy.stats import poisson, nbinom
+from scipy.stats import poisson, nbinom, rv_discrete
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -16,7 +17,7 @@ class PandemicEnv(gym.Env):
 
     def __init__(self,
                num_population=1000,
-               initial_num_cases=100,
+               initial_fraction_infected=0.1,
                R_0=2.5,
                imported_cases_per_step=0.5,
                power=2,
@@ -28,7 +29,7 @@ class PandemicEnv(gym.Env):
                **kwargs):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
-        self.initial_num_cases = initial_num_cases
+        self.initial_num_infected = int(initial_fraction_infected * num_population)
         self.R_0 = R_0
         self.imported_cases_per_step = imported_cases_per_step
         self.power = power
@@ -44,7 +45,6 @@ class PandemicEnv(gym.Env):
         self.nA = self.actions_r.shape[0]
         self.action_space = spaces.Discrete(self.nA)
 
-        self.nS = num_population
         # Use entire state space
         self.observation_space = spaces.Box(low=0,
                                             high=num_population,
@@ -53,7 +53,7 @@ class PandemicEnv(gym.Env):
         self.states = list(range(self.observation_space.low[0],
                                  self.observation_space.high[0] + 1))
         self.state_to_idx = {self.states[idx]: idx for idx in range(len(self.states))}
-
+        self.nS = len(self.states)
 
         
         self.dynamics_param_str = f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping}'
@@ -64,7 +64,7 @@ class PandemicEnv(gym.Env):
         if init_transition_probs:
             self._set_transition_probabilities()
         
-        self.state = self.initial_num_cases
+        self.state = self.initial_num_infected
         self.done = 0
         self.reward = 0
 
@@ -92,7 +92,7 @@ class PandemicEnv(gym.Env):
     
     def reset(self):
         # Reset the state of the environment to an initial state
-        self.state = self.initial_num_cases
+        self.state = self.initial_num_infected
         obs = self.state
 
         return obs
@@ -102,7 +102,9 @@ class PandemicEnv(gym.Env):
         print(self.state)
 
     def _unpack_state(self, packed_state):
-        return packed_state
+        num_infected = packed_state
+        num_susceptible = self.num_population
+        return (num_susceptible, num_infected)
         
     def _reward(self, num_infected, r, **kwargs):
         return -self._cost_of_n(num_infected, **kwargs) - self._cost_of_r(r, **kwargs)
@@ -142,13 +144,15 @@ class PandemicEnv(gym.Env):
         if self.distr_family == 'poisson':
             return poisson(lam)
         elif self.distr_family == 'nbinom':
-            # r = 100000000000000.0
-            r = 0.17
+            r = 100000000000000.0
+            # r = 0.17
             p = lam / (r + lam)
             return nbinom(r, 1-p)
+        elif self.distr_family == 'deterministic':
+            return rv_discrete(values=([lam], [1.0]))
 
     def _set_transition_probabilities(self, **kwargs):
-        file_name = f'../lookup_tables/{self.dynamics_param_str}/transition_dynamics_{self.dynamics_param_str}.pickle'
+        file_name = f'../results/{self.dynamics_param_str}/transition_dynamics_{self.dynamics_param_str}.pickle'
         try:
             self.P = load_pickle(file_name)
             print('Loaded transition_probs')

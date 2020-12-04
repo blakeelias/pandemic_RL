@@ -8,17 +8,19 @@ from einops import rearrange
 from value_iteration import one_step_lookahead
 
 
-def test_environment(env, policy, V=None):
+def test_environment(env, policy, V, file_name_prefix):
     # Plot policy
     actions_policy = [env.actions_r[policy[i].argmax()] for i in range(env.nS)]
     print('policy')
+    plt.figure()
     plt.plot(range(env.nS), actions_policy)
-    plt.show()
+    plt.savefig(file_name_prefix + '_policy.png')
 
     # Plot value function
     print('value function')
+    plt.figure()
     plt.plot(range(env.nS), V)
-    plt.show()
+    plt.savefig(file_name_prefix + '_value.png')
     
     gamma = 0.99
     num_susceptible_t = []
@@ -42,8 +44,6 @@ def test_environment(env, policy, V=None):
     print(f'expected_action_values: {expected_action_values}')
     print(f'best action: {expected_action_values.argmax()}')
 
-    b()
-    
     for t in range(100):
         # Get best action
         # observation = min(observation, env.nS - 1) # max number infected
@@ -78,7 +78,7 @@ def test_environment(env, policy, V=None):
     ax1.set_xlabel('Time (days)')
     ax1.set_title('Number of Individuals Susceptible ($S_t$)')
     ax1.plot([time_step_days * t for t in range(len(num_susceptible_t))], num_susceptible_t)
-    plt.show()
+    fig.savefig(file_name_prefix + '_susceptible.png')
     
     # print('num infected')
     fig = plt.figure()
@@ -88,7 +88,7 @@ def test_environment(env, policy, V=None):
     ax1.set_xlabel('Time (days)')
     ax1.set_title('Number of Individuals Infected ($I_t$)')
     ax1.plot([time_step_days * t for t in range(len(num_infected_t))], num_infected_t)
-    plt.show()
+    fig.savefig(file_name_prefix + '_infected.png')
 
     # print('action taken')
     fig = plt.figure()
@@ -98,7 +98,7 @@ def test_environment(env, policy, V=None):
     ax1.set_xlabel('Time (days)')
     ax1.set_title('Intervention Taken ($R_t$)')
     ax1.plot([time_step_days * t for t in range(len(actions_taken_t))], actions_taken_t)
-    plt.show()
+    fig.savefig(file_name_prefix + '_actions.png')
 
     print(f'total reward: {total_reward}')
 
@@ -131,16 +131,15 @@ def plot_value_function(env, policy, V):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    print('Value function')
+    #print('Value function')
     
-    ax.plot_wireframe(X, Y, Z_value, rstride=10, cstride=10)
-    plt.show()
-
-    b()
-    
-    #fig = plt.figure()
-    #print('Policy')
-    #ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
+    #ax.plot_wireframe(X, Y, Z_value, rstride=10, cstride=10)
     #plt.show()
+
+        
+    #fig = plt.figure()
+    print('Policy')
+    ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
+    plt.show()
 
     

@@ -14,12 +14,19 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['imported_cases_per_step', 'power', 'extra_scale', 'num_population'])
+Params = namedtuple('Params', ['num_population', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics'])
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Boolean command-line')
 
+    
+    parser.add_argument('--num_population',
+                        metavar='num_population',
+                        type=int,
+                        nargs='+',
+                        default=[1000], help='')
+    
     parser.add_argument('--imported_cases_per_step_range',
                         metavar='imported_cases_per_step_range',
                         type=float,
@@ -30,14 +37,22 @@ def parse_args():
                         metavar='powers',
                         type=float,
                         nargs='+',
+                        default=[1.0],
                         help='')
 
     parser.add_argument('--extra_scale',
                         metavar='extra_scale',
                         type=float,
                         nargs='+',
+                        default=[1.0],
                         help='')
 
+    parser.add_argument('--dynamics',
+                        type=str,
+                        nargs='+',
+                        default=['SIS'],
+                        help='"SIR" or "SIS"')
+    
     return parser.parse_args()
 
 
@@ -50,17 +65,9 @@ power_scale_factor = {
 }
 
 
-def main(args={
-          'imported_cases_per_step_range': [0.0, 0.5, 1.0, 5.0, 10.0],
-          'powers': [0.1, 0.25, 0.5, 1.0, 1.5],
-          'extra_scale': [0.25, 1.0],
-          'num_population': [100],
-         },
-):
-
+def main(args):
     experiment_parameters = {
-        'distr_family': 'nbinom',
-        'dynamics': 'SIR',
+        'distr_family': 'deterministic', # 'nbinom',
         'time_lumping': False,
         #'num_population': args['num_population'],
         'initial_fraction_infected': 0.1,
@@ -71,10 +78,11 @@ def main(args={
     
     parameters_sweep = [
         Params(*parameters) for parameters in product(
-            args['imported_cases_per_step_range'],
-            args['powers'],
-            args['extra_scale'],
-            args['num_population'],
+            args.num_population,
+            args.imported_cases_per_step_range,
+            args.powers,
+            args.extra_scale,
+            args.dynamics
         )
     ]
 
@@ -87,26 +95,26 @@ def main(args={
             env = PandemicImmunityEnv(**parameters)
         else:
             env = PandemicEnv(**parameters)
-        policy, V = train_environment(env)
+        policy, V, file_name_prefix = train_environment(env)
         policies[particular_parameters] = policy
         Vs[particular_parameters] = V
 
         print(particular_parameters)
-        test_environment(env, policy, V)
+        test_environment(env, policy, V, file_name_prefix)
 
     # experiment.checkpoint(path="lookup_tables")
 
 if __name__ == '__main__':
-    # args = parse_args()
-    # main(**args.__dict__)
+    args = parse_args()
+    main(args)
 
     #try:
-    main(args={
-        'imported_cases_per_step_range': [0.0],
-        'powers': [1.0],
-        'extra_scale': [10.0/7],
-        'num_population': [100]
-    })
+    #main(args={
+    #    'imported_cases_per_step_range': [0.0],
+    #    'powers': [1.0],
+    #    'extra_scale': [10.0/7],
+    #    'num_population': [100]
+    #})
     #except:
     #    pass
     #    # b()

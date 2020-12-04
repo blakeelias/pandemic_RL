@@ -12,22 +12,22 @@ DISCOUNT_FACTOR=0.99
 
 def train_environment(env, theta=0.0001, discount_factor=DISCOUNT_FACTOR):
     reward_param_str = env.reward_param_str + f',theta={theta},discount_factor={discount_factor}'
-    file_name = f'../lookup_tables/{env.dynamics_param_str}/policy_reward=({reward_param_str}),env=({env.dynamics_param_str}).pickle'
+    file_name_prefix = f'../results/{env.dynamics_param_str}/policy_reward=({reward_param_str}),env=({env.dynamics_param_str})'
+    file_name = file_name_prefix + '.pickle'
 
     try:
         policy, V = load_pickle(file_name)
         print('Loaded policy')
-        return policy, V
+        return policy, V, file_name_prefix
     except:
         if not env.P:
             env._set_transition_probabilities()
-        b()
         policy, V = value_iteration(env,
                                     theta=theta,
                                     discount_factor=discount_factor,
                                     initial_value=0)
         save_pickle((policy, V), file_name)
-        return policy, V
+        return policy, V, file_name_prefix
 
 
 
