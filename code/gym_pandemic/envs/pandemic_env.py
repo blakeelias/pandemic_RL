@@ -37,7 +37,7 @@ class PandemicEnv(gym.Env):
         self.distr_family = distr_family
         self.dynamics = dynamics
         self.time_lumping = time_lumping
-        
+
         # Define action and observation space
         # They must be gym.spaces objects
         # Example when using discrete actions
@@ -167,8 +167,14 @@ class PandemicEnv(gym.Env):
                 distr = self._new_state_distribution(state, self.actions_r[action], **kwargs)
                 
                 k = 3
-                low = min(max(distr.mean() - k * distr.std(), 0), self.nS - 1)
-                high = max(min(distr.mean() + k * distr.std(), self.nS), 1)
+                low = min(
+                    max(distr.mean() - k * distr.std(), 0),
+                    self.nS - 1
+                )
+                high = max(
+                    min(distr.mean() + k * distr.std(), self.nS),
+                    1
+                )
                 feasible_range = range(floor(low), ceil(high))
                 
                 for new_state in feasible_range: # range(self.nS):

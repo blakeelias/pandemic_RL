@@ -67,7 +67,7 @@ power_scale_factor = {
 
 def main(args):
     experiment_parameters = {
-        'distr_family': 'deterministic', # 'nbinom',
+        'distr_family': 'nbinom',  # 'deterministic'
         'time_lumping': False,
         #'num_population': args['num_population'],
         'initial_fraction_infected': 0.1,

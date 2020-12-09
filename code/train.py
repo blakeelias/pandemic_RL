@@ -22,6 +22,7 @@ def train_environment(env, theta=0.0001, discount_factor=DISCOUNT_FACTOR):
     except:
         if not env.P:
             env._set_transition_probabilities()
+        b()    
         policy, V = value_iteration(env,
                                     theta=theta,
                                     discount_factor=discount_factor,
