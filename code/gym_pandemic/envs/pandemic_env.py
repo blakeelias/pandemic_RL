@@ -1,5 +1,6 @@
-from math import floor, ceil
+from math import floor, ceil, prod
 from pdb import set_trace as b
+import itertools
 
 import numpy as np
 from scipy.stats import poisson, nbinom, rv_discrete
@@ -193,6 +194,20 @@ class PandemicEnv(gym.Env):
 
                     outcome = (prob, new_state, reward, done)
                     self.P[state][action].append(outcome)
-
+                    self.P[state][action][new_state] = (prob, reward)
+                    
         save_pickle(self.P, file_name)
         return self.P
+
+    def _set_iterated_probabilities(self, iterations=4):
+        self._set_transition_probabilities()
+        self.P_iterated = [[ [] for j in range(self.nA)] for i in range(self.nS)]
+
+        for state in tqdm(range(self.nS)):
+            for action in range(self.nA):
+                for new_state in range(self.nS):
+                    prob = 0
+                    prob = sum([prod([self.P[]]) for state_chain in itertools.product(self.states)])
+                    outcome = (prob, new_state, reward, done)
+                    self.P_iterated[state][action].append(outcome)
+
