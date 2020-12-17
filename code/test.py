@@ -1,6 +1,7 @@
 from pdb import set_trace as b
 
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 from einops import rearrange
@@ -11,12 +12,16 @@ from value_iteration import one_step_lookahead
 def test_environment(env, policy, V, file_name_prefix):
     # Plot policy
     actions_policy = [env.actions_r[policy[i].argmax()] for i in range(env.nS)]
+    df_policy = pd.DataFrame({'state': range(env.nS), 'action': actions_policy})
+    df_policy.to_csv(file_name_prefix + 'policy.txt')
     print('policy')
     plt.figure()
     plt.bar(range(env.nS), actions_policy)
     plt.savefig(file_name_prefix + 'policy.png')
 
     # Plot value function
+    df_value = pd.DataFrame({'state': range(env.nS), 'value': V})
+    df_value.to_csv(file_name_prefix + 'value.txt')
     print('value function')
     plt.figure()
     plt.bar(range(env.nS), V)
@@ -71,33 +76,42 @@ def test_environment(env, policy, V, file_name_prefix):
     time_step_days = 4
     
     # print('num susceptible')
+    times = [time_step_days * t for t in range(len(num_susceptible_t))]
+    df_susceptible = pd.DataFrame({'time': times, 'num_susceptible': num_susceptible_t})
+    df_susceptible.to_csv(file_name_prefix + 'susceptible.txt')
     fig = plt.figure()
     # fig.subplots_adjust(top=0.8)
     ax1 = fig.add_subplot()
     ax1.set_ylabel('Number Susceptible')
     ax1.set_xlabel('Time (days)')
     ax1.set_title('Number of Individuals Susceptible ($S_t$)')
-    ax1.bar([time_step_days * t for t in range(len(num_susceptible_t))], num_susceptible_t)
+    ax1.bar(times, num_susceptible_t)
     fig.savefig(file_name_prefix + 'susceptible.png')
     
     # print('num infected')
+    times = [time_step_days * t for t in range(len(num_infected_t))]
+    df_infected = pd.DataFrame({'time': times, 'num_infected': num_infected_t})
+    df_infected.to_csv(file_name_prefix + 'infected.txt')
     fig = plt.figure()
     # fig.subplots_adjust(top=0.8)
     ax1 = fig.add_subplot()
     ax1.set_ylabel('Number Infected')
     ax1.set_xlabel('Time (days)')
     ax1.set_title('Number of Individuals Infected ($I_t$)')
-    ax1.bar([time_step_days * t for t in range(len(num_infected_t))], num_infected_t)
+    ax1.bar(times, num_infected_t)
     fig.savefig(file_name_prefix + 'infected.png')
 
     # print('action taken')
+    times = [time_step_days * t for t in range(len(actions_taken_t))]
+    df_actions = pd.DataFrame({'time': times, 'action_taken': num_infected_t})
+    df_actions.to_csv(file_name_prefix + 'actions.txt')
     fig = plt.figure()
     # fig.subplots_adjust(top=0.8)
     ax1 = fig.add_subplot()
     ax1.set_ylabel('Level of Lockdown, $R_t$')
     ax1.set_xlabel('Time (days)')
     ax1.set_title('Intervention Taken ($R_t$)')
-    ax1.bar([time_step_days * t for t in range(len(actions_taken_t))], actions_taken_t)
+    ax1.bar(times, actions_taken_t)
     fig.savefig(file_name_prefix + 'actions.png')
 
     print(f'total reward: {total_reward}')
