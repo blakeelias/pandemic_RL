@@ -14,13 +14,13 @@ def test_environment(env, policy, V, file_name_prefix):
     print('policy')
     plt.figure()
     plt.plot(range(env.nS), actions_policy)
-    plt.savefig(file_name_prefix + '_policy.png')
+    plt.savefig(file_name_prefix + 'policy.png')
 
     # Plot value function
     print('value function')
     plt.figure()
     plt.plot(range(env.nS), V)
-    plt.savefig(file_name_prefix + '_value.png')
+    plt.savefig(file_name_prefix + 'value.png')
     
     gamma = 0.99
     num_susceptible_t = []
@@ -78,7 +78,7 @@ def test_environment(env, policy, V, file_name_prefix):
     ax1.set_xlabel('Time (days)')
     ax1.set_title('Number of Individuals Susceptible ($S_t$)')
     ax1.plot([time_step_days * t for t in range(len(num_susceptible_t))], num_susceptible_t)
-    fig.savefig(file_name_prefix + '_susceptible.png')
+    fig.savefig(file_name_prefix + 'susceptible.png')
     
     # print('num infected')
     fig = plt.figure()
@@ -88,7 +88,7 @@ def test_environment(env, policy, V, file_name_prefix):
     ax1.set_xlabel('Time (days)')
     ax1.set_title('Number of Individuals Infected ($I_t$)')
     ax1.plot([time_step_days * t for t in range(len(num_infected_t))], num_infected_t)
-    fig.savefig(file_name_prefix + '_infected.png')
+    fig.savefig(file_name_prefix + 'infected.png')
 
     # print('action taken')
     fig = plt.figure()
@@ -98,7 +98,7 @@ def test_environment(env, policy, V, file_name_prefix):
     ax1.set_xlabel('Time (days)')
     ax1.set_title('Intervention Taken ($R_t$)')
     ax1.plot([time_step_days * t for t in range(len(actions_taken_t))], actions_taken_t)
-    fig.savefig(file_name_prefix + '_actions.png')
+    fig.savefig(file_name_prefix + 'actions.png')
 
     print(f'total reward: {total_reward}')
 

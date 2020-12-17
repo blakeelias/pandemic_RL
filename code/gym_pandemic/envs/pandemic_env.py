@@ -152,7 +152,7 @@ class PandemicEnv(gym.Env):
             return rv_discrete(values=([lam], [1.0]))
 
     def _set_transition_probabilities(self, **kwargs):
-        file_name = f'../results/{self.dynamics_param_str}/transition_dynamics_{self.dynamics_param_str}.pickle'
+        file_name = f'../results/env=({self.dynamics_param_str})/transition_dynamics.pickle'
         try:
             self.P = load_pickle(file_name)
             print('Loaded transition_probs')

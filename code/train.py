@@ -8,12 +8,12 @@ from value_iteration import value_iteration
 from utils import save_pickle, load_pickle
 
 
-DISCOUNT_FACTOR=0.99
+DISCOUNT_FACTOR = 0.99
 
-def train_environment(env, theta=0.0001, discount_factor=DISCOUNT_FACTOR):
-    reward_param_str = env.reward_param_str + f',theta={theta},discount_factor={discount_factor}'
-    file_name_prefix = f'../results/env=({env.dynamics_param_str})/reward=({reward_param_str})'
-    file_name = file_name_prefix + '.pickle'
+def train_environment(env, convergence_threshold=0.0001, discount_factor=DISCOUNT_FACTOR):
+    reward_param_str = env.reward_param_str + f',convergence_threshold={convergence_threshold},discount_factor={discount_factor}'
+    file_name_prefix = f'../results/env=({env.dynamics_param_str})/reward=({reward_param_str})/'
+    file_name = file_name_prefix + 'policy.pickle'
 
     try:
         policy, V = load_pickle(file_name)
@@ -24,7 +24,7 @@ def train_environment(env, theta=0.0001, discount_factor=DISCOUNT_FACTOR):
             env._set_transition_probabilities()
         b()    
         policy, V = value_iteration(env,
-                                    theta=theta,
+                                    theta=convergence_threshold,
                                     discount_factor=discount_factor,
                                     initial_value=0)
         save_pickle((policy, V), file_name)
