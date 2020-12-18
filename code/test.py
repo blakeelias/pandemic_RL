@@ -2,6 +2,7 @@ from pdb import set_trace as b
 
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 from einops import rearrange
@@ -101,9 +102,15 @@ def test_environment(env, policy, V, file_name_prefix):
     ax1.bar(times, num_infected_t)
     fig.savefig(file_name_prefix + 'infected.png')
 
+    ax2 = sns.barplot(times, num_infected_t)
+    ax2.set_xticks(times)
+    ax2.set_xticklabels(times)
+    fig2 = ax2.get_figure()
+    fig2.savefig(file_name_prefix + 'infected_sns.png')
+    
     # print('action taken')
     times = [time_step_days * t for t in range(len(actions_taken_t))]
-    df_actions = pd.DataFrame({'time': times, 'action_taken': num_infected_t})
+    df_actions = pd.DataFrame({'time': times, 'action_taken': actions_taken_t})
     df_actions.to_csv(file_name_prefix + 'actions.txt')
     fig = plt.figure()
     # fig.subplots_adjust(top=0.8)
@@ -113,11 +120,19 @@ def test_environment(env, policy, V, file_name_prefix):
     ax1.set_title('Intervention Taken ($R_t$)')
     ax1.bar(times, actions_taken_t)
     fig.savefig(file_name_prefix + 'actions.png')
-
+    
     print(f'total reward: {total_reward}')
 
     env.close()
 
+def plot_policy(best_action_idx):
+    ax = sns.barplot(list(range(num_states)),
+                [actions[int(best_action_idx[n])] for n in range(num_states)])
+    # ax.set(xlabel='common xlabel', ylabel='common ylabel')
+    ax.set_xticks(range(int(len(states) / 1)))
+    ax.set_xticklabels([state for i, state in enumerate(states) if i % 1 == 0])
+    plt.show()
+    
 
 def plot_value_function(env, policy, V):
     state_to_value = {}

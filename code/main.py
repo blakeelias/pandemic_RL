@@ -14,7 +14,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics'])
+Params = namedtuple('Params', ['num_population', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family'])
 
 
 def parse_args():
@@ -52,6 +52,12 @@ def parse_args():
                         nargs='+',
                         default=['SIS'],
                         help='"SIR" or "SIS"')
+
+    parser.add_argument('--distr_family',
+                        type=str,
+                        nargs='+',
+                        default=['nbinom'],
+                        help='"nbinom", "poisson", or "deterministic"')
     
     return parser.parse_args()
 
@@ -67,7 +73,6 @@ power_scale_factor = {
 
 def main(args):
     experiment_parameters = {
-        'distr_family': 'nbinom',  # 'deterministic'
         'time_lumping': False,
         #'num_population': args['num_population'],
         'initial_fraction_infected': 0.1,
@@ -82,7 +87,8 @@ def main(args):
             args.imported_cases_per_step_range,
             args.powers,
             args.extra_scale,
-            args.dynamics
+            args.dynamics,
+            args.distr_family
         )
     ]
 
