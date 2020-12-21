@@ -147,7 +147,7 @@ class PandemicEnv(gym.Env):
             r = 100000000000000.0
             # r = 0.17
             p = lam / (r + lam)
-            return nbinom(r, 1-p)
+            return nbinom(r, p) # 1 - p
         elif self.distr_family == 'deterministic':
             return rv_discrete(values=([lam], [1.0]))
 
