@@ -56,7 +56,7 @@ class PandemicEnv(gym.Env):
         self.nS = len(self.states)
 
         
-        self.dynamics_param_str = f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping}'
+        self.dynamics_param_str = f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping},custom={kwargs}'
 
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor}'
         
@@ -165,19 +165,21 @@ class PandemicEnv(gym.Env):
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
                 distr = self._new_state_distribution(state, self.actions_r[action], **kwargs)
-                
-                k = 3
-                low = min(
-                    max(distr.mean() - k * distr.std(), 0),
-                    self.nS - 1
-                )
-                high = max(
-                    min(distr.mean() + k * distr.std(), self.nS),
-                    1
-                )
-                feasible_range = range(floor(low), ceil(high))
-                
-                for new_state in feasible_range: # range(self.nS):
+                clipping = False
+                if clipping:
+                    k = 3
+                    low = min(
+                        max(distr.mean() - k * distr.std(), 0),
+                        self.nS - 1
+                    )
+                    high = max(
+                        min(distr.mean() + k * distr.std(), self.nS),
+                        1
+                    )
+                    feasible_range = range(floor(low), ceil(high))
+                else:
+                    feasible_range = range(self.nS)
+                for new_state in feasible_range:
                     prob = 0
                     if new_state == self.nS - 1:
                         # probability of landing on new_state or anything above
