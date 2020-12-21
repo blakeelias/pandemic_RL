@@ -26,7 +26,8 @@ def train_environment(env, convergence_threshold=0.0001, discount_factor=DISCOUN
         policy, V = value_iteration(env,
                                     theta=convergence_threshold,
                                     discount_factor=discount_factor,
-                                    initial_value=0)
+                                    initial_value=0,
+                                    horizon=env.horizon)
         save_pickle((policy, V), file_name)
         return policy, V, file_name_prefix
 

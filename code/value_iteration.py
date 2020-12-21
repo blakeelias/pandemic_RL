@@ -9,7 +9,7 @@ if "../" not in sys.path:
     sys.path.append("../")
 
 
-def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0):
+def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, horizon=np.inf):
     """
     Value Iteration Algorithm.
     
@@ -20,13 +20,16 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0):
             env.nA is a number of actions in the environment.
         theta: We stop evaluation once our value function change is less than theta for all states.
         discount_factor: Gamma discount factor.
+        horizon: Number of time steps over which we are interested in maximizing
         
     Returns:
         A tuple (policy, V) of the optimal policy and the optimal value function.
     """    
     
     V = np.zeros(env.nS) * initial_value
-    while True:
+    time_step = 0
+    while time_step < horizon:
+        time_step += 1
         # Stopping condition
         delta = 0
         # Update each state...
