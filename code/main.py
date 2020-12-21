@@ -6,6 +6,7 @@ import gym
 from tqdm import tqdm
 import argparse
 import replicate
+import numpy as np
 
 from train import train_environment
 from test import test_environment
@@ -14,7 +15,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'tags'])
+Params = namedtuple('Params', ['num_population', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'tags'])
 
 
 def parse_args():
@@ -59,11 +60,17 @@ def parse_args():
                         default=['nbinom'],
                         help='"nbinom", "poisson", or "deterministic"')
 
+    parser.add_argument('--horizon',
+                        type=float,
+                        nargs='+',
+                        default=[np.inf],
+                        help='Time horizon over which to optimize.')
+    
     parser.add_argument('--tags',
                         type=str,
                         nargs='+',
                         default=[],
-                        help='List of any custom arguments to be recorded in output directory name')
+                        help='Custom argument to be recorded in output directory name')
     
     
     return parser.parse_args()
@@ -96,6 +103,7 @@ def main(args):
             args.extra_scale,
             args.dynamics,
             args.distr_family,
+            args.horizon,
             args.tags,
         )
     ]

@@ -26,6 +26,7 @@ class PandemicEnv(gym.Env):
                dynamics='SIS',
                time_lumping=False,
                init_transition_probs=False,
+               horizon=np.inf,
                **kwargs):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
@@ -37,6 +38,7 @@ class PandemicEnv(gym.Env):
         self.distr_family = distr_family
         self.dynamics = dynamics
         self.time_lumping = time_lumping
+        self.horizon = horizon
 
         # Define action and observation space
         # They must be gym.spaces objects
@@ -58,7 +60,7 @@ class PandemicEnv(gym.Env):
         
         self.dynamics_param_str = f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping},custom={kwargs}'
 
-        self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor}'
+        self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
         
         self.P = None
         if init_transition_probs:
