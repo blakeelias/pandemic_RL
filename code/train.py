@@ -22,7 +22,7 @@ def train_environment(env, convergence_threshold=0.0001, discount_factor=DISCOUN
     except:
         if not env.P:
             env._set_transition_probabilities()
-        b()    
+        #b()    
         policy, V = value_iteration(env,
                                     theta=convergence_threshold,
                                     discount_factor=discount_factor,

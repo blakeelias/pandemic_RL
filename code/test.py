@@ -16,16 +16,26 @@ def test_environment(env, policy, V, file_name_prefix):
     df_policy = pd.DataFrame({'state': range(env.nS), 'action': actions_policy})
     df_policy.to_csv(file_name_prefix + 'policy.txt')
     print('policy')
-    plt.figure()
-    plt.bar(range(env.nS), actions_policy)
+    fig = plt.figure()
+    # fig.subplots_adjust(top=0.8)
+    ax1 = fig.add_subplot()
+    ax1.set_ylabel('Action (R)')
+    ax1.set_xlabel('Number of Individuals Infectious ($I_t$)')
+    ax1.set_title('Policy')
+    ax1.bar(range(env.nS), actions_policy)
     plt.savefig(file_name_prefix + 'policy.png')
 
     # Plot value function
     df_value = pd.DataFrame({'state': range(env.nS), 'value': V})
     df_value.to_csv(file_name_prefix + 'value.txt')
     print('value function')
-    plt.figure()
-    plt.bar(range(env.nS), V)
+    fig = plt.figure()
+    # fig.subplots_adjust(top=0.8)
+    ax1 = fig.add_subplot()
+    ax1.set_ylabel('Value (Arbitrary Units)')
+    ax1.set_xlabel('Number of Individuals Infectious ($I_t$)')
+    ax1.set_title('Value Function')
+    ax1.bar(range(env.nS), V)
     plt.savefig(file_name_prefix + 'value.png')
     
     gamma = 0.99
@@ -101,7 +111,7 @@ def test_environment(env, policy, V, file_name_prefix):
     ax1.set_title('Number of Individuals Infected ($I_t$)')
     ax1.bar(times, num_infected_t)
     fig.savefig(file_name_prefix + 'infected.png')
-
+    # Try with Seaborn
     ax2 = sns.barplot(times, num_infected_t)
     ax2.set_xticks(times)
     ax2.set_xticklabels(times)
