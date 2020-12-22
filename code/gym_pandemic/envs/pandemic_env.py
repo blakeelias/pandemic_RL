@@ -164,6 +164,8 @@ class PandemicEnv(gym.Env):
             self.P = []
         
         self.P = [[ [] for j in range(self.nA)] for i in range(self.nS)]
+        self.P_lookup = [[[0 for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
+        self.R_lookup = [[[0 for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
 
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
@@ -194,7 +196,8 @@ class PandemicEnv(gym.Env):
 
                     outcome = (prob, new_state, reward, done)
                     self.P[state][action].append(outcome)
-                    self.P[state][action][new_state] = (prob, reward)
+                    self.P_lookup[state][action][new_state] = prob
+                    self.R_lookup[state][action][new_state] = reward
                     
         save_pickle(self.P, file_name)
         return self.P
@@ -203,11 +206,21 @@ class PandemicEnv(gym.Env):
         self._set_transition_probabilities()
         self.P_iterated = [[ [] for j in range(self.nA)] for i in range(self.nS)]
 
+        internal_state_chains = itertools.product(*([self.states] * (iterations - 1)))  # self.states --> range(self.nS)
+        
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
                 for new_state in range(self.nS):
                     prob = 0
-                    prob = sum([prod([self.P[]]) for state_chain in itertools.product(self.states)])
+                    reward = 0
+                    for chain in internal_state_chains:
+                        full_chain = [state] + chain + [new_state]
+                        chain_prob = prod([self.P_lookup[i][action][i+1] for i in range(len(chain)-1)])
+                        chain_reward = sum([self.R_lookup[i][action][i+1] for i in range(len(chain)-1)])
+                        prob += chain_prob
+                        reward += chain_prob * chain_reward
+                        
+                    prob = sum([prod([self.P_lookup[]]) for state_chain in ])
                     outcome = (prob, new_state, reward, done)
                     self.P_iterated[state][action].append(outcome)
 
