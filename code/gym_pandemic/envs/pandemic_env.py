@@ -153,9 +153,9 @@ class PandemicEnv(gym.Env):
             return nbinom(r, p) # 1 - p
         elif self.distr_family == 'deterministic':
             return rv_discrete(values=([lam], [1.0]))
-
+        
     def _set_transition_probabilities(self, **kwargs):
-        file_name = f'../results/env=({self.dynamics_param_str})/transition_dynamics.pickle'
+        file_name = self._dynamics_file_name(iterations=1)
         try:
             self.P = load_pickle(file_name)
             print('Loaded transition_probs')
@@ -164,8 +164,7 @@ class PandemicEnv(gym.Env):
             self.P = []
         
         self.P = [[ [] for j in range(self.nA)] for i in range(self.nS)]
-        self.P_lookup = [[[0 for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
-        self.R_lookup = [[[0 for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
+        self.P_lookup = [[[None for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
 
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
@@ -196,31 +195,38 @@ class PandemicEnv(gym.Env):
 
                     outcome = (prob, new_state, reward, done)
                     self.P[state][action].append(outcome)
-                    self.P_lookup[state][action][new_state] = prob
-                    self.R_lookup[state][action][new_state] = reward
+                    self.P_lookup[state][action][new_state] = (prob, reward)
                     
         save_pickle(self.P, file_name)
         return self.P
 
     def _set_iterated_probabilities(self, iterations=4):
         self._set_transition_probabilities()
-        self.P_iterated = [[ [] for j in range(self.nA)] for i in range(self.nS)]
+        self.time_steps_per_action = iterations
+        file_name = self._dynamics_file_name(iterations=iterations)
+        try:
+            self.P_iterated = load_pickle(file_name)
+            print('Loaded transition_probs')
+            return self.P_iterated
+        except:
+            self.P_iterated = []
 
-        internal_state_chains = itertools.product(*([self.states] * (iterations - 1)))  # self.states --> range(self.nS)
+        self.P_iterated = [[ [] for j in range(self.nA)] for i in range(self.nS)]
+        state_chains = itertools.product(*([self.states] * iterations))  # self.states --> range(self.nS)
         
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
-                for new_state in range(self.nS):
-                    prob = 0
-                    reward = 0
-                    for chain in internal_state_chains:
-                        full_chain = [state] + chain + [new_state]
-                        chain_prob = prod([self.P_lookup[i][action][i+1] for i in range(len(chain)-1)])
-                        chain_reward = sum([self.R_lookup[i][action][i+1] for i in range(len(chain)-1)])
-                        prob += chain_prob
-                        reward += chain_prob * chain_reward
-                        
-                    prob = sum([prod([self.P_lookup[]]) for state_chain in ])
+                # outcomes = {}  # {new_state : (prob, reward) }   # accumulate this to just keep a single entry per new_state?  Maybe later if need a speedup... trickier to implement
+                for chain in state_chains:
+                    full_chain = [state] + chain
+                    prob = prod([self.P_lookup[i][action][i+1][0] for i in range(len(full_chain)-1)])
+                    reward = sum([self.P_lookup[i][action][i+1][1] for i in range(len(full_chain)-1)])
+                    new_state = full_chain[-1]
+                    done = False
                     outcome = (prob, new_state, reward, done)
                     self.P_iterated[state][action].append(outcome)
-
+        return self.P_iterated
+                    
+    def _dynamics_file_name(self, iterations):
+        file_name = f'../results/env=({self.dynamics_param_str})/transition_dynamics_{iterations}_steps.pickle'
+        return file_name
