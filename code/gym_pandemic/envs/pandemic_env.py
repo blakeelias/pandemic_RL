@@ -25,9 +25,9 @@ class PandemicEnv(gym.Env):
                scale_factor=100,
                distr_family='nbinom',
                dynamics='SIS',
-               time_lumping=False,
                init_transition_probs=False,
                horizon=np.inf,
+               action_frequency=1,
                **kwargs):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
@@ -38,9 +38,10 @@ class PandemicEnv(gym.Env):
         self.scale_factor = scale_factor
         self.distr_family = distr_family
         self.dynamics = dynamics
-        self.time_lumping = time_lumping
         self.horizon = horizon
-
+        self.action_frequency = action_frequency
+        self.horizon_effective = ceil(horizon / action_frequency)
+        
         # Define action and observation space
         # They must be gym.spaces objects
         # Example when using discrete actions
@@ -65,8 +66,8 @@ class PandemicEnv(gym.Env):
         
         self.P = None
         if init_transition_probs:
-            self._set_transition_probabilities()
-        
+            self._set_transition_probabilities(**kwargs)
+            
         self.state = self.initial_num_infected
         self.done = 0
         self.reward = 0
@@ -92,6 +93,13 @@ class PandemicEnv(gym.Env):
         done = self.done
 
         return obs, reward, done, {}
+
+    def step_macro(self, action):
+        for i in range(self.action_frequency):
+            result = self.step(action)
+        # TODO: accumulate results of each individual step into result object
+        # i.e. list of observations, sum of rewards, any done, list of info?
+        return result
     
     def reset(self):
         # Reset the state of the environment to an initial state
@@ -154,17 +162,17 @@ class PandemicEnv(gym.Env):
         elif self.distr_family == 'deterministic':
             return rv_discrete(values=([lam], [1.0]))
         
-    def _set_transition_probabilities(self, **kwargs):
+    def _set_transition_probabilities_1_step(self, **kwargs):
         file_name = self._dynamics_file_name(iterations=1)
         try:
-            self.P = load_pickle(file_name)
+            self.P_1_step = load_pickle(file_name)
             print('Loaded transition_probs')
-            return self.P
+            return self.P_1_step
         except:
-            self.P = []
+            self.P_1_step = []
         
-        self.P = [[ [] for j in range(self.nA)] for i in range(self.nS)]
-        self.P_lookup = [[[None for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
+        self.P_1_step = [[ [] for j in range(self.nA)] for i in range(self.nS)]
+        self.P_lookup_1_step = [[[None for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
 
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
@@ -194,24 +202,24 @@ class PandemicEnv(gym.Env):
                     reward = self._reward(state, self.actions_r[action])
 
                     outcome = (prob, new_state, reward, done)
-                    self.P[state][action].append(outcome)
-                    self.P_lookup[state][action][new_state] = (prob, reward)
+                    self.P_1_step[state][action].append(outcome)
+                    self.P_lookup_1_step[state][action][new_state] = (prob, reward)
                     
-        save_pickle(self.P, file_name)
-        return self.P
+        save_pickle(self.P_1_step, file_name)
+        return self.P_1_step
 
-    def _set_iterated_probabilities(self, iterations=4):
-        self._set_transition_probabilities()
-        self.time_steps_per_action = iterations
+    def _set_transition_probabilities(self, **kwargs):
+        self._set_transition_probabilities_1_step(**kwargs)
+        iterations = self.action_frequency
         file_name = self._dynamics_file_name(iterations=iterations)
         try:
-            self.P_iterated = load_pickle(file_name)
+            self.P = load_pickle(file_name)
             print('Loaded transition_probs')
-            return self.P_iterated
+            return self.P
         except:
-            self.P_iterated = []
+            self.P = []
 
-        self.P_iterated = [[ [] for j in range(self.nA)] for i in range(self.nS)]
+        self.P = [[ [] for j in range(self.nA)] for i in range(self.nS)]
         state_chains = itertools.product(*([self.states] * iterations))  # self.states --> range(self.nS)
         
         for state in tqdm(range(self.nS)):
@@ -219,14 +227,25 @@ class PandemicEnv(gym.Env):
                 # outcomes = {}  # {new_state : (prob, reward) }   # accumulate this to just keep a single entry per new_state?  Maybe later if need a speedup... trickier to implement
                 for chain in state_chains:
                     full_chain = [state] + chain
-                    prob = prod([self.P_lookup[i][action][i+1][0] for i in range(len(full_chain)-1)])
-                    reward = sum([self.P_lookup[i][action][i+1][1] for i in range(len(full_chain)-1)])
+                    prob = prod([self.P_lookup_1_step[i][action][i+1][0] for i in range(len(full_chain)-1)])
+                    reward = sum([self.P_lookup_1_step[i][action][i+1][1] for i in range(len(full_chain)-1)])
                     new_state = full_chain[-1]
                     done = False
                     outcome = (prob, new_state, reward, done)
-                    self.P_iterated[state][action].append(outcome)
-        return self.P_iterated
-                    
+                    self.P[state][action].append(outcome)
+        return self.P
+
+    def create_iterated_env(self, iterations=4):
+        self._set_iterated_probabilities(iterations=iterations)
+        new_env = copy.copy(self)
+        new_env.P = new_env.P_iterated
+        new_env._single_step = new_env.step
+        def macro_step(env, action):
+            for i in range(iterations):
+                result = env._single_step(action)
+            return result
+        new_env.macro_step = macro_step
+    
     def _dynamics_file_name(self, iterations):
         file_name = f'../results/env=({self.dynamics_param_str})/transition_dynamics_{iterations}_steps.pickle'
         return file_name

@@ -15,7 +15,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'tags'])
+Params = namedtuple('Params', ['num_population', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'tags'])
 
 
 def parse_args():
@@ -65,6 +65,12 @@ def parse_args():
                         nargs='+',
                         default=[np.inf],
                         help='Time horizon over which to optimize.')
+
+    parser.add_argument('--action_frequency',
+                        type=float,
+                        nargs='+',
+                        default=[1],
+                        help='Frequency (in time steps) to allow agent to set a new action')
     
     parser.add_argument('--tags',
                         type=str,
@@ -104,6 +110,7 @@ def main(args):
             args.dynamics,
             args.distr_family,
             args.horizon,
+            args.action_frequency,
             args.tags,
         )
     ]

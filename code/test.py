@@ -60,13 +60,8 @@ def test_environment(env, policy, V, file_name_prefix):
     print(f'expected_action_values: {expected_action_values}')
     print(f'best action: {expected_action_values.argmax()}')
 
-    for t in range(100):
-        # Get best action
-        # observation = min(observation, env.nS - 1) # max number infected
-        state_idx = env.state_to_idx[observation]
-        action = policy[state_idx].argmax()
-        actions_taken_t.append(env.actions_r[action])
-        
+    t = 0
+    while t < env.horizon:
         new_state = env._unpack_state(observation)
         if type(new_state) == tuple:
             num_susceptible, num_infected = new_state
@@ -74,7 +69,15 @@ def test_environment(env, policy, V, file_name_prefix):
             num_susceptible_t.append(num_susceptible)
         else:
             num_infected_t.append(new_state)
+
+        if t % env.action_frequency == 0:
+            # Get best action
+            # Allowed to take a new action once every {env.action_frequency} steps
+            # observation = min(observation, env.nS - 1) # max number infected
+            state_idx = env.state_to_idx[observation]
+            action = policy[state_idx].argmax()
             
+        actions_taken_t.append(env.actions_r[action])
         observation, reward, done, info = env.step(action)
         
         if done:
