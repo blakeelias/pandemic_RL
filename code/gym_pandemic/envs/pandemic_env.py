@@ -164,8 +164,10 @@ class PandemicEnv(gym.Env):
         
     def _set_transition_probabilities_1_step(self, **kwargs):
         file_name = self._dynamics_file_name(iterations=1)
+        file_name_lookup = self._dynamics_file_name(iterations=1, lookup=True)
         try:
             self.P_1_step = load_pickle(file_name)
+            self.P_lookup_1_step = load_pickle(file_name_lookup)
             print('Loaded transition_probs')
             return self.P_1_step
         except:
@@ -206,6 +208,7 @@ class PandemicEnv(gym.Env):
                     self.P_lookup_1_step[state][action][new_state] = (prob, reward)
                     
         save_pickle(self.P_1_step, file_name)
+        save_pickle(self.P_lookup_1_step, file_name_lookup)
         return self.P_1_step
 
     def _set_transition_probabilities(self):
@@ -226,7 +229,7 @@ class PandemicEnv(gym.Env):
             for action in range(self.nA):
                 # outcomes = {}  # {new_state : (prob, reward) }   # accumulate this to just keep a single entry per new_state?  Maybe later if need a speedup... trickier to implement
                 for chain in state_chains:
-                    full_chain = [state] + chain
+                    full_chain = (state,) + chain
                     prob = prod([self.P_lookup_1_step[i][action][i+1][0] for i in range(len(full_chain)-1)])
                     reward = sum([self.P_lookup_1_step[i][action][i+1][1] for i in range(len(full_chain)-1)])
                     new_state = full_chain[-1]
@@ -249,7 +252,7 @@ class PandemicEnv(gym.Env):
     def _param_string(self, action_frequency, **kwargs):
         return f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},custom={self.kwargs}'
         
-    def _dynamics_file_name(self, iterations, **kwargs):
+    def _dynamics_file_name(self, iterations, lookup=False, **kwargs):
         param_str = self._param_string(iterations, **kwargs)
-        file_name = f'../results/env=({param_str})/transition_dynamics.pickle'
+        file_name = f'../results/env=({param_str})/transition_dynamics{"_lookup" if lookup else ""}.pickle'
         return file_name

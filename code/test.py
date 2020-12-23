@@ -86,6 +86,8 @@ def test_environment(env, policy, V, file_name_prefix):
         total_reward += gamma_cum * reward
         gamma_cum *= gamma
 
+        t += 1
+
     # Duration of each time step:
     time_step_days = 4
     
