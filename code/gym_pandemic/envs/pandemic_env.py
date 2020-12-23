@@ -59,8 +59,7 @@ class PandemicEnv(gym.Env):
         self.state_to_idx = {self.states[idx]: idx for idx in range(len(self.states))}
         self.nS = len(self.states)
 
-        
-        self.dynamics_param_str = f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},time_lumping={self.time_lumping},custom={kwargs}'
+        self.dynamics_param_str = self._param_string(self.action_frequency)
 
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
         
@@ -137,7 +136,7 @@ class PandemicEnv(gym.Env):
         else:
             return n
 
-    def _expected_new_state(self, num_infected, r, **kwargs):    
+    def _expected_new_state(self, num_infected, r, **kwargs):
         fraction_susceptible = 1 # (num_population - current_cases) / num_population
         # TODO: may need better way to bound susceptible population,
         # to account for immunity
@@ -245,7 +244,11 @@ class PandemicEnv(gym.Env):
                 result = env._single_step(action)
             return result
         new_env.macro_step = macro_step
-    
+
+    def _param_string(self, action_frequency):
+        return f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},custom={kwargs}'
+        
     def _dynamics_file_name(self, iterations):
-        file_name = f'../results/env=({self.dynamics_param_str})/transition_dynamics_{iterations}_steps.pickle'
+        param_str = self._param_string(iterations)
+        file_name = f'../results/env=({param_str})/transition_dynamics.pickle'
         return file_name
