@@ -67,7 +67,7 @@ def parse_args():
                         help='Time horizon over which to optimize.')
 
     parser.add_argument('--action_frequency',
-                        type=float,
+                        type=int,
                         nargs='+',
                         default=[1],
                         help='Frequency (in time steps) to allow agent to set a new action')

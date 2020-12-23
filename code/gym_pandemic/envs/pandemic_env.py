@@ -41,6 +41,7 @@ class PandemicEnv(gym.Env):
         self.horizon = horizon
         self.action_frequency = action_frequency
         self.horizon_effective = ceil(horizon / action_frequency)
+        self.kwargs = kwargs
         
         # Define action and observation space
         # They must be gym.spaces objects
@@ -59,13 +60,13 @@ class PandemicEnv(gym.Env):
         self.state_to_idx = {self.states[idx]: idx for idx in range(len(self.states))}
         self.nS = len(self.states)
 
-        self.dynamics_param_str = self._param_string(self.action_frequency)
+        self.dynamics_param_str = self._param_string(self.action_frequency, **self.kwargs)
 
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
         
         self.P = None
         if init_transition_probs:
-            self._set_transition_probabilities(**kwargs)
+            self._set_transition_probabilities()
             
         self.state = self.initial_num_infected
         self.done = 0
@@ -207,10 +208,10 @@ class PandemicEnv(gym.Env):
         save_pickle(self.P_1_step, file_name)
         return self.P_1_step
 
-    def _set_transition_probabilities(self, **kwargs):
-        self._set_transition_probabilities_1_step(**kwargs)
+    def _set_transition_probabilities(self):
+        self._set_transition_probabilities_1_step(**self.kwargs)
         iterations = self.action_frequency
-        file_name = self._dynamics_file_name(iterations=iterations)
+        file_name = self._dynamics_file_name(iterations=iterations, **self.kwargs)
         try:
             self.P = load_pickle(file_name)
             print('Loaded transition_probs')
@@ -245,10 +246,10 @@ class PandemicEnv(gym.Env):
             return result
         new_env.macro_step = macro_step
 
-    def _param_string(self, action_frequency):
-        return f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},custom={kwargs}'
+    def _param_string(self, action_frequency, **kwargs):
+        return f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},custom={self.kwargs}'
         
-    def _dynamics_file_name(self, iterations):
-        param_str = self._param_string(iterations)
+    def _dynamics_file_name(self, iterations, **kwargs):
+        param_str = self._param_string(iterations, **kwargs)
         file_name = f'../results/env=({param_str})/transition_dynamics.pickle'
         return file_name
