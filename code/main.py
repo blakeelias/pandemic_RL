@@ -75,7 +75,7 @@ def parse_args():
     parser.add_argument('--tags',
                         type=str,
                         nargs='+',
-                        default=[],
+                        default=[None],
                         help='Custom argument to be recorded in output directory name')
     
     
@@ -117,7 +117,7 @@ def main(args):
 
     policies = {}
     Vs = {}
-    
+
     for particular_parameters in tqdm(parameters_sweep):
         parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
         if parameters['dynamics'] == 'SIR':

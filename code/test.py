@@ -74,6 +74,7 @@ def test_environment(env, policy, V, file_name_prefix):
             # Get best action
             # Allowed to take a new action once every {env.action_frequency} steps
             # observation = min(observation, env.nS - 1) # max number infected
+            #b()
             state_idx = env.state_to_idx[observation]
             action = policy[state_idx].argmax()
             
