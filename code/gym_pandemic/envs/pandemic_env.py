@@ -40,7 +40,7 @@ class PandemicEnv(gym.Env):
         self.dynamics = dynamics
         self.horizon = horizon
         self.action_frequency = action_frequency
-        self.horizon_effective = ceil(horizon / action_frequency)
+        self.horizon_effective = ceil(horizon / action_frequency) if horizon < np.inf else horizon
         self.kwargs = kwargs
         
         # Define action and observation space
@@ -78,7 +78,6 @@ class PandemicEnv(gym.Env):
         # Execute one time step within the environment
         prev_cases = self.state
         r = self.actions_r[action]
-
         distr = self._new_state_distribution(prev_cases, r, imported_cases_per_step=self.imported_cases_per_step)
         new_cases = distr.rvs()
         new_cases = min(new_cases, self.num_population)
@@ -158,7 +157,7 @@ class PandemicEnv(gym.Env):
             r = 100000000000000.0
             # r = 0.17
             p = lam / (r + lam)
-            return nbinom(r, p) # 1 - p
+            return nbinom(r, 1 - p)
         elif self.distr_family == 'deterministic':
             return rv_discrete(values=([lam], [1.0]))
         

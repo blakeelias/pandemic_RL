@@ -28,7 +28,7 @@ def train_environment(env, convergence_threshold=0.0001, discount_factor=DISCOUN
                                     theta=convergence_threshold,
                                     discount_factor=discount_factor ** env.action_frequency,
                                     initial_value=0,
-                                    horizon=ceil(env.horizon / env.action_frequency))
+                                    horizon=env.horizon_effective)
         save_pickle((policy, V), file_name)
         return policy, V, file_name_prefix
 

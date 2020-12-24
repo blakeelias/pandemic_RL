@@ -61,7 +61,7 @@ def test_environment(env, policy, V, file_name_prefix):
     print(f'best action: {expected_action_values.argmax()}')
 
     t = 0
-    while t < env.horizon:
+    while t < min(env.horizon, 100):
         new_state = env._unpack_state(observation)
         if type(new_state) == tuple:
             num_susceptible, num_infected = new_state
