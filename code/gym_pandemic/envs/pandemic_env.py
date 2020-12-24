@@ -226,7 +226,7 @@ class PandemicEnv(gym.Env):
         
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
-                # outcomes = {}  # {new_state : (prob, reward) }   # accumulate this to just keep a single entry per new_state?  Maybe later if need a speedup... trickier to implement
+                # outcomes = {}  # {new_state : (prob, reward) }   # TODO: accumulate this to just keep a single entry per new_state?  Maybe later if need a speedup... trickier to implement
                 for chain in state_chains:
                     full_chain = (state,) + chain
                     prob = prod([self.P_lookup_1_step[i][action][i+1][0] for i in range(len(full_chain)-1)])
@@ -235,6 +235,8 @@ class PandemicEnv(gym.Env):
                     done = False
                     outcome = (prob, new_state, reward, done)
                     self.P[state][action].append(outcome)
+
+        save_pickle(self.P, file_name)
         return self.P
 
     def create_iterated_env(self, iterations=4):

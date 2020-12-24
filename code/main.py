@@ -129,7 +129,9 @@ def main(args):
         Vs[particular_parameters] = V
 
         print(particular_parameters)
-        test_environment(env, policy, V, file_name_prefix)
+        # For finite time horizon, these tests are less appropriate
+        # Because the policy is time-varying
+        # test_environment(env, policy, V, file_name_prefix)
 
     # experiment.checkpoint(path="lookup_tables")
 
