@@ -63,17 +63,7 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
 
         # Advance time step
         time_step -= 1
-
         
-    # Create a deterministic policy using the optimal value function
-
-    for s in range(env.nS):
-        # One step lookahead to find the best action for this state
-        A = one_step_lookahead(env, s, V)
-        best_action = np.argmax(A)
-        # Always take the best action
-        policy[s, best_action] = 1.0
-    
     return policy, V
 
 
@@ -91,6 +81,5 @@ def one_step_lookahead(env, state, V, discount_factor=0.99):
     A = np.zeros(env.nA)
     for a in range(env.nA):
         for prob, next_state, reward, done in env.P[state][a]:
-            # b()
             A[a] += prob * (reward + discount_factor * V[next_state])
     return A
