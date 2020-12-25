@@ -222,11 +222,10 @@ class PandemicEnv(gym.Env):
             self.P = []
 
         self.P = [[ [] for j in range(self.nA)] for i in range(self.nS)]
-        state_chains = itertools.product(*([self.states] * iterations))  # self.states --> range(self.nS)
+        state_chains = list(itertools.product(*([self.states] * iterations)))  # self.states --> range(self.nS)
         
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
-                b()
                 # outcomes = {}  # {new_state : (prob, reward) }   # TODO: accumulate this to just keep a single entry per new_state?  Maybe later if need a speedup... trickier to implement
                 for partial_chain in state_chains:
                     chain = (state,) + partial_chain
@@ -236,7 +235,7 @@ class PandemicEnv(gym.Env):
                     done = False
                     outcome = (prob, new_state, reward, done)
                     self.P[state][action].append(outcome)
-
+                    
         #save_pickle(self.P, file_name)
         return self.P
 
