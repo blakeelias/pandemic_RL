@@ -60,6 +60,7 @@ def test_environment(env, policy, V, file_name_prefix):
     print(f'expected_action_values: {expected_action_values}')
     print(f'best action: {expected_action_values.argmax()}')
 
+    '''
     t = 0
     while t < min(env.horizon, 100):
         new_state = env._unpack_state(observation)
@@ -88,10 +89,12 @@ def test_environment(env, policy, V, file_name_prefix):
         gamma_cum *= gamma
 
         t += 1
+    '''
 
     # Duration of each time step:
     time_step_days = 4
-    
+
+    '''
     # print('num susceptible')
     times = [time_step_days * t for t in range(len(num_susceptible_t))]
     df_susceptible = pd.DataFrame({'time': times, 'num_susceptible': num_susceptible_t})
@@ -138,8 +141,10 @@ def test_environment(env, policy, V, file_name_prefix):
     fig.savefig(file_name_prefix + 'actions.png')
     
     print(f'total reward: {total_reward}')
-
+    '''
+    
     env.close()
+
 
 def plot_policy(best_action_idx):
     ax = sns.barplot(list(range(num_states)),
