@@ -1,6 +1,7 @@
 from math import floor, ceil, prod
 from pdb import set_trace as b
 import itertools
+import copy
 
 import numpy as np
 from scipy.stats import poisson, nbinom, rv_discrete
@@ -222,21 +223,44 @@ class PandemicEnv(gym.Env):
             self.P = []
 
         self.P = [[ [] for j in range(self.nA)] for i in range(self.nS)]
-        state_chains = list(itertools.product(*([self.states] * iterations)))  # self.states --> range(self.nS)
         
-        for state in tqdm(range(self.nS)):
+        self.P_lookup_prev = copy.deepcopy(self.P_lookup_1_step)
+        self.P_lookups_next = [[[set() for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
+        
+        for iteration in range(iterations - 1):
+            for start_state in range(self.nS):
+                for action in range(self.nA):
+                    for intermediate_state in range(self.nS):
+                        for new_state in range(self.nS):
+                            prob_start_intermediate = self.P_lookup_prev[start_state][action][intermediate_state][0]
+                            prob_intermediate_new = self.P_lookup_1_step[intermediate_state][action][new_state][0]
+                            reward_start_intermediate = self.P_lookup_prev[start_state][action][intermediate_state][1]
+                            reward_intermediate_new = self.P_lookup_1_step[intermediate_state][action][new_state][1]
+                            self.P_lookups_next[start_state][action][new_state].add(
+                                (prob_start_intermediate * prob_intermediate_new,
+                                 reward_start_intermediate + reward_intermediate_new)
+                            )
+            # sum up over all intermediate states
+            for start_state in range(self.nS):
+                for action in range(self.nA):
+                    for new_state in range(self.nS):
+                        outcomes = self.P_lookups_next[start_state][action][new_state] # {(prob, reward)}
+                        prob = sum([outcome[0] for outcome in outcomes])
+                        if prob > 0:
+                            reward = sum(outcome[0] * outcome[1] for outcome in outcomes) / prob
+                        else:
+                            reward = 0
+                        self.P_lookup_prev[start_state][action][new_state] = (prob, reward)
+
+        for state in range(self.nS):
             for action in range(self.nA):
-                # outcomes = {}  # {new_state : (prob, reward) }   # TODO: accumulate this to just keep a single entry per new_state?  Maybe later if need a speedup... trickier to implement
-                for partial_chain in state_chains:
-                    chain = (state,) + partial_chain
-                    prob = prod([self.P_lookup_1_step[chain[i]][action][chain[i+1]][0] for i in range(len(chain)-1)])
-                    reward = sum([self.P_lookup_1_step[chain[i]][action][chain[i+1]][1] for i in range(len(chain)-1)])
-                    new_state = chain[-1]
+                for new_state in range(self.nS):
+                    prob, reward = self.P_lookup_prev[state][action][new_state]
                     done = False
                     outcome = (prob, new_state, reward, done)
                     self.P[state][action].append(outcome)
                     
-        #save_pickle(self.P, file_name)
+        save_pickle(self.P, file_name)
         return self.P
 
     def create_iterated_env(self, iterations=4):
