@@ -43,7 +43,7 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
         # Update each state...
         for s in range(env.nS):
             # Do a one-step lookahead to find the best action
-            A = one_step_lookahead(env, s, V[time_idx, :])
+            A = one_step_lookahead(env, s, V[time_idx, :], discount_factor)
             best_action_value = np.max(A)
             best_action = np.argmax(A)
             # Calculate delta across all states seen so far
