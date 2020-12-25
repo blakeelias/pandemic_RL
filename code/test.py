@@ -11,6 +11,9 @@ from value_iteration import one_step_lookahead
 
 
 def test_environment(env, policy, V, file_name_prefix):
+    policy = policy[0, :, :]
+    V = V[0, :]
+
     # Plot policy
     actions_policy = [env.actions_r[policy[i].argmax()] for i in range(env.nS)]
     df_policy = pd.DataFrame({'state': range(env.nS), 'action': actions_policy})
