@@ -228,6 +228,7 @@ class PandemicEnv(gym.Env):
         self.P_lookups_next = [[[set() for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
         
         for iteration in range(iterations - 1):
+            self.P_lookups_next = [[[set() for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
             for start_state in range(self.nS):
                 for action in range(self.nA):
                     for intermediate_state in range(self.nS):
@@ -240,7 +241,9 @@ class PandemicEnv(gym.Env):
                                 (prob_start_intermediate * prob_intermediate_new,
                                  reward_start_intermediate + reward_intermediate_new)
                             )
+
             # sum up over all intermediate states
+            self.P_lookup_prev = [[[None for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
             for start_state in range(self.nS):
                 for action in range(self.nA):
                     for new_state in range(self.nS):
