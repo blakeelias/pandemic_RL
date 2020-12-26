@@ -27,8 +27,7 @@ def test_environment(env, policy, V, file_name_prefix):
     df_policy.to_csv(file_name_prefix + 'policy.txt')
 
     ### Plot full policy
-    ax = sns.heatmap(policy_rs)
-    b()
+    ax = sns.heatmap(policy_rs[:-1, :].T)
     ax.get_figure().savefig(file_name_prefix + 'policy.png')
     
     ### Save full value function
