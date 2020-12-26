@@ -122,7 +122,8 @@ class PandemicEnv(gym.Env):
         
     def _reward(self, num_infected, r, **kwargs):
         return -self._cost_of_n(num_infected, **kwargs) \
-               -self._cost_of_r_linear(r, self.R_0, self.R_0, **kwargs)
+               -self._cost_of_r(r, self.R_0, **kwargs)
+             # -self._cost_of_r_linear(r, self.R_0, self.R_0, **kwargs)
     
     def _cost_of_r(self, r, R_0, **kwargs):
         baseline = 1/(R_0 ** self.power)
@@ -169,7 +170,7 @@ class PandemicEnv(gym.Env):
         if n <= 0:
             return 0
         else:
-            return n * self.scenario.cost_per_case
+            return n # * self.scenario.cost_per_case
 
     def _expected_new_state(self, num_infected, r, **kwargs):
         fraction_susceptible = 1 # (num_population - current_cases) / num_population
