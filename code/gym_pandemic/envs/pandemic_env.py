@@ -120,8 +120,8 @@ class PandemicEnv(gym.Env):
     def _reward(self, num_infected, r, **kwargs):
         return -self._cost_of_n(num_infected, **kwargs) - self._cost_of_r(r, **kwargs)
     
-    def _cost_of_r(self, r, **kwargs):
-        baseline = 1/(self.R_0 ** self.power)
+    def _cost_of_r(self, r, R_0, **kwargs):
+        baseline = 1/(R_0 ** self.power)
         actual = 1/(r ** self.power)
 
         # cost_to_keep_half_home / (1/((num_population/4)**power) - 1/(R_0 ** power))
@@ -130,6 +130,35 @@ class PandemicEnv(gym.Env):
         else:
             return (actual - baseline) * self.scale_factor  # (actual - baseline)
         #return actual
+
+    def _cost_of_r_linear(self, r, R_0_new, R_0_orig, cost_of_full_lockdown, **kwargs):
+        '''
+>>> from gym_pandemic.envs.pandemic_env import PandemicEnv
+>>> env = PandemicEnv()
+>>> env
+<gym_pandemic.envs.pandemic_env.PandemicEnv object at 0x7fd5157e1130>
+>>> env._cost_of_r_linear(1.0, 4.0, 4.0, 1e6)
+750000.0
+>>> env._cost_of_r_linear(2.0, 4.0, 4.0, 1e6)
+500000.0
+>>> env._cost_of_r_linear(4.0, 4.0, 4.0, 1e6)
+0.0
+>>> env._cost_of_r_linear(4.0, 3.0, 4.0, 1e6)
+-250000.0
+>>> env._cost_of_r_linear(3.0, 3.0, 4.0, 1e6)
+0.0
+>>> env._cost_of_r_linear(2.0, 3.0, 4.0, 1e6)
+250000.0
+>>> env._cost_of_r_linear(1.0, 3.0, 4.0, 1e6)
+500000.0
+>>> env._cost_of_r_linear(0.0, 3.0, 4.0, 1e6)
+750000.0
+        '''
+        r = max(r, 0) # cannot physically make r < 0
+        fraction_locked_down = (R_0_orig - r) / R_0_orig
+        fraction_for_free = (R_0_orig - R_0_new) / R_0_orig
+        net_cost = cost_of_full_lockdown * (fraction_locked_down - fraction_for_free)
+        return max(net_cost, 0) # cannot incur negative cost (i.e. make money) by making r > R_0_new
 
     def _cost_of_n(self, n, **kwargs):
         if n <= 0:
