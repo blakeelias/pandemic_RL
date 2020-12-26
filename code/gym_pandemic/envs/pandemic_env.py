@@ -37,7 +37,6 @@ class PandemicEnv(gym.Env):
         self.initial_num_infected = int(initial_fraction_infected * num_population)
         self.R_0 = R_0
         self.imported_cases_per_step = imported_cases_per_step
-        self.cost_of_full_lockdown = 
         self.power = power
         self.scale_factor = scale_factor
         self.distr_family = distr_family
@@ -123,7 +122,7 @@ class PandemicEnv(gym.Env):
         
     def _reward(self, num_infected, r, **kwargs):
         return -self._cost_of_n(num_infected, **kwargs) \
-               -self._cost_of_r_linear(r, self.R_0, self.R_0, self.cost_of_full_lockdown, **kwargs)
+               -self._cost_of_r_linear(r, self.R_0, self.R_0, **kwargs)
     
     def _cost_of_r(self, r, R_0, **kwargs):
         baseline = 1/(R_0 ** self.power)
@@ -136,7 +135,7 @@ class PandemicEnv(gym.Env):
             return (actual - baseline) * self.scale_factor  # (actual - baseline)
         #return actual
 
-    def _cost_of_r_linear(self, r, R_0_new, R_0_orig, cost_of_full_lockdown, **kwargs):
+    def _cost_of_r_linear(self, r, R_0_new, R_0_orig, **kwargs):
         '''
 >>> from gym_pandemic.envs.pandemic_env import PandemicEnv
 >>> env = PandemicEnv()
@@ -159,7 +158,7 @@ class PandemicEnv(gym.Env):
 >>> env._cost_of_r_linear(0.0, 3.0, 4.0, 1e6)
 750000.0
         '''
-        cost_of_full_lockdown = days_per_step * self.scenario.gdp_per_day * self.scenario.fraction_gdp_lost
+        cost_of_full_lockdown = self.days_per_step * self.scenario.gdp_per_day * self.scenario.fraction_gdp_lost
         r = max(r, 0) # cannot physically make r < 0
         fraction_locked_down = (R_0_orig - r) / R_0_orig
         fraction_for_free = (R_0_orig - R_0_new) / R_0_orig
@@ -170,7 +169,7 @@ class PandemicEnv(gym.Env):
         if n <= 0:
             return 0
         else:
-            return n * scenario.cost_per_case
+            return n * self.scenario.cost_per_case
 
     def _expected_new_state(self, num_infected, r, **kwargs):
         fraction_susceptible = 1 # (num_population - current_cases) / num_population
