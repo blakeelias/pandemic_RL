@@ -51,6 +51,7 @@ class PandemicEnv(gym.Env):
         # They must be gym.spaces objects
         # Example when using discrete actions
         self.actions_r = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0, 2.5])
+        self.contact_factor = self.actions_r / 2.5
         self.nA = self.actions_r.shape[0]
         self.action_space = spaces.Discrete(self.nA)
 
@@ -67,10 +68,13 @@ class PandemicEnv(gym.Env):
         self.dynamics_param_str = self._param_string(self.action_frequency, **self.kwargs)
 
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
+
+        self.vaccine_schedule = [1 for time_idx in range(horizon)]
+        self.infectious_schedule = [1 for time_idx in range(horizon)]
         
         self.P = None
-        if init_transition_probs:
-            self._set_transition_probabilities()
+        #if init_transition_probs:
+        #    self._set_transition_probabilities()
             
         self.state = self.initial_num_infected
         self.done = 0
@@ -120,21 +124,28 @@ class PandemicEnv(gym.Env):
         num_susceptible = self.num_population
         return (num_susceptible, num_infected)
         
-    def _reward(self, num_infected, r, **kwargs):
+    def _reward(self, state, action, **kwargs):
+        num_infected = state
+        factor_contact = self.contact_factor[action] # What percentage of contact are we allowing
         return -self._cost_of_n(num_infected, **kwargs) \
-               -self._cost_of_r(r, self.R_0, **kwargs)
+               -self._cost_of_r(factor_contact, **kwargs)
              # -self._cost_of_r_linear(r, self.R_0, self.R_0, **kwargs)
     
-    def _cost_of_r(self, r, R_0, **kwargs):
-        baseline = 1/(R_0 ** self.power)
-        actual = 1/(r ** self.power)
+    def _cost_of_r(self, factor_contact, **kwargs):
+        '''
+        `factor_contact` \in (0, 1]
+        '''
+        baseline = 1/(1 ** self.power)
+        actual = 1/(factor_contact ** self.power)
 
         # cost_to_keep_half_home / (1/((num_population/4)**power) - 1/(R_0 ** power))
-        if r >= self.R_0:
+        if factor_contact >= 1:
             return 0
         else:
-            return (actual - baseline) * self.scale_factor  # (actual - baseline)
-        #return actual
+            return (actual - baseline) * self.scale_factor * (self.R_0 ** self.power)
+            # put back in the factor of self.R_0 ** self.power that's been divided out
+            # by dividing the denominator of both baseline and actual by R_0
+            # (was previously measured on the scale of 0 to R_0; now on the scale of 0 to 1
 
     def _cost_of_r_linear(self, r, R_0_new, R_0_orig, **kwargs):
         '''
@@ -200,9 +211,16 @@ class PandemicEnv(gym.Env):
         feasible_range = range(self.nS)
         return cap_distribution(distr, feasible_range)
 
-    def transitions(self, state, action):
-        reward = self._reward(state, self.actions_r[action])
-        distr = self._new_state_distribution(state, self.actions_r[action])
+    def transitions(self, state, action, time_idx=None):
+        reward = self._reward(state, action)
+
+        factor_transmissibility = self.vaccine_schedule[time_idx] if time_idx else 1
+        factor_contact = self.contact_factor[action]
+        factior_infectious_period = self.infectious_schedule[time_idx] if time_idx else 1
+
+        R_t = self.R_0 * factor_transmissibility * factor_contact * factor_infectious_period
+        
+        distr = self._new_state_distribution(state, R_t)
         feasible_range = range(self.nS)
         probs = distr.pmf(feasible_range)
         done = False
