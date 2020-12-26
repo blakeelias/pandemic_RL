@@ -11,13 +11,17 @@ from value_iteration import one_step_lookahead
 
 
 def test_environment(env, policy, V, file_name_prefix):
-    policy = policy[0, :, :]
-    V = V[0, :]
+    policy_start = policy[0, :, :]
+    V_start = V[0, :]
 
+    b()
+    policy_idxs = policy.argmax(axis=-1)
+    policy_rs = np.array([[env.actions_r[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
+    
     # Plot policy
     actions_policy = [env.actions_r[policy[i].argmax()] for i in range(env.nS)]
     df_policy = pd.DataFrame({'state': range(env.nS), 'action': actions_policy})
-    df_policy.to_csv(file_name_prefix + 'policy.txt')
+    df_policy.to_csv(file_name_prefix + 'policy_start.txt')
     print('policy')
     fig = plt.figure()
     # fig.subplots_adjust(top=0.8)
@@ -26,11 +30,11 @@ def test_environment(env, policy, V, file_name_prefix):
     ax1.set_xlabel('Number of Individuals Infectious ($I_t$)')
     ax1.set_title('Policy')
     ax1.bar(range(env.nS), actions_policy)
-    plt.savefig(file_name_prefix + 'policy.png')
+    plt.savefig(file_name_prefix + 'policy_start.png')
 
     # Plot value function
     df_value = pd.DataFrame({'state': range(env.nS), 'value': V})
-    df_value.to_csv(file_name_prefix + 'value.txt')
+    df_value.to_csv(file_name_prefix + 'value_start.txt')
     print('value function')
     fig = plt.figure()
     # fig.subplots_adjust(top=0.8)
@@ -39,7 +43,7 @@ def test_environment(env, policy, V, file_name_prefix):
     ax1.set_xlabel('Number of Individuals Infectious ($I_t$)')
     ax1.set_title('Value Function')
     ax1.bar(range(env.nS), V)
-    plt.savefig(file_name_prefix + 'value.png')
+    plt.savefig(file_name_prefix + 'value_start.png')
     
     gamma = 0.99
     num_susceptible_t = []
@@ -63,6 +67,9 @@ def test_environment(env, policy, V, file_name_prefix):
     print(f'expected_action_values: {expected_action_values}')
     print(f'best action: {expected_action_values.argmax()}')
 
+    # Step through a trajectory
+    # TODO: put this back and actually plot a few trajectories
+    # Must change to use time-varying policy
     '''
     t = 0
     while t < min(env.horizon, 100):
