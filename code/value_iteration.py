@@ -25,7 +25,6 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
     Returns:
         A tuple (policy, V) of the optimal policy and the optimal value function.
     """
-    b()
     n_decisions = horizon
     n_steps = horizon + 1 if horizon < np.inf else 1  # there's 1 more step at the end which has 0 cost
     
@@ -57,9 +56,9 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
         new_time_idx = time_idx - 1 if horizon < np.inf else 0
         V[new_time_idx, :] = V_new
         policy[new_time_idx, :, :] = policy_new
-        
+
         # Check if we can stop 
-        if delta < theta:
+        if horizon == np.inf and delta < theta:
             break
 
         # Advance time step
