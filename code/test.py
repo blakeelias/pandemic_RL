@@ -30,7 +30,9 @@ def test_environment(env, policy, V, file_name_prefix):
     ax = sns.heatmap(policy_rs[:-1, :].T, linewidths=0.5, center=1.0, cmap='RdYlGn')
     # To show policy values: use `annot=True`
     # Round to integer: `fmt='d'` (gives error for floats)
-    # To hide x axis labels: `xticklabels=False`
+    # To hide x axis ticks: `xticklabels=False`
+    # TODO: label x and y axes
+    # TODO: better color scheme
     ax.invert_yaxis()
     ax.get_figure().savefig(file_name_prefix + 'policy.png')
     
