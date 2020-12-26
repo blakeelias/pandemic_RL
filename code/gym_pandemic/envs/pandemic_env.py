@@ -183,9 +183,9 @@ class PandemicEnv(gym.Env):
 
         return expected_new_cases
 
-    def _new_state_distribution(self, num_infected, r, **kwargs):
+    def _new_state_distribution(self, num_infected, action_r, **kwargs):
         # distr_family: 'poisson' or 'nbinom' or 'deterministic'
-        lam = self._expected_new_state(num_infected, r, **kwargs)
+        lam = self._expected_new_state(num_infected, action_r, **kwargs)
 
         if self.distr_family == 'poisson':
             distr = poisson(lam)
