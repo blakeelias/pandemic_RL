@@ -27,12 +27,9 @@ def test_environment(env, policy, V, file_name_prefix):
     df_policy.to_csv(file_name_prefix + 'policy.txt')
 
     ### Plot full policy
-    fig = plt.figure()
-    ax1 = fig.add_subplot()
-    ax1.set_ylabel('Number Infectious ($I_t$)')
-    ax1.set_xlabel('Time (t)')
-    ax1.set_title('Policy')
-    ax1.matshow(policy_rs)
+    ax = sns.heatmap(policy_rs)
+    b()
+    ax.get_figure().savefig(file_name_prefix + 'policy.png')
     
     ### Save full value function
     # V: (time, env.nS)
