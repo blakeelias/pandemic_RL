@@ -11,13 +11,44 @@ from value_iteration import one_step_lookahead
 
 
 def test_environment(env, policy, V, file_name_prefix):
-    policy = policy[0, :, :]
-    V = V[0, :]
+    # policy: (time, env.nS, env.nA)
+    # V: (time, env.nS)
+    
+    ### Save full policy
+    # (time, env.nS)
+    policy_idxs = policy.argmax(axis=-1)
 
-    # Plot policy
-    actions_policy = [env.actions_r[policy[i].argmax()] for i in range(env.nS)]
-    df_policy = pd.DataFrame({'state': range(env.nS), 'action': actions_policy})
+    # (time, env.nS)
+    policy_rs = np.array([[env.actions_r[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
+
+    policy_dict = {f't={t}': policy_rs[t, :] for t in range(policy_rs.shape[0])}
+    policy_dict['state'] = range(env.nS)
+    df_policy = pd.DataFrame(policy_dict)
     df_policy.to_csv(file_name_prefix + 'policy.txt')
+
+    ### Plot full policy
+    ax = sns.heatmap(policy_rs[:-1, :].T, linewidths=0.5, center=1.0, cmap='RdYlGn')
+    # To show policy values: use `annot=True`
+    # Round to integer: `fmt='d'` (gives error for floats)
+    # To hide x axis ticks: `xticklabels=False`
+    # TODO: label x and y axes
+    # TODO: better color scheme
+    ax.invert_yaxis()
+    ax.get_figure().savefig(file_name_prefix + 'policy.png')
+    
+    ### Save full value function
+    # V: (time, env.nS)
+    value_dict = {f't={t}': V[t, :] for t in range(V.shape[0])}
+    value_dict['state'] = range(env.nS)
+    df_value = pd.DataFrame(value_dict)
+    df_value.to_csv(file_name_prefix + 'value.txt')
+
+
+    ### Plot start policy
+    policy_start = policy[0, :, :] # (env.nS, env.nA)
+    actions_policy = [env.actions_r[policy_start[i].argmax()] for i in range(env.nS)]
+    df_policy_start = pd.DataFrame({'state': range(env.nS), 'action': actions_policy})
+    df_policy_start.to_csv(file_name_prefix + 'policy_start.txt')
     print('policy')
     fig = plt.figure()
     # fig.subplots_adjust(top=0.8)
@@ -26,11 +57,13 @@ def test_environment(env, policy, V, file_name_prefix):
     ax1.set_xlabel('Number of Individuals Infectious ($I_t$)')
     ax1.set_title('Policy')
     ax1.bar(range(env.nS), actions_policy)
-    plt.savefig(file_name_prefix + 'policy.png')
+    plt.savefig(file_name_prefix + 'policy_start.png')
 
-    # Plot value function
-    df_value = pd.DataFrame({'state': range(env.nS), 'value': V})
-    df_value.to_csv(file_name_prefix + 'value.txt')
+    
+    ### Plot start value function
+    V_start = V[0, :] # (env.nS,)
+    df_value_start = pd.DataFrame({'state': range(env.nS), 'value': V_start})
+    df_value_start.to_csv(file_name_prefix + 'value_start.txt')
     print('value function')
     fig = plt.figure()
     # fig.subplots_adjust(top=0.8)
@@ -38,9 +71,16 @@ def test_environment(env, policy, V, file_name_prefix):
     ax1.set_ylabel('Value (Arbitrary Units)')
     ax1.set_xlabel('Number of Individuals Infectious ($I_t$)')
     ax1.set_title('Value Function')
-    ax1.bar(range(env.nS), V)
-    plt.savefig(file_name_prefix + 'value.png')
+    ax1.bar(range(env.nS), V_start)
+    plt.savefig(file_name_prefix + 'value_start.png')
+
+
+    ### Trajectory
+    # Step through a trajectory
+    # TODO: put this back and actually plot a few trajectories
+    # Must change to use time-varying policy
     
+    '''
     gamma = 0.99
     num_susceptible_t = []
     num_infected_t = []
@@ -63,7 +103,6 @@ def test_environment(env, policy, V, file_name_prefix):
     print(f'expected_action_values: {expected_action_values}')
     print(f'best action: {expected_action_values.argmax()}')
 
-    '''
     t = 0
     while t < min(env.horizon, 100):
         new_state = env._unpack_state(observation)
