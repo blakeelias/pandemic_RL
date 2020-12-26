@@ -43,13 +43,10 @@ def cap_distribution(distribution, feasible_range):
     '''
     # feasible_range = list(feasible_range)
     support = feasible_range
-    probs = np.zeros(len(feasible_range))
-    for i, x in enumerate(feasible_range):
-        if i == 0:
-            probs[i] = distribution.pmf(x) + distribution.cdf(x - 1)
-        elif i == len(feasible_range) - 1:
-            probs[i] = 1 - distribution.cdf(x - 1)
-        else:
-            probs[i] = distribution.pmf(x)
+    probs = distribution.pmf(support)
+    low = 0
+    high = len(feasible_range) - 1
+    probs[low] = distribution.pmf(support[low]) + distribution.cdf(support[low] - 1)
+    probs[high] = 1 - distribution.cdf(support[high] - 1)
 
     return rv_discrete(values=(support, probs))
