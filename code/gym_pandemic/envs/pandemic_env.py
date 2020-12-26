@@ -10,7 +10,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 from tqdm import tqdm
 
-from utils import save_pickle, load_pickle
+from utils import save_pickle, load_pickle, cap_distribution
 from scenarios import US, Test
 
 class PandemicEnv(gym.Env):
@@ -187,15 +187,18 @@ class PandemicEnv(gym.Env):
         lam = self._expected_new_state(num_infected, r, **kwargs)
 
         if self.distr_family == 'poisson':
-            return poisson(lam)
+            distr = poisson(lam)
         elif self.distr_family == 'nbinom':
             r = 100000000000000.0
             # r = 0.17
             p = lam / (r + lam)
-            return nbinom(r, 1 - p)
+            distr = nbinom(r, 1 - p)
         elif self.distr_family == 'deterministic':
-            return rv_discrete(values=([lam], [1.0]))
-        
+            distr = rv_discrete(values=([lam], [1.0]))
+
+        feasible_range = range(self.nS)
+        return cap_distribution(distr, feasible_range)
+            
     def _set_transition_probabilities_1_step(self, **kwargs):
         file_name = self._dynamics_file_name(iterations=1)
         file_name_lookup = self._dynamics_file_name(iterations=1, lookup=True)
