@@ -33,6 +33,7 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
 
     time_step = n_decisions
     while time_step > 0:
+        print(f'time_step = {time_step}')
         # Stopping condition
         delta = 0
 
