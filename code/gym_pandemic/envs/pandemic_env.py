@@ -41,7 +41,7 @@ class PandemicEnv(gym.Env):
         self.scale_factor = scale_factor
         self.distr_family = distr_family
         self.dynamics = dynamics
-        self.horizon = horizon
+        self.horizon = int(horizon) if horizon < np.inf else horizon
         self.action_frequency = action_frequency
         self.horizon_effective = ceil(horizon / action_frequency) if horizon < np.inf else horizon
         self.scenario = scenario
@@ -69,8 +69,8 @@ class PandemicEnv(gym.Env):
 
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
 
-        self.vaccine_schedule = [1 for time_idx in range(horizon)]
-        self.infectious_schedule = [1 for time_idx in range(horizon)]
+        self.vaccine_schedule = [1 for time_idx in range(self.horizon)] if self.horizon < np.inf else None
+        self.infectious_schedule = [1 for time_idx in range(self.horizon)] if self.horizon < np.inf else None
         
         self.P = None
         #if init_transition_probs:
@@ -216,7 +216,7 @@ class PandemicEnv(gym.Env):
 
         factor_transmissibility = self.vaccine_schedule[time_idx] if time_idx else 1
         factor_contact = self.contact_factor[action]
-        factior_infectious_period = self.infectious_schedule[time_idx] if time_idx else 1
+        factor_infectious_period = self.infectious_schedule[time_idx] if time_idx else 1
 
         R_t = self.R_0 * factor_transmissibility * factor_contact * factor_infectious_period
         
