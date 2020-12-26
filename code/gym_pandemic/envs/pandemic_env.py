@@ -204,8 +204,9 @@ class PandemicEnv(gym.Env):
         distr = self._new_state_distribution(state, self.actions_r[action])
         feasible_range = range(self.nS)
         outcomes = []
-        for next_state in feasible_range:
-            prob = distr.pmf(next_state)
+        probs = distr.pmf(feasible_range)
+        for i, next_state in enumerate(feasible_range):
+            prob = probs[i]
             done = False
             reward = self._reward(state, self.actions_r[action])
             outcome = (prob, next_state, reward, done)
