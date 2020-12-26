@@ -9,7 +9,7 @@ from value_iteration import value_iteration
 from utils import save_pickle, load_pickle
 
 
-DISCOUNT_FACTOR = 0.99
+DISCOUNT_FACTOR = 1.0
 
 def train_environment(env, convergence_threshold=0.0001, discount_factor=DISCOUNT_FACTOR):
     reward_param_str = env.reward_param_str + f',convergence_threshold={convergence_threshold},discount_factor={discount_factor}'
