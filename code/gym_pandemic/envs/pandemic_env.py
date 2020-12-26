@@ -198,7 +198,7 @@ class PandemicEnv(gym.Env):
 
         feasible_range = range(self.nS)
         return cap_distribution(distr, feasible_range)
-            
+    
     def _set_transition_probabilities_1_step(self, **kwargs):
         file_name = self._dynamics_file_name(iterations=1)
         file_name_lookup = self._dynamics_file_name(iterations=1, lookup=True)
@@ -231,12 +231,7 @@ class PandemicEnv(gym.Env):
                 else:
                     feasible_range = range(self.nS)
                 for new_state in feasible_range:
-                    prob = 0
-                    if new_state == self.nS - 1:
-                        # probability of landing on new_state or anything above
-                        prob = 1 - distr.cdf(new_state - 1)
-                    else:
-                        prob = distr.pmf(new_state)
+                    prob = distr.pmf(new_state)
                     done = False
                     reward = self._reward(state, self.actions_r[action])
 
