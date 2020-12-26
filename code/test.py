@@ -21,7 +21,7 @@ def test_environment(env, policy, V, file_name_prefix):
     # (time, env.nS)
     policy_rs = np.array([[env.actions_r[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
 
-    policy_dict = {f'action_r_(t={t})': policy_rs[t, :] for t in range(policy_rs.shape[0])}
+    policy_dict = {f't={t}': policy_rs[t, :] for t in range(policy_rs.shape[0])}
     policy_dict['state'] = range(env.nS)
     df_policy = pd.DataFrame(policy_dict)
     df_policy.to_csv(file_name_prefix + 'policy.txt')
@@ -29,7 +29,7 @@ def test_environment(env, policy, V, file_name_prefix):
     
     ### Save full value function
     # V: (time, env.nS)
-    value_dict = {f'value_(t={t})': V[t, :] for t in range(V.shape[0])}
+    value_dict = {f't={t}': V[t, :] for t in range(V.shape[0])}
     value_dict['state'] = range(env.nS)
     df_value = pd.DataFrame(value_dict)
     df_value.to_csv(file_name_prefix + 'value.txt')
