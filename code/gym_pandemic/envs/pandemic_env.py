@@ -11,12 +11,13 @@ from gym.utils import seeding
 from tqdm import tqdm
 
 from utils import save_pickle, load_pickle
-
+from scenarios import US, Test
 
 class PandemicEnv(gym.Env):
     """Custom Environment that follows gym interface"""
     metadata = {'render.modes': ['human']}
-
+    days_per_step = 4
+    
     def __init__(self,
                num_population=1000,
                initial_fraction_infected=0.1,
@@ -29,12 +30,14 @@ class PandemicEnv(gym.Env):
                init_transition_probs=False,
                horizon=np.inf,
                action_frequency=1,
+               scenario=Test,
                **kwargs):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
         self.initial_num_infected = int(initial_fraction_infected * num_population)
         self.R_0 = R_0
         self.imported_cases_per_step = imported_cases_per_step
+        self.cost_of_full_lockdown = 
         self.power = power
         self.scale_factor = scale_factor
         self.distr_family = distr_family
@@ -42,6 +45,7 @@ class PandemicEnv(gym.Env):
         self.horizon = horizon
         self.action_frequency = action_frequency
         self.horizon_effective = ceil(horizon / action_frequency) if horizon < np.inf else horizon
+        self.scenario = scenario
         self.kwargs = kwargs
         
         # Define action and observation space
@@ -118,7 +122,8 @@ class PandemicEnv(gym.Env):
         return (num_susceptible, num_infected)
         
     def _reward(self, num_infected, r, **kwargs):
-        return -self._cost_of_n(num_infected, **kwargs) - self._cost_of_r(r, **kwargs)
+        return -self._cost_of_n(num_infected, **kwargs) \
+               -self._cost_of_r_linear(r, self.R_0, self.R_0, self.cost_of_full_lockdown, **kwargs)
     
     def _cost_of_r(self, r, R_0, **kwargs):
         baseline = 1/(R_0 ** self.power)
@@ -154,6 +159,7 @@ class PandemicEnv(gym.Env):
 >>> env._cost_of_r_linear(0.0, 3.0, 4.0, 1e6)
 750000.0
         '''
+        cost_of_full_lockdown = days_per_step * self.scenario.gdp_per_day * self.scenario.fraction_gdp_lost
         r = max(r, 0) # cannot physically make r < 0
         fraction_locked_down = (R_0_orig - r) / R_0_orig
         fraction_for_free = (R_0_orig - R_0_new) / R_0_orig
@@ -164,7 +170,7 @@ class PandemicEnv(gym.Env):
         if n <= 0:
             return 0
         else:
-            return n
+            return n * scenario.cost_per_case
 
     def _expected_new_state(self, num_infected, r, **kwargs):
         fraction_susceptible = 1 # (num_population - current_cases) / num_population
