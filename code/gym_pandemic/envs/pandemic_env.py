@@ -31,6 +31,8 @@ class PandemicEnv(gym.Env):
                horizon=np.inf,
                action_frequency=1,
                scenario=Test,
+               vaccine_start=0,
+               vaccine_final_susceptible=0,
                **kwargs):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
@@ -71,7 +73,9 @@ class PandemicEnv(gym.Env):
 
         
         # Transmissibility goes down over time due to vaccinations
-        self.transmissibility_schedule = [1 for time_idx in range(self.horizon)] if self.horizon < np.inf else None
+        vaccine_start_idx = round(horizon * vaccine_start)
+        vaccine_schedule = schedule_even_delay(horizon, vaccine_start_idx, 4, 0)
+        self.transmissibility_schedule = vaccine_schedule
 
         # Infectiousness can go down over time due to better treatments
         self.infectious_schedule = [1 for time_idx in range(self.horizon)] if self.horizon < np.inf else None

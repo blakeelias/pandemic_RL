@@ -71,6 +71,16 @@ def parse_args():
                         nargs='+',
                         default=[1],
                         help='Frequency (in time steps) to allow agent to set a new action')
+
+    parser.add_argument('--vaccine_start',
+                        type=float,
+                        nargs='+',
+                        default=[0])
+
+    parser.add_argument('--vaccine_final_susceptible',
+                        type=float,
+                        nargs='+',
+                        default=[0])
     
     parser.add_argument('--tags',
                         type=str,
@@ -112,6 +122,8 @@ def main(args):
             args.horizon,
             args.action_frequency,
             args.tags,
+            args.vaccine_start,
+            args.vaccine_final_susceptible,
         )
     ]
 
