@@ -127,11 +127,11 @@ class PandemicEnv(gym.Env):
     def _reward(self, state, action, **kwargs):
         num_infected = state
         factor_contact = self.contact_factor[action] # What percentage of contact are we allowing
-        return -self._cost_of_n(num_infected, **kwargs) \
-               -self._cost_of_r(factor_contact, **kwargs)
+        return -self._cost_of_infections(num_infected, **kwargs) \
+               -self._cost_of_contact_factor(factor_contact, **kwargs)
              # -self._cost_of_r_linear(r, self.R_0, self.R_0, **kwargs)
     
-    def _cost_of_r(self, factor_contact, **kwargs):
+    def _cost_of_contact_factor(self, factor_contact, **kwargs):
         '''
         `factor_contact` \in (0, 1]
         '''
@@ -177,7 +177,7 @@ class PandemicEnv(gym.Env):
         net_cost = cost_of_full_lockdown * (fraction_locked_down - fraction_for_free)
         return max(net_cost, 0) # cannot incur negative cost (i.e. make money) by making r > R_0_new
 
-    def _cost_of_n(self, n, **kwargs):
+    def _cost_of_infections(self, n, **kwargs):
         if n <= 0:
             return 0
         else:
