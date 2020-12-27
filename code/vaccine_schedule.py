@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 
 
 def vaccine_schedule(horizon, milestones, R_0):
@@ -53,8 +54,11 @@ array([4. , 4. , 3.5, 3.5, 3.5, 3.5, 3. , 3. , 3. , 3. , 2.5, 2.5, 2.5,
         t_start = milestones[i][0]
         t_end = milestones[i+1][0]
         for t in range(t_start, t_end):
-            schedule[t] = R
-    
+            if t < len(schedule):
+                schedule[t] = R
+            else:
+                logging.warning(f'Vaccination milestones ([{t_start}, {t_end})) extend outside time horizon ({horizon}).')
+                
     return schedule
 
 
