@@ -68,14 +68,12 @@ class PandemicEnv(gym.Env):
         self.state_to_idx = {self.states[idx]: idx for idx in range(len(self.states))}
         self.nS = len(self.states)
 
-        self.dynamics_param_str = self._param_string(self.action_frequency, **self.kwargs)
-
-        self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
-
         
         # Transmissibility goes down over time due to vaccinations
-        vaccine_start_idx = round(self.horizon_effective * vaccine_start)
-        vaccine_schedule = schedule_even_delay(self.horizon_effective, vaccine_start_idx, 4, 0)
+        self.vaccine_final_susceptible = vaccine_final_susceptible
+        self.vaccine_start_idx = round(self.horizon_effective * vaccine_start)
+        num_steps = 4
+        vaccine_schedule = schedule_even_delay(self.horizon_effective, self.vaccine_start_idx, num_steps, self.vaccine_final_susceptible)
         self.transmissibility_schedule = vaccine_schedule
 
         # Infectiousness can go down over time due to better treatments
@@ -95,6 +93,10 @@ class PandemicEnv(gym.Env):
         self.reward = 0
 
         self.reset()
+        
+        self.dynamics_param_str = self._param_string(self.action_frequency, **self.kwargs)
+        self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
+
         
     def step(self, action):
         # TODO: switch to contact-rate actions
@@ -357,7 +359,7 @@ class PandemicEnv(gym.Env):
         new_env.macro_step = macro_step
 
     def _param_string(self, action_frequency, **kwargs):
-        return f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},custom={self.kwargs}'
+        return f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},vaccine_start_idx={self.vaccine_start_idx},vaccine_final_susceptible={self.vaccine_final_susceptible},custom={self.kwargs}'
         
     def _dynamics_file_name(self, iterations, lookup=False, **kwargs):
         param_str = self._param_string(iterations, **kwargs)
