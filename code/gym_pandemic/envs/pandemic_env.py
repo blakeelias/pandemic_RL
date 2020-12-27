@@ -69,8 +69,17 @@ class PandemicEnv(gym.Env):
 
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
 
-        self.vaccine_schedule = [1 for time_idx in range(self.horizon)] if self.horizon < np.inf else None
+        
+        # Transmissibility goes down over time due to vaccinations
+        self.transmissibility_schedule = [1 for time_idx in range(self.horizon)] if self.horizon < np.inf else None
+
+        # Infectiousness can go down over time due to better treatments
         self.infectious_schedule = [1 for time_idx in range(self.horizon)] if self.horizon < np.inf else None
+        
+        # Contact rate can go down over time: people independently learn to limit contact in low-cost ways
+        # (e.g. adoption of masks, safer business practices, etc.)
+        # Gets multiplied by the contact reduction the policymaker sets, but policymaker does not get charged for it 
+        self.contact_rate_schedule = [1 for time_idx in range(self.horizon)] if self.horizon < np.inf else None
         
         self.P = None
         #if init_transition_probs:
@@ -216,8 +225,8 @@ class PandemicEnv(gym.Env):
     def transitions(self, state, action, time_idx=None):
         reward = self._reward(state, action)
 
-        factor_transmissibility = self.vaccine_schedule[time_idx] if time_idx else 1
-        factor_contact = self.contact_factor[action]
+        factor_transmissibility = self.transmissibility_schedule[time_idx] if time_idx else 1
+        factor_contact = self.contact_factor[action] * (self.contact_rate_schedule[time_idx] if time_idx else 1)
         factor_infectious_period = self.infectious_schedule[time_idx] if time_idx else 1
 
         R_t = self.R_0 * factor_transmissibility * factor_contact * factor_infectious_period
