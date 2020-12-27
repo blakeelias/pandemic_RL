@@ -15,7 +15,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'tags'])
+Params = namedtuple('Params', ['num_population', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'tags'])
 
 
 def parse_args():
@@ -121,9 +121,9 @@ def main(args):
             args.distr_family,
             args.horizon,
             args.action_frequency,
-            args.tags,
             args.vaccine_start,
             args.vaccine_final_susceptible,
+            args.tags,
         )
     ]
 
