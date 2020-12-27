@@ -48,8 +48,8 @@ array([4. , 4. , 3.5, 3.5, 3.5, 3.5, 3. , 3. , 3. , 3. , 2.5, 2.5, 2.5,
 
     for i in range(len(milestones) - 1):
         factor = milestones[i][1]
-        t_start = milestones[i][0]
-        t_end = milestones[i+1][0]
+        t_start = round(milestones[i][0])
+        t_end = round(milestones[i+1][0])
         for t in range(t_start, t_end):
             if t < len(schedule):
                 schedule[t] = factor
@@ -59,5 +59,19 @@ array([4. , 4. , 3.5, 3.5, 3.5, 3.5, 3. , 3. , 3. , 3. , 2.5, 2.5, 2.5,
     return schedule
 
 
-def schedule_even(horizon, increment_fraction):
-    pass
+def schedule_even(horizon, num_increments, final_susceptible):
+    '''
+    >>> from vaccine_schedule import schedule_even
+    >>> schedule_even(24, 8, 0.0)
+    array([1.   , 1.   , 1.   , 0.875, 0.875, 0.875, 0.75 , 0.75 , 0.75 ,
+           0.625, 0.625, 0.625, 0.5  , 0.5  , 0.5  , 0.375, 0.375, 0.375,
+           0.25 , 0.25 , 0.25 , 0.125, 0.125, 0.125])
+    >>> len(schedule_even(24, 8, 0.0))
+    24
+    '''
+    increment_duration = horizon / num_increments
+    increment_reduction = (1 - final_susceptible) / num_increments
+    times = np.arange(0, horizon, increment_duration)
+    factors = np.arange(1.0, final_susceptible, -increment_reduction)
+    milestones = list(zip(times, factors))
+    return vaccine_schedule(horizon, milestones)
