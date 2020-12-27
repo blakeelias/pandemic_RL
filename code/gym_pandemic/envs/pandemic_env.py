@@ -83,6 +83,8 @@ class PandemicEnv(gym.Env):
         self.reset()
         
     def step(self, action):
+        # TODO: switch to contact-rate actions
+        raise Exception('Not implemented (step() must be updated to use contact-rate actions rather than R actions)')
         # Execute one time step within the environment
         prev_cases = self.state
         r = self.actions_r[action]
@@ -228,6 +230,9 @@ class PandemicEnv(gym.Env):
         return outcomes
     
     def _set_transition_probabilities_1_step(self, **kwargs):
+        # TODO: switch to contact-rate actions
+        raise Exception('Not implemented (_set_transition_probabilities_1_step() must be updated to use contact-rate actions rather than R actions)')
+
         file_name = self._dynamics_file_name(iterations=1)
         file_name_lookup = self._dynamics_file_name(iterations=1, lookup=True)
         try:
