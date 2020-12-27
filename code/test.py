@@ -35,14 +35,26 @@ def test_environment(env, policy, V, file_name_prefix):
     df_policy.to_csv(file_name_prefix + 'policy_contact_rate.txt')
 
     ### Plot full policy
-    ax = sns.heatmap(policy_rs[:-1, :].T, linewidths=0.5, center=1.0, cmap='RdYlGn')
+    # With respect to R
+    # ax = sns.heatmap(policy_rs[:-1, :].T, linewidths=0.5, center=1.0, cmap='RdYlGn')
     # To show policy values: use `annot=True`
     # Round to integer: `fmt='d'` (gives error for floats)
     # To hide x axis ticks: `xticklabels=False`
     # TODO: label x and y axes
     # TODO: better color scheme
-    ax.invert_yaxis()
-    ax.get_figure().savefig(file_name_prefix + 'policy.png')
+    # ax.invert_yaxis()
+    # ax.get_figure().savefig(file_name_prefix + 'policy_R.png')
+
+    # With respect to contact rate
+    ax1 = sns.heatmap(policy_contact_rates[:-1, :].T, linewidths=0.5, center=1.0/2.5, cmap='RdYlGn')
+    # To show policy values: use `annot=True`
+    # Round to integer: `fmt='d'` (gives error for floats)
+    # To hide x axis ticks: `xticklabels=False`
+    # TODO: label x and y axes
+    # TODO: better color scheme
+    ax1.invert_yaxis()
+    ax1.get_figure().savefig(file_name_prefix + 'policy_contact_rate.png')
+
     
     ### Save full value function
     # V: (time, env.nS)
