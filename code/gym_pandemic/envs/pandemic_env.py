@@ -142,7 +142,7 @@ class PandemicEnv(gym.Env):
         if factor_contact >= 1:
             return 0
         else:
-            return (actual - baseline) * self.scale_factor * (self.R_0 ** self.power)
+            return (actual - baseline) * self.scale_factor / (self.R_0 ** self.power)
             # put back in the factor of self.R_0 ** self.power that's been divided out
             # by dividing the denominator of both baseline and actual by R_0
             # (was previously measured on the scale of 0 to R_0; now on the scale of 0 to 1
