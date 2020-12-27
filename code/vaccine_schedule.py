@@ -2,11 +2,10 @@ import numpy as np
 import logging
 
 
-def vaccine_schedule(horizon, milestones, R_0):
+def vaccine_schedule(horizon, milestones):
     '''
     `horizon`: number of time steps
-    `milestones`: [(time, R_0), ...]
-
+    `milestones`: [(time, reduction_factor), ...]
 
 >>> horizon = 24
 >>> R_0 = 4
@@ -42,23 +41,23 @@ array([4. , 4. , 3.5, 3.5, 3.5, 3.5, 3. , 3. , 3. , 3. , 2.5, 2.5, 2.5,
 
     # TODO: add linear interpolation.
     
-    schedule = np.ones(horizon) * R_0
+    schedule = np.ones(horizon)
 
-    milestones = [(0, R_0)] + milestones + [(horizon, milestones[-1][1])]
+    milestones = [(0, 1.0)] + milestones + [(horizon, milestones[-1][1])]
     milestones.sort()
 
-    last_R = R_0
-
     for i in range(len(milestones) - 1):
-        R = milestones[i][1]
+        factor = milestones[i][1]
         t_start = milestones[i][0]
         t_end = milestones[i+1][0]
         for t in range(t_start, t_end):
             if t < len(schedule):
-                schedule[t] = R
+                schedule[t] = factor
             else:
                 logging.warning(f'Vaccination milestones ([{t_start}, {t_end})) extend outside time horizon ({horizon}).')
                 
     return schedule
 
 
+def schedule_even(horizon, increment_fraction):
+    pass
