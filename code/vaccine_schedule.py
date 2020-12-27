@@ -70,8 +70,38 @@ def schedule_even(horizon, num_increments, final_susceptible):
     24
     '''
     increment_duration = horizon / num_increments
-    increment_reduction = (1 - final_susceptible) / num_increments
+    increment_reduction = (1 - final_susceptible) / (num_increments - 1)
     times = np.arange(0, horizon, increment_duration)
-    factors = np.arange(1.0, final_susceptible, -increment_reduction)
+    factors = np.arange(1.0, final_susceptible - increment_reduction, -increment_reduction)
     milestones = list(zip(times, factors))
     return vaccine_schedule(horizon, milestones)
+
+
+def schedule_none(horizon):
+    '''
+    >>> schedule_none(24)
+    array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+           1., 1., 1., 1., 1., 1., 1.])
+    '''
+    milestones = [(1, 1.0), (horizon, 1.0)]
+    return vaccine_schedule(horizon, milestones)
+
+
+def schedule_even_delay(horizon, delay_horizon, num_increments, final_susceptible):
+    '''
+>>> from vaccine_schedule import schedule_even_delay
+>>> schedule_even_delay(24, 16, 4, 0)
+array([1.00000000e+00, 1.00000000e+00, 1.00000000e+00, 1.00000000e+00,
+       1.00000000e+00, 1.00000000e+00, 1.00000000e+00, 1.00000000e+00,
+       1.00000000e+00, 1.00000000e+00, 1.00000000e+00, 1.00000000e+00,
+       1.00000000e+00, 1.00000000e+00, 1.00000000e+00, 1.00000000e+00,
+       1.00000000e+00, 1.00000000e+00, 6.66666667e-01, 6.66666667e-01,
+       3.33333333e-01, 3.33333333e-01, 2.22044605e-16, 2.22044605e-16])
+    '''
+    none_horizon = delay_horizon
+    even_horizon = horizon - delay_horizon
+
+    schedule_1 = schedule_none(none_horizon)
+    schedule_2 = schedule_even(even_horizon, num_increments, final_susceptible)
+
+    return np.hstack((schedule_1, schedule_2))
