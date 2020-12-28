@@ -166,6 +166,7 @@ class PandemicEnv(gym.Env):
         file_name = self._dynamics_file_name(iterations=1)
         file_name_lookup = self._dynamics_file_name(iterations=1, lookup=True)
         try:
+            print('Loading 1-step transition probs...')
             self.P_1_step = load_pickle(file_name)
             self.P_lookup_1_step = load_pickle(file_name_lookup)
             print('Loaded 1-step transition_probs')
