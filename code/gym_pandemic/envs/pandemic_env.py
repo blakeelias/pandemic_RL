@@ -209,9 +209,10 @@ class PandemicEnv(gym.Env):
                         self.P_1_step[state, action] = []
                     self.P_1_step[state, action].append(outcome)
                     self.P_lookup_1_step[state, action, new_state] = (prob, reward)
-                    
+        print('Saving 1-step transition probabilities...')
         save_pickle(self.P_1_step, file_name)
         save_pickle(self.P_lookup_1_step, file_name_lookup)
+        print('Saved')
         return self.P_1_step
 
     def _set_transition_probabilities(self):
@@ -219,6 +220,7 @@ class PandemicEnv(gym.Env):
         iterations = self.action_frequency
         file_name = self._dynamics_file_name(iterations=iterations, **self.kwargs)
         try:
+            print('Loading multi-step transition probs')
             self.P = load_pickle(file_name)
             print(f'Loaded multi-step transition_probs ({iterations}-step)')
             return self.P
