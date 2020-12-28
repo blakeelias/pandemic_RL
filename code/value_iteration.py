@@ -80,6 +80,8 @@ def one_step_lookahead(env, state, V, discount_factor=0.99):
     """
     A = np.zeros(env.nA)
     for a in range(env.nA):
+        # TODO: change below line to comma-based indexing for Numpy arrays?
+        # Don't want to create this dependence if not needed
         for prob, next_state, reward, done in env.P[state][a]:
             A[a] += prob * (reward + discount_factor * V[next_state])
     return A
