@@ -174,8 +174,8 @@ class PandemicEnv(gym.Env):
             self.P_1_step = []
 
         print('Generating 1-step transition probabilities:')
-        self.P_1_step = [[ [] for j in range(self.nA)] for i in range(self.nS)]
-        self.P_lookup_1_step = [[[None for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
+        self.P_1_step = np.empty((self.nS, self.nA), dtype=list)
+        self.P_lookup_1_step = np.empty((self.nS, self.nA, self.nS), dtype=list)
 
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
@@ -205,8 +205,10 @@ class PandemicEnv(gym.Env):
                     reward = self._reward(state, self.actions_r[action])
 
                     outcome = (prob, new_state, reward, done)
-                    self.P_1_step[state][action].append(outcome)
-                    self.P_lookup_1_step[state][action][new_state] = (prob, reward)
+                    if not self.P_1_step[state, action]:
+                        self.P_1_step[state, action] = []
+                    self.P_1_step[state, action].append(outcome)
+                    self.P_lookup_1_step[state, action, new_state] = (prob, reward)
                     
         save_pickle(self.P_1_step, file_name)
         save_pickle(self.P_lookup_1_step, file_name_lookup)
