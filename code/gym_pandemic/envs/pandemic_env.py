@@ -168,11 +168,12 @@ class PandemicEnv(gym.Env):
         try:
             self.P_1_step = load_pickle(file_name)
             self.P_lookup_1_step = load_pickle(file_name_lookup)
-            print('Loaded transition_probs')
+            print('Loaded 1-step transition_probs')
             return self.P_1_step
         except:
             self.P_1_step = []
-        
+
+        print('Generating 1-step transition probabilities:')
         self.P_1_step = [[ [] for j in range(self.nA)] for i in range(self.nS)]
         self.P_lookup_1_step = [[[None for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
 
@@ -217,7 +218,7 @@ class PandemicEnv(gym.Env):
         file_name = self._dynamics_file_name(iterations=iterations, **self.kwargs)
         try:
             self.P = load_pickle(file_name)
-            print('Loaded transition_probs')
+            print(f'Loaded multi-step transition_probs ({iterations}-step)')
             return self.P
         except:
             self.P = []
@@ -226,8 +227,9 @@ class PandemicEnv(gym.Env):
         
         self.P_lookup_prev = copy.deepcopy(self.P_lookup_1_step)
         self.P_lookups_next = [[[set() for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
-        
-        for iteration in range(iterations - 1):
+
+        print(f'Iterating multi-step transitions ({iterations}-step)')
+        for iteration in tqdm(range(iterations - 1)):
             self.P_lookups_next = [[[set() for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
             for start_state in range(self.nS):
                 for action in range(self.nA):
@@ -255,7 +257,8 @@ class PandemicEnv(gym.Env):
                             reward = 0
                         self.P_lookup_prev[start_state][action][new_state] = (prob, reward)
 
-        for state in range(self.nS):
+        print(f'Converting multi-step lookup table to outcomes list')
+        for state in tqdm(range(self.nS)):
             for action in range(self.nA):
                 for new_state in range(self.nS):
                     prob, reward = self.P_lookup_prev[state][action][new_state]

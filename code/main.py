@@ -118,8 +118,10 @@ def main(args):
     policies = {}
     Vs = {}
 
-    for particular_parameters in tqdm(parameters_sweep):
+    for i, particular_parameters in enumerate(parameters_sweep):
         parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
+        print(f'Experiment {i}: {parameters}')
+        
         if parameters['dynamics'] == 'SIR':
             env = PandemicImmunityEnv(**parameters)
         else:
