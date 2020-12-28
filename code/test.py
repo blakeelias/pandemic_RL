@@ -27,7 +27,7 @@ def test_environment(env, policy, V, file_name_prefix):
     df_policy.to_csv(file_name_prefix + 'policy.txt')
 
     ### Plot full policy
-    ax = sns.heatmap(policy_rs[:-1, :].T, linewidths=0.5, center=1.0, cmap='RdYlGn')
+    ax = sns.heatmap(policy_rs[:-1, :].T, center=1.0, cmap='RdYlGn')
     # To show policy values: use `annot=True`
     # Round to integer: `fmt='d'` (gives error for floats)
     # To hide x axis ticks: `xticklabels=False`
