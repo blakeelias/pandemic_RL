@@ -267,7 +267,7 @@ class PandemicEnv(gym.Env):
                 for new_state in range(self.nS):
                     # TODO: way to speed this up? Just by flattening the array in some efficient way, rather than 3x for loop?
                     # Of course, not even sure this is a slow part of the code...
-                    prob, reward = self.P_lookup_prev[state][action][new_state]
+                    prob, reward = self.P_lookup_prev[state, action, new_state]
                     done = False
                     outcome = (prob, new_state, reward, done)
                     if not self.P[state, action]:
