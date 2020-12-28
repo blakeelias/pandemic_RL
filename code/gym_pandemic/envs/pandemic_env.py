@@ -225,15 +225,20 @@ class PandemicEnv(gym.Env):
         except:
             self.P = []
 
+        print('Allocating multi-step transition table (empty)...')
         self.P = np.empty((self.nS, self.nA), dtype=list)
-        
+
+        print('Copying 1-step lookup table...')
         self.P_lookup_prev = copy.deepcopy(self.P_lookup_1_step)
+
+        print('Allocating iterative lookup table...')
         self.P_lookups_next = np.empty((self.nS, self.nA, self.nS), dtype=set)
 
         print(f'Iterating multi-step transitions ({iterations}-step)')
-        for iteration in tqdm(range(iterations - 1)):
+        for iteration in range(iterations - 1):
+            print(f'Iteration {iteration}. Branching out.')
             self.P_lookups_next.fill(None)
-            for start_state in range(self.nS):
+            for start_state in tqdm(range(self.nS)):
                 for action in range(self.nA):
                     for intermediate_state in range(self.nS):
                         for new_state in range(self.nS):
@@ -249,8 +254,9 @@ class PandemicEnv(gym.Env):
                             )
 
             # sum up over all intermediate states
+            print(f'Iteration {iteration}. Summing up.')
             self.P_lookup_prev.fill(None)
-            for start_state in range(self.nS):
+            for start_state in tqdm(range(self.nS)):
                 for action in range(self.nA):
                     for new_state in range(self.nS):
                         outcomes = self.P_lookups_next[start_state, action, new_state] # {(prob, reward)}
