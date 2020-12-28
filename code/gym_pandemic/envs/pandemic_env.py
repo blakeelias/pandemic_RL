@@ -225,48 +225,54 @@ class PandemicEnv(gym.Env):
         except:
             self.P = []
 
-        self.P = [[ [] for j in range(self.nA)] for i in range(self.nS)]
+        self.P = np.empty((self.nS, self.nA), dtype=list)
         
         self.P_lookup_prev = copy.deepcopy(self.P_lookup_1_step)
-        self.P_lookups_next = [[[set() for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
+        self.P_lookups_next = np.empty((self.nS, self.nA, self.nS), dtype=set)
 
         print(f'Iterating multi-step transitions ({iterations}-step)')
         for iteration in tqdm(range(iterations - 1)):
-            self.P_lookups_next = [[[set() for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
+            self.P_lookups_next.fill(None)
             for start_state in range(self.nS):
                 for action in range(self.nA):
                     for intermediate_state in range(self.nS):
                         for new_state in range(self.nS):
-                            prob_start_intermediate = self.P_lookup_prev[start_state][action][intermediate_state][0]
-                            prob_intermediate_new = self.P_lookup_1_step[intermediate_state][action][new_state][0]
-                            reward_start_intermediate = self.P_lookup_prev[start_state][action][intermediate_state][1]
-                            reward_intermediate_new = self.P_lookup_1_step[intermediate_state][action][new_state][1]
-                            self.P_lookups_next[start_state][action][new_state].add(
+                            prob_start_intermediate = self.P_lookup_prev[start_state, action, intermediate_state][0]
+                            prob_intermediate_new = self.P_lookup_1_step[intermediate_state, action, new_state][0]
+                            reward_start_intermediate = self.P_lookup_prev[start_state, action, intermediate_state][1]
+                            reward_intermediate_new = self.P_lookup_1_step[intermediate_state, action, new_state][1]
+                            if not self.P_lookups_next[start_state, action, new_state]:
+                                self.P_lookups_next[start_state, action, new_state] = set()
+                            self.P_lookups_next[start_state, action, new_state].add(
                                 (prob_start_intermediate * prob_intermediate_new,
                                  reward_start_intermediate + reward_intermediate_new)
                             )
 
             # sum up over all intermediate states
-            self.P_lookup_prev = [[[None for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
+            self.P_lookup_prev.fill(None)
             for start_state in range(self.nS):
                 for action in range(self.nA):
                     for new_state in range(self.nS):
-                        outcomes = self.P_lookups_next[start_state][action][new_state] # {(prob, reward)}
+                        outcomes = self.P_lookups_next[start_state, action, new_state] # {(prob, reward)}
                         prob = sum([outcome[0] for outcome in outcomes])
                         if prob > 0:
                             reward = sum(outcome[0] * outcome[1] for outcome in outcomes) / prob
                         else:
                             reward = 0
-                        self.P_lookup_prev[start_state][action][new_state] = (prob, reward)
+                        self.P_lookup_prev[start_state, action, new_state] = (prob, reward)
 
         print(f'Converting multi-step lookup table to outcomes list')
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
                 for new_state in range(self.nS):
+                    # TODO: way to speed this up? Just by flattening the array in some efficient way, rather than 3x for loop?
+                    # Of course, not even sure this is a slow part of the code...
                     prob, reward = self.P_lookup_prev[state][action][new_state]
                     done = False
                     outcome = (prob, new_state, reward, done)
-                    self.P[state][action].append(outcome)
+                    if not self.P[state, action]:
+                        self.P[state, action] = []
+                    self.P[state, action].append(outcome)
                     
         save_pickle(self.P, file_name)
         return self.P
