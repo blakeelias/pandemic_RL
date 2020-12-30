@@ -18,9 +18,7 @@ python main.py --imported_cases_per_step_range 0 --num_population 100
 
 Full experiment:
 ```
-python main.py --num_population 1000 --power_scale_factors 0.25 1.0 --imported_cases_per_step_range 0 0.5 --powers 0.1 0.25 0.5 1.0 1.5
-
-python main.py --num_population 1000 --power_scale_factors 0.25 1.0 --imported_cases_per_step_range 1.0 5.0 10.0 --powers 0.1 0.25 0.5 1.0 1.5
+python main.py --num_population 1000  --imported_cases_per_step_range 1 --powers 1.0 --action_frequency 1 2 4 8 16 --tags no_clipping --horizon 96 --distr_family poisson
 ```
 
 Debugging:

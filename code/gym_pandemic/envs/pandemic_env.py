@@ -118,6 +118,12 @@ class PandemicEnv(gym.Env):
         return (num_susceptible, num_infected)
         
     def _reward(self, num_infected, r, **kwargs):
+        # Do not allow exceeding hospital capacity
+        expected_new_cases = self._expected_new_state(num_infected, r)
+        if expected_new_cases > self.num_population:
+            return -np.inf
+
+        # Otherwise, add the cost of cases and the cost of lockdown
         return -self._cost_of_n(num_infected, **kwargs) - self._cost_of_r(r, **kwargs)
     
     def _cost_of_r(self, r, **kwargs):
@@ -166,6 +172,7 @@ class PandemicEnv(gym.Env):
         file_name = self._dynamics_file_name(iterations=1)
         file_name_lookup = self._dynamics_file_name(iterations=1, lookup=True)
         try:
+            print('Loading 1-step transition probs...')
             self.P_1_step = load_pickle(file_name)
             self.P_lookup_1_step = load_pickle(file_name_lookup)
             print('Loaded 1-step transition_probs')
@@ -209,9 +216,10 @@ class PandemicEnv(gym.Env):
                         self.P_1_step[state, action] = []
                     self.P_1_step[state, action].append(outcome)
                     self.P_lookup_1_step[state, action, new_state] = (prob, reward)
-                    
+        print('Saving 1-step transition probabilities...')
         save_pickle(self.P_1_step, file_name)
         save_pickle(self.P_lookup_1_step, file_name_lookup)
+        print('Saved')
         return self.P_1_step
 
     def _set_transition_probabilities(self):
@@ -219,6 +227,7 @@ class PandemicEnv(gym.Env):
         iterations = self.action_frequency
         file_name = self._dynamics_file_name(iterations=iterations, **self.kwargs)
         try:
+            print('Loading multi-step transition probs')
             self.P = load_pickle(file_name)
             print(f'Loaded multi-step transition_probs ({iterations}-step)')
             return self.P
