@@ -49,7 +49,13 @@ class PandemicEnv(gym.Env):
         # Define action and observation space
         # They must be gym.spaces objects
         # Example when using discrete actions
-        self.actions_r = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0, 2.5])
+        
+        # Actions in increments of 0.5 up to R_0
+        self.actions_r = np.array(
+            [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
+            list(np.arange(1.5, self.R_0, 0.5)) + \
+            [self.R_0]
+        )
         self.nA = self.actions_r.shape[0]
         self.action_space = spaces.Discrete(self.nA)
 
@@ -308,7 +314,7 @@ class PandemicEnv(gym.Env):
         new_env.macro_step = macro_step
 
     def _param_string(self, action_frequency, **kwargs):
-        return f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},custom={self.kwargs}'
+        return f'R_0={self.R_0},distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},custom={self.kwargs}'
         
     def _dynamics_file_name(self, iterations, lookup=False, **kwargs):
         param_str = self._param_string(iterations, **kwargs)
