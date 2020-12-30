@@ -118,6 +118,12 @@ class PandemicEnv(gym.Env):
         return (num_susceptible, num_infected)
         
     def _reward(self, num_infected, r, **kwargs):
+        # Do not allow exceeding hospital capacity
+        expected_new_cases = self._expected_new_state(num_infected, r)
+        if expected_new_cases > self.num_population:
+            return -np.inf
+
+        # Otherwise, add the cost of cases and the cost of lockdown
         return -self._cost_of_n(num_infected, **kwargs) - self._cost_of_r(r, **kwargs)
     
     def _cost_of_r(self, r, **kwargs):
