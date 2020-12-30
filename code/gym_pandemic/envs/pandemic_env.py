@@ -18,21 +18,23 @@ class PandemicEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self,
-               num_population=1000,
-               initial_fraction_infected=0.1,
-               R_0=2.5,
-               imported_cases_per_step=0.5,
-               power=2,
-               scale_factor=100,
-               distr_family='nbinom',
-               dynamics='SIS',
-               init_transition_probs=False,
-               horizon=np.inf,
-               action_frequency=1,
-               **kwargs):
+                 num_population=10000,
+                 hospital_capacity_proportion=0.01,
+                 initial_fraction_infected=0.001,
+                 R_0=2.5,
+                 imported_cases_per_step=0.5,
+                 power=2,
+                 scale_factor=100,
+                 distr_family='nbinom',
+                 dynamics='SIS',
+                 init_transition_probs=False,
+                 horizon=np.inf,
+                 action_frequency=1,
+                 **kwargs):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
-        self.initial_num_infected = int(initial_fraction_infected * num_population)
+        self.max_infected = int(num_population * hospital_capacity_proportion)
+        self.initial_num_infected = int(num_population * initial_fraction_infected)
         self.R_0 = R_0
         self.imported_cases_per_step = imported_cases_per_step
         self.power = power
@@ -53,7 +55,7 @@ class PandemicEnv(gym.Env):
 
         # Use entire state space
         self.observation_space = spaces.Box(low=0,
-                                            high=num_population,
+                                            high=self.max_infected,
                                             shape=(1,), dtype=np.uint16)  # maximum infected = 2**16 == 65536
         # self.observation_space = spaces.Discrete(self.nS)
         self.states = list(range(self.observation_space.low[0],
@@ -81,7 +83,7 @@ class PandemicEnv(gym.Env):
         r = self.actions_r[action]
         distr = self._new_state_distribution(prev_cases, r, imported_cases_per_step=self.imported_cases_per_step)
         new_cases = distr.rvs()
-        new_cases = min(new_cases, self.num_population)
+        new_cases = min(new_cases, self.max_infected)
         new_state = new_cases
 
         reward = self._reward(new_state, self.actions_r[action])
@@ -114,13 +116,13 @@ class PandemicEnv(gym.Env):
 
     def _unpack_state(self, packed_state):
         num_infected = packed_state
-        num_susceptible = self.num_population
+        num_susceptible = self.max_infected
         return (num_susceptible, num_infected)
         
     def _reward(self, num_infected, r, **kwargs):
         # Do not allow exceeding hospital capacity
         expected_new_cases = self._expected_new_state(num_infected, r)
-        if expected_new_cases > self.num_population:
+        if expected_new_cases > self.max_infected:
             return -np.inf
 
         # Otherwise, add the cost of cases and the cost of lockdown
@@ -129,8 +131,10 @@ class PandemicEnv(gym.Env):
     def _cost_of_r(self, r, **kwargs):
         baseline = 1/(self.R_0 ** self.power)
         actual = 1/(r ** self.power)
+        base_population = 1000 # Population the cost function was originally designed for
+        scaling = self.scale_factor * self.num_population / base_population
 
-        # cost_to_keep_half_home / (1/((num_population/4)**power) - 1/(R_0 ** power))
+        # cost_to_keep_half_home / (1/((max_infected/4)**power) - 1/(R_0 ** power))
         if r >= self.R_0:
             return 0
         else:
@@ -144,10 +148,10 @@ class PandemicEnv(gym.Env):
             return n
 
     def _expected_new_state(self, num_infected, r, **kwargs):
-        fraction_susceptible = 1 # (num_population - current_cases) / num_population
+        fraction_susceptible = 1 # (max_infected - current_cases) / max_infected
         # TODO: may need better way to bound susceptible population,
         # to account for immunity
-        # One option: fraction_susceptible = 1 always, and just bound new_state by num_population
+        # One option: fraction_susceptible = 1 always, and just bound new_state by max_infected
 
         # Better solution: keep track of how many people are susceptible NOW, based on some immunity time
         expected_new_cases = (num_infected * r) * fraction_susceptible + self.imported_cases_per_step
