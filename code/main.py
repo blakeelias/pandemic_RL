@@ -102,7 +102,6 @@ def main(args):
         'time_lumping': False,
         #'num_population': args['num_population'],
         'initial_fraction_infected': 0.1,
-        'R_0': 2.5
     }
     
     # experiment = replicate.init(combine_dicts(args, experiment_parameters))
