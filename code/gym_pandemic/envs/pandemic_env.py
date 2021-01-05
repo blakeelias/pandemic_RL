@@ -10,13 +10,15 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 from tqdm import tqdm
 
-from utils import save_pickle, load_pickle
-
+from utils import save_pickle, load_pickle, cap_distribution
+from scenarios import US, Test
+from vaccine_schedule import schedule_even_delay
 
 class PandemicEnv(gym.Env):
     """Custom Environment that follows gym interface"""
     metadata = {'render.modes': ['human']}
-
+    days_per_step = 4
+    
     def __init__(self,
                  num_population=10000,
                  hospital_capacity_proportion=0.01,
@@ -30,6 +32,9 @@ class PandemicEnv(gym.Env):
                  init_transition_probs=False,
                  horizon=np.inf,
                  action_frequency=1,
+                 scenario=Test,
+                 vaccine_start=0,
+                 vaccine_final_susceptible=0,
                  **kwargs):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
@@ -41,9 +46,10 @@ class PandemicEnv(gym.Env):
         self.scale_factor = scale_factor
         self.distr_family = distr_family
         self.dynamics = dynamics
-        self.horizon = horizon
+        self.horizon = int(horizon) if horizon < np.inf else horizon
         self.action_frequency = action_frequency
         self.horizon_effective = ceil(horizon / action_frequency) if horizon < np.inf else horizon
+        self.scenario = scenario
         self.kwargs = kwargs
         
         # Define action and observation space
@@ -56,6 +62,8 @@ class PandemicEnv(gym.Env):
             list(np.arange(1.5, self.R_0, 0.5)) + \
             [self.R_0]
         )
+        self.contact_factor = self.actions_r / self.R_0
+        
         self.nA = self.actions_r.shape[0]
         self.action_space = spaces.Discrete(self.nA)
 
@@ -69,13 +77,25 @@ class PandemicEnv(gym.Env):
         self.state_to_idx = {self.states[idx]: idx for idx in range(len(self.states))}
         self.nS = len(self.states)
 
-        self.dynamics_param_str = self._param_string(self.action_frequency, **self.kwargs)
-
-        self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
+        
+        # Transmissibility goes down over time due to vaccinations
+        self.vaccine_final_susceptible = vaccine_final_susceptible
+        self.vaccine_start_idx = round(self.horizon_effective * vaccine_start)
+        num_steps = 4
+        vaccine_schedule = schedule_even_delay(self.horizon_effective + 1, self.vaccine_start_idx, num_steps, self.vaccine_final_susceptible)   # TODO: make this horizon, not horizon + 1
+        self.transmissibility_schedule = vaccine_schedule
+        
+        # Infectiousness can go down over time due to better treatments
+        self.infectious_schedule = [1 for time_idx in range(self.horizon_effective + 1)] if self.horizon < np.inf else None
+        
+        # Contact rate can go down over time: people independently learn to limit contact in low-cost ways
+        # (e.g. adoption of masks, safer business practices, etc.)
+        # Gets multiplied by the contact reduction the policymaker sets, but policymaker does not get charged for it 
+        self.contact_rate_schedule = [1 for time_idx in range(self.horizon_effective + 1)] if self.horizon < np.inf else None
         
         self.P = None
-        if init_transition_probs:
-            self._set_transition_probabilities()
+        #if init_transition_probs:
+        #    self._set_transition_probabilities()
             
         self.state = self.initial_num_infected
         self.done = 0
@@ -83,7 +103,13 @@ class PandemicEnv(gym.Env):
 
         self.reset()
         
+        self.dynamics_param_str = self._param_string(self.action_frequency, **self.kwargs)
+        self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
+
+        
     def step(self, action):
+        # TODO: switch to contact-rate actions
+        raise Exception('Not implemented (step() must be updated to use contact-rate actions rather than R actions)')
         # Execute one time step within the environment
         prev_cases = self.state
         r = self.actions_r[action]
@@ -125,14 +151,36 @@ class PandemicEnv(gym.Env):
         num_susceptible = self.max_infected
         return (num_susceptible, num_infected)
         
-    def _reward(self, num_infected, r, **kwargs):
+    def _reward(self, state, action, time_idx=None, **kwargs):
+        num_infected = state
+        factor_contact = self.contact_factor[action] # What percentage of contact are we allowing
+
+        R_t = self.R_t(action, time_idx)
+        
         # Do not allow exceeding hospital capacity
-        expected_new_cases = self._expected_new_state(num_infected, r)
+        expected_new_cases = self._expected_new_state(num_infected, R_t)
         if expected_new_cases > self.max_infected:
             return -np.inf
+        
+        return -self._cost_of_infections(num_infected, **kwargs) \
+               -self._cost_of_contact_factor(factor_contact, **kwargs)
+             # -self._cost_of_r_linear(r, self.R_0, self.R_0, **kwargs)
+    
+    def _cost_of_contact_factor(self, factor_contact, **kwargs):
+        '''
+        `factor_contact` \in (0, 1]
+        '''
+        baseline = 1/(1 ** self.power)
+        actual = 1/(factor_contact ** self.power)
 
-        # Otherwise, add the cost of cases and the cost of lockdown
-        return -self._cost_of_n(num_infected, **kwargs) - self._cost_of_r(r, **kwargs)
+        # cost_to_keep_half_home / (1/((num_population/4)**power) - 1/(R_0 ** power))
+        if factor_contact >= 1:
+            return 0
+        else:
+            return (actual - baseline) * self.scale_factor / (self.R_0 ** self.power)
+            # put back in the factor of self.R_0 ** self.power that's been divided out
+            # by dividing the denominator of both baseline and actual by R_0
+            # (was previously measured on the scale of 0 to R_0; now on the scale of 0 to 1
     
     def _cost_of_r(self, r, **kwargs):
         baseline = 1/(self.R_0 ** self.power)
@@ -144,41 +192,91 @@ class PandemicEnv(gym.Env):
         if r >= self.R_0:
             return 0
         else:
-            return (actual - baseline) * self.scale_factor  # (actual - baseline)
-        #return actual
+            return (actual - baseline) * self.scale_factor / (self.R_0 ** self.power)
+            # put back in the factor of self.R_0 ** self.power that's been divided out
+            # by dividing the denominator of both baseline and actual by R_0
+            # (was previously measured on the scale of 0 to R_0; now on the scale of 0 to 1
 
-    def _cost_of_n(self, n, **kwargs):
+            
+    def _cost_of_r_linear(self, r, R_0_new, R_0_orig, **kwargs):
+        '''
+>>> from gym_pandemic.envs.pandemic_env import PandemicEnv
+>>> env = PandemicEnv()
+>>> env
+<gym_pandemic.envs.pandemic_env.PandemicEnv object at 0x7fd5157e1130>
+>>> env._cost_of_r_linear(1.0, 4.0, 4.0, 1e6)
+750000.0
+>>> env._cost_of_r_linear(2.0, 4.0, 4.0, 1e6)
+500000.0
+>>> env._cost_of_r_linear(4.0, 4.0, 4.0, 1e6)
+0.0
+>>> env._cost_of_r_linear(4.0, 3.0, 4.0, 1e6)
+-250000.0
+>>> env._cost_of_r_linear(3.0, 3.0, 4.0, 1e6)
+0.0
+>>> env._cost_of_r_linear(2.0, 3.0, 4.0, 1e6)
+250000.0
+>>> env._cost_of_r_linear(1.0, 3.0, 4.0, 1e6)
+500000.0
+>>> env._cost_of_r_linear(0.0, 3.0, 4.0, 1e6)
+750000.0
+        '''
+        cost_of_full_lockdown = self.days_per_step * self.scenario.gdp_per_day * self.scenario.fraction_gdp_lost
+        r = max(r, 0) # cannot physically make r < 0
+        fraction_locked_down = (R_0_orig - r) / R_0_orig
+        fraction_for_free = (R_0_orig - R_0_new) / R_0_orig
+        net_cost = cost_of_full_lockdown * (fraction_locked_down - fraction_for_free)
+        return max(net_cost, 0) # cannot incur negative cost (i.e. make money) by making r > R_0_new
+
+    def _cost_of_infections(self, n, **kwargs):
         if n <= 0:
             return 0
         else:
-            return n
+            return n # * self.scenario.cost_per_case
 
-    def _expected_new_state(self, num_infected, r, **kwargs):
-        fraction_susceptible = 1 # (max_infected - current_cases) / max_infected
-        # TODO: may need better way to bound susceptible population,
-        # to account for immunity
-        # One option: fraction_susceptible = 1 always, and just bound new_state by max_infected
-
-        # Better solution: keep track of how many people are susceptible NOW, based on some immunity time
+    def _expected_new_state(self, num_infected, r, fraction_susceptible=1, **kwargs):
         expected_new_cases = (num_infected * r) * fraction_susceptible + self.imported_cases_per_step
-
         return expected_new_cases
 
-    def _new_state_distribution(self, num_infected, r, **kwargs):
+    def _new_state_distribution(self, num_infected, action_r, **kwargs):
         # distr_family: 'poisson' or 'nbinom' or 'deterministic'
-        lam = self._expected_new_state(num_infected, r, **kwargs)
+        lam = self._expected_new_state(num_infected, action_r, **kwargs)
 
         if self.distr_family == 'poisson':
-            return poisson(lam)
+            distr = poisson(lam)
         elif self.distr_family == 'nbinom':
             r = 100000000000000.0
             # r = 0.17
             p = lam / (r + lam)
-            return nbinom(r, 1 - p)
+            distr = nbinom(r, 1 - p)
         elif self.distr_family == 'deterministic':
-            return rv_discrete(values=([lam], [1.0]))
-        
+            distr = rv_discrete(values=([lam], [1.0]))
+
+        feasible_range = range(self.nS)
+        return cap_distribution(distr, feasible_range)
+
+    def R_t(self, action, time_idx):
+        factor_transmissibility = self.transmissibility_schedule[time_idx] if time_idx else 1
+        factor_contact = self.contact_factor[action] * (self.contact_rate_schedule[time_idx] if time_idx else 1)
+        factor_infectious_period = self.infectious_schedule[time_idx] if time_idx else 1
+
+        R_t = self.R_0 * factor_transmissibility * factor_contact * factor_infectious_period
+        return R_t
+    
+    def transitions(self, state, action, time_idx=None):
+        reward = self._reward(state, action, time_idx)
+        R_t = self.R_t(action, time_idx)
+        distr = self._new_state_distribution(state, R_t)
+        feasible_range = range(self.nS)
+        probs = distr.pmf(feasible_range)
+        done = False
+        outcomes = [(probs[i], feasible_range[i], reward, done) for i in range(len(feasible_range))]
+        return outcomes
+    
     def _set_transition_probabilities_1_step(self, **kwargs):
+        # TODO: switch to contact-rate actions
+        raise Exception('Not implemented (_set_transition_probabilities_1_step() must be updated to use contact-rate actions rather than R actions)')
+
         file_name = self._dynamics_file_name(iterations=1)
         file_name_lookup = self._dynamics_file_name(iterations=1, lookup=True)
         try:
@@ -212,12 +310,7 @@ class PandemicEnv(gym.Env):
                 else:
                     feasible_range = range(self.nS)
                 for new_state in feasible_range:
-                    prob = 0
-                    if new_state == self.nS - 1:
-                        # probability of landing on new_state or anything above
-                        prob = 1 - distr.cdf(new_state - 1)
-                    else:
-                        prob = distr.pmf(new_state)
+                    prob = distr.pmf(new_state)
                     done = False
                     reward = self._reward(state, self.actions_r[action])
 
@@ -314,7 +407,7 @@ class PandemicEnv(gym.Env):
         new_env.macro_step = macro_step
 
     def _param_string(self, action_frequency, **kwargs):
-        return f'R_0={self.R_0},distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},custom={self.kwargs}'
+        return f'R_0={self.R_0},distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},vaccine_start_idx={self.vaccine_start_idx},vaccine_final_susceptible={self.vaccine_final_susceptible},custom={self.kwargs}'
         
     def _dynamics_file_name(self, iterations, lookup=False, **kwargs):
         param_str = self._param_string(iterations, **kwargs)

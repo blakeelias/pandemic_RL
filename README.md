@@ -23,5 +23,5 @@ python main.py --num_population 1000  --imported_cases_per_step_range 1 --powers
 
 Debugging:
 ```
-python main.py --num_population 20 --imported_cases_per_step_range 0 --powers 1.0 --action_frequency 1 2 3 4 --tags no_clipping --horizon 50 --distr_family poisson
+python main.py --num_population 20 --imported_cases_per_step_range 0 --powers 1.0 --action_frequency 1 4 8 24 --tags no_clipping --distr_family poisson --horizon 24 36 48 96
 ```

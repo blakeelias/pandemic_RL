@@ -21,24 +21,50 @@ def test_environment(env, policy, V, file_name_prefix):
 
     # (time, env.nS)
     policy_rs = np.array([[env.actions_r[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
+    policy_contact_rates = np.array([[env.contact_factor[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
 
+    # Policy with respect to R ideally achieved at the given contact rate (with no influence of vaccination or other factors)
     policy_dict = {f't={t}': policy_rs[t, :] for t in range(policy_rs.shape[0])}
     policy_dict['state'] = range(env.nS)
     df_policy = pd.DataFrame(policy_dict)
-    df_policy.to_csv(file_name_prefix + 'policy.txt')
+    df_policy.to_csv(file_name_prefix + 'policy_R.txt')
+
+    # Policy with respect to contact rate achieved
+    policy_dict = {f't={t}': policy_contact_rates[t, :] for t in range(policy_contact_rates.shape[0])}
+    policy_dict['state'] = range(env.nS)
+    df_policy = pd.DataFrame(policy_dict)
+    df_policy.to_csv(file_name_prefix + 'policy_contact_rate.txt')
 
     ### Plot full policy
-    # color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.5/env.R_0, 'red'), (1.0/env.R_0, 'white'), (1, 'green')])
     color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.25, 'red'), (0.5, 'white'), (1, 'green')])
-    # color_map = sns.color_palette("vlag_r", as_cmap=True)
-    ax = sns.heatmap(policy_rs[:-1, :].T, center=1.0, cmap=color_map) # 'RdYlGn')
+    
+    # With respect to R
+    # ax = sns.heatmap(policy_rs[:-1, :].T, linewidths=0.5, center=1.0, cmap='RdYlGn')
     # To show policy values: use `annot=True`
     # Round to integer: `fmt='d'` (gives error for floats)
     # To hide x axis ticks: `xticklabels=False`
     # TODO: label x and y axes
     # TODO: better color scheme
+    # ax.invert_yaxis()
+    # ax.get_figure().savefig(file_name_prefix + 'policy_R.png')
+    # color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.5/env.R_0, 'red'), (1.0/env.R_0, 'white'), (1, 'green')])
+
+    # color_map = sns.color_palette("vlag_r", as_cmap=True)
+    ax = sns.heatmap(policy_rs[:-1, :].T, center=1.0, cmap=color_map) # 'RdYlGn')
     ax.invert_yaxis()
-    ax.get_figure().savefig(file_name_prefix + 'policy.png')
+    ax.get_figure().savefig(file_name_prefix + 'policy_R.png')
+
+    
+    # With respect to contact rate
+    ax1 = sns.heatmap(policy_contact_rates[:-1, :].T, center=1.0/2.5, cmap=color_map)    
+    # To show policy values: use `annot=True`
+    # Round to integer: `fmt='d'` (gives error for floats)
+    # To hide x axis ticks: `xticklabels=False`
+    # TODO: label x and y axes
+    # TODO: better color scheme
+    ax1.invert_yaxis()
+    ax1.get_figure().savefig(file_name_prefix + 'policy_contact_rate.png')
+
     
     ### Save full value function
     # V: (time, env.nS)
