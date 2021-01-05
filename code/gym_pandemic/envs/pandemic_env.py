@@ -82,16 +82,16 @@ class PandemicEnv(gym.Env):
         self.vaccine_final_susceptible = vaccine_final_susceptible
         self.vaccine_start_idx = round(self.horizon_effective * vaccine_start)
         num_steps = 4
-        vaccine_schedule = schedule_even_delay(self.horizon_effective, self.vaccine_start_idx, num_steps, self.vaccine_final_susceptible)
+        vaccine_schedule = schedule_even_delay(self.horizon_effective + 1, self.vaccine_start_idx, num_steps, self.vaccine_final_susceptible)   # TODO: make this horizon, not horizon + 1
         self.transmissibility_schedule = vaccine_schedule
-
+        
         # Infectiousness can go down over time due to better treatments
-        self.infectious_schedule = [1 for time_idx in range(self.horizon_effective)] if self.horizon < np.inf else None
+        self.infectious_schedule = [1 for time_idx in range(self.horizon_effective + 1)] if self.horizon < np.inf else None
         
         # Contact rate can go down over time: people independently learn to limit contact in low-cost ways
         # (e.g. adoption of masks, safer business practices, etc.)
         # Gets multiplied by the contact reduction the policymaker sets, but policymaker does not get charged for it 
-        self.contact_rate_schedule = [1 for time_idx in range(self.horizon_effective)] if self.horizon < np.inf else None
+        self.contact_rate_schedule = [1 for time_idx in range(self.horizon_effective + 1)] if self.horizon < np.inf else None
         
         self.P = None
         #if init_transition_probs:
