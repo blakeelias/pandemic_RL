@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
+import matplotlib.colors
 from mpl_toolkits.mplot3d import axes3d
 from einops import rearrange
 
@@ -35,6 +36,8 @@ def test_environment(env, policy, V, file_name_prefix):
     df_policy.to_csv(file_name_prefix + 'policy_contact_rate.txt')
 
     ### Plot full policy
+    color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.25, 'red'), (0.5, 'white'), (1, 'green')])
+    
     # With respect to R
     # ax = sns.heatmap(policy_rs[:-1, :].T, linewidths=0.5, center=1.0, cmap='RdYlGn')
     # To show policy values: use `annot=True`
@@ -44,9 +47,16 @@ def test_environment(env, policy, V, file_name_prefix):
     # TODO: better color scheme
     # ax.invert_yaxis()
     # ax.get_figure().savefig(file_name_prefix + 'policy_R.png')
+    # color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.5/env.R_0, 'red'), (1.0/env.R_0, 'white'), (1, 'green')])
 
+    # color_map = sns.color_palette("vlag_r", as_cmap=True)
+    ax = sns.heatmap(policy_rs[:-1, :].T, center=1.0, cmap=color_map) # 'RdYlGn')
+    ax.invert_yaxis()
+    ax.get_figure().savefig(file_name_prefix + 'policy_R.png')
+
+    
     # With respect to contact rate
-    ax1 = sns.heatmap(policy_contact_rates[:-1, :].T, linewidths=0.5, center=1.0/2.5, cmap='RdYlGn')
+    ax1 = sns.heatmap(policy_contact_rates[:-1, :].T, center=1.0/2.5, cmap=color_map)    
     # To show policy values: use `annot=True`
     # Round to integer: `fmt='d'` (gives error for floats)
     # To hide x axis ticks: `xticklabels=False`

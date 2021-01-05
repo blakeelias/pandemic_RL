@@ -81,6 +81,6 @@ def one_step_lookahead(env, state, V, discount_factor, time_idx):
     """
     A = np.zeros(env.nA)
     for a in range(env.nA):
-        for prob, next_state, reward, done in env.transitions(state, a):
+        for prob, next_state, reward, done in env.transitions(state, a, time_idx):
             A[a] += prob * (reward + discount_factor * V[next_state])
     return A

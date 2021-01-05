@@ -15,7 +15,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'tags'])
+Params = namedtuple('Params', ['num_population', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'tags'])
 
 
 def parse_args():
@@ -26,7 +26,13 @@ def parse_args():
                         metavar='num_population',
                         type=int,
                         nargs='+',
-                        default=[1000], help='')
+                        default=[1000], help='Size of total population')
+
+    parser.add_argument('--R_0',
+                        metavar='R_0',
+                        type=float,
+                        nargs='+',
+                        default=[2.5], help='Initial reproductive number')
     
     parser.add_argument('--imported_cases_per_step_range',
                         metavar='imported_cases_per_step_range',
@@ -106,7 +112,6 @@ def main(args):
         'time_lumping': False,
         #'num_population': args['num_population'],
         'initial_fraction_infected': 0.1,
-        'R_0': 2.5
     }
     
     # experiment = replicate.init(combine_dicts(args, experiment_parameters))
@@ -114,6 +119,7 @@ def main(args):
     parameters_sweep = [
         Params(*parameters) for parameters in product(
             args.num_population,
+            args.R_0,
             args.imported_cases_per_step_range,
             args.powers,
             args.extra_scale,
@@ -130,8 +136,10 @@ def main(args):
     policies = {}
     Vs = {}
 
-    for particular_parameters in tqdm(parameters_sweep):
+    for i, particular_parameters in enumerate(parameters_sweep):
         parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
+        print(f'Experiment {i}: {parameters}')
+        
         if parameters['dynamics'] == 'SIR':
             env = PandemicImmunityEnv(**parameters)
         else:

@@ -20,24 +20,26 @@ class PandemicEnv(gym.Env):
     days_per_step = 4
     
     def __init__(self,
-               num_population=1000,
-               initial_fraction_infected=0.1,
-               R_0=2.5,
-               imported_cases_per_step=0.5,
-               power=2,
-               scale_factor=100,
-               distr_family='nbinom',
-               dynamics='SIS',
-               init_transition_probs=False,
-               horizon=np.inf,
-               action_frequency=1,
-               scenario=Test,
-               vaccine_start=0,
-               vaccine_final_susceptible=0,
-               **kwargs):
+                 num_population=10000,
+                 hospital_capacity_proportion=0.01,
+                 initial_fraction_infected=0.001,
+                 R_0=2.5,
+                 imported_cases_per_step=0.5,
+                 power=2,
+                 scale_factor=100,
+                 distr_family='nbinom',
+                 dynamics='SIS',
+                 init_transition_probs=False,
+                 horizon=np.inf,
+                 action_frequency=1,
+                 scenario=Test,
+                 vaccine_start=0,
+                 vaccine_final_susceptible=0,
+                 **kwargs):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
-        self.initial_num_infected = int(initial_fraction_infected * num_population)
+        self.max_infected = int(num_population * hospital_capacity_proportion)
+        self.initial_num_infected = int(num_population * initial_fraction_infected)
         self.R_0 = R_0
         self.imported_cases_per_step = imported_cases_per_step
         self.power = power
@@ -53,14 +55,21 @@ class PandemicEnv(gym.Env):
         # Define action and observation space
         # They must be gym.spaces objects
         # Example when using discrete actions
-        self.actions_r = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0, 2.5])
-        self.contact_factor = self.actions_r / 2.5
+        
+        # Actions in increments of 0.5 up to R_0
+        self.actions_r = np.array(
+            [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
+            list(np.arange(1.5, self.R_0, 0.5)) + \
+            [self.R_0]
+        )
+        self.contact_factor = self.actions_r / self.R_0
+        
         self.nA = self.actions_r.shape[0]
         self.action_space = spaces.Discrete(self.nA)
 
         # Use entire state space
         self.observation_space = spaces.Box(low=0,
-                                            high=num_population,
+                                            high=self.max_infected,
                                             shape=(1,), dtype=np.uint16)  # maximum infected = 2**16 == 65536
         # self.observation_space = spaces.Discrete(self.nS)
         self.states = list(range(self.observation_space.low[0],
@@ -106,7 +115,7 @@ class PandemicEnv(gym.Env):
         r = self.actions_r[action]
         distr = self._new_state_distribution(prev_cases, r, imported_cases_per_step=self.imported_cases_per_step)
         new_cases = distr.rvs()
-        new_cases = min(new_cases, self.num_population)
+        new_cases = min(new_cases, self.max_infected)
         new_state = new_cases
 
         reward = self._reward(new_state, self.actions_r[action])
@@ -139,12 +148,20 @@ class PandemicEnv(gym.Env):
 
     def _unpack_state(self, packed_state):
         num_infected = packed_state
-        num_susceptible = self.num_population
+        num_susceptible = self.max_infected
         return (num_susceptible, num_infected)
         
-    def _reward(self, state, action, **kwargs):
+    def _reward(self, state, action, time_idx=None, **kwargs):
         num_infected = state
         factor_contact = self.contact_factor[action] # What percentage of contact are we allowing
+
+        R_t = self.R_t(action, time_idx)
+        
+        # Do not allow exceeding hospital capacity
+        expected_new_cases = self._expected_new_state(num_infected, R_t)
+        if expected_new_cases > self.max_infected:
+            return -np.inf
+        
         return -self._cost_of_infections(num_infected, **kwargs) \
                -self._cost_of_contact_factor(factor_contact, **kwargs)
              # -self._cost_of_r_linear(r, self.R_0, self.R_0, **kwargs)
@@ -164,7 +181,23 @@ class PandemicEnv(gym.Env):
             # put back in the factor of self.R_0 ** self.power that's been divided out
             # by dividing the denominator of both baseline and actual by R_0
             # (was previously measured on the scale of 0 to R_0; now on the scale of 0 to 1
+    
+    def _cost_of_r(self, r, **kwargs):
+        baseline = 1/(self.R_0 ** self.power)
+        actual = 1/(r ** self.power)
+        base_population = 1000 # Population the cost function was originally designed for
+        scaling = self.scale_factor * self.num_population / base_population
 
+        # cost_to_keep_half_home / (1/((max_infected/4)**power) - 1/(R_0 ** power))
+        if r >= self.R_0:
+            return 0
+        else:
+            return (actual - baseline) * self.scale_factor / (self.R_0 ** self.power)
+            # put back in the factor of self.R_0 ** self.power that's been divided out
+            # by dividing the denominator of both baseline and actual by R_0
+            # (was previously measured on the scale of 0 to R_0; now on the scale of 0 to 1
+
+            
     def _cost_of_r_linear(self, r, R_0_new, R_0_orig, **kwargs):
         '''
 >>> from gym_pandemic.envs.pandemic_env import PandemicEnv
@@ -201,15 +234,8 @@ class PandemicEnv(gym.Env):
         else:
             return n # * self.scenario.cost_per_case
 
-    def _expected_new_state(self, num_infected, r, **kwargs):
-        fraction_susceptible = 1 # (num_population - current_cases) / num_population
-        # TODO: may need better way to bound susceptible population,
-        # to account for immunity
-        # One option: fraction_susceptible = 1 always, and just bound new_state by num_population
-
-        # Better solution: keep track of how many people are susceptible NOW, based on some immunity time
+    def _expected_new_state(self, num_infected, r, fraction_susceptible=1, **kwargs):
         expected_new_cases = (num_infected * r) * fraction_susceptible + self.imported_cases_per_step
-
         return expected_new_cases
 
     def _new_state_distribution(self, num_infected, action_r, **kwargs):
@@ -229,15 +255,17 @@ class PandemicEnv(gym.Env):
         feasible_range = range(self.nS)
         return cap_distribution(distr, feasible_range)
 
-    def transitions(self, state, action, time_idx=None):
-        reward = self._reward(state, action)
-
+    def R_t(self, action, time_idx):
         factor_transmissibility = self.transmissibility_schedule[time_idx] if time_idx else 1
         factor_contact = self.contact_factor[action] * (self.contact_rate_schedule[time_idx] if time_idx else 1)
         factor_infectious_period = self.infectious_schedule[time_idx] if time_idx else 1
 
         R_t = self.R_0 * factor_transmissibility * factor_contact * factor_infectious_period
-        
+        return R_t
+    
+    def transitions(self, state, action, time_idx=None):
+        reward = self._reward(state, action, time_idx)
+        R_t = self.R_t(action, time_idx)
         distr = self._new_state_distribution(state, R_t)
         feasible_range = range(self.nS)
         probs = distr.pmf(feasible_range)
@@ -252,15 +280,17 @@ class PandemicEnv(gym.Env):
         file_name = self._dynamics_file_name(iterations=1)
         file_name_lookup = self._dynamics_file_name(iterations=1, lookup=True)
         try:
+            print('Loading 1-step transition probs...')
             self.P_1_step = load_pickle(file_name)
             self.P_lookup_1_step = load_pickle(file_name_lookup)
-            print('Loaded transition_probs')
+            print('Loaded 1-step transition_probs')
             return self.P_1_step
         except:
             self.P_1_step = []
-        
-        self.P_1_step = [[ [] for j in range(self.nA)] for i in range(self.nS)]
-        self.P_lookup_1_step = [[[None for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
+
+        print('Generating 1-step transition probabilities:')
+        self.P_1_step = np.empty((self.nS, self.nA), dtype=list)
+        self.P_lookup_1_step = np.empty((self.nS, self.nA, self.nS), dtype=list)
 
         for state in tqdm(range(self.nS)):
             for action in range(self.nA):
@@ -285,11 +315,14 @@ class PandemicEnv(gym.Env):
                     reward = self._reward(state, self.actions_r[action])
 
                     outcome = (prob, new_state, reward, done)
-                    self.P_1_step[state][action].append(outcome)
-                    self.P_lookup_1_step[state][action][new_state] = (prob, reward)
-                    
+                    if not self.P_1_step[state, action]:
+                        self.P_1_step[state, action] = []
+                    self.P_1_step[state, action].append(outcome)
+                    self.P_lookup_1_step[state, action, new_state] = (prob, reward)
+        print('Saving 1-step transition probabilities...')
         save_pickle(self.P_1_step, file_name)
         save_pickle(self.P_lookup_1_step, file_name_lookup)
+        print('Saved')
         return self.P_1_step
 
     def _set_transition_probabilities(self):
@@ -297,52 +330,67 @@ class PandemicEnv(gym.Env):
         iterations = self.action_frequency
         file_name = self._dynamics_file_name(iterations=iterations, **self.kwargs)
         try:
+            print('Loading multi-step transition probs')
             self.P = load_pickle(file_name)
-            print('Loaded transition_probs')
+            print(f'Loaded multi-step transition_probs ({iterations}-step)')
             return self.P
         except:
             self.P = []
 
-        self.P = [[ [] for j in range(self.nA)] for i in range(self.nS)]
-        
+        print('Allocating multi-step transition table (empty)...')
+        self.P = np.empty((self.nS, self.nA), dtype=list)
+
+        print('Copying 1-step lookup table...')
         self.P_lookup_prev = copy.deepcopy(self.P_lookup_1_step)
-        self.P_lookups_next = [[[set() for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
-        
+
+        print('Allocating iterative lookup table...')
+        self.P_lookups_next = np.empty((self.nS, self.nA, self.nS), dtype=set)
+
+        print(f'Iterating multi-step transitions ({iterations}-step)')
         for iteration in range(iterations - 1):
-            self.P_lookups_next = [[[set() for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
-            for start_state in range(self.nS):
+            print(f'Iteration {iteration}. Branching out.')
+            self.P_lookups_next.fill(None)
+            for start_state in tqdm(range(self.nS)):
                 for action in range(self.nA):
                     for intermediate_state in range(self.nS):
                         for new_state in range(self.nS):
-                            prob_start_intermediate = self.P_lookup_prev[start_state][action][intermediate_state][0]
-                            prob_intermediate_new = self.P_lookup_1_step[intermediate_state][action][new_state][0]
-                            reward_start_intermediate = self.P_lookup_prev[start_state][action][intermediate_state][1]
-                            reward_intermediate_new = self.P_lookup_1_step[intermediate_state][action][new_state][1]
-                            self.P_lookups_next[start_state][action][new_state].add(
+                            prob_start_intermediate = self.P_lookup_prev[start_state, action, intermediate_state][0]
+                            prob_intermediate_new = self.P_lookup_1_step[intermediate_state, action, new_state][0]
+                            reward_start_intermediate = self.P_lookup_prev[start_state, action, intermediate_state][1]
+                            reward_intermediate_new = self.P_lookup_1_step[intermediate_state, action, new_state][1]
+                            if not self.P_lookups_next[start_state, action, new_state]:
+                                self.P_lookups_next[start_state, action, new_state] = set()
+                            self.P_lookups_next[start_state, action, new_state].add(
                                 (prob_start_intermediate * prob_intermediate_new,
                                  reward_start_intermediate + reward_intermediate_new)
                             )
 
             # sum up over all intermediate states
-            self.P_lookup_prev = [[[None for k in range(self.nS)] for j in range(self.nA)] for i in range(self.nS)]
-            for start_state in range(self.nS):
+            print(f'Iteration {iteration}. Summing up.')
+            self.P_lookup_prev.fill(None)
+            for start_state in tqdm(range(self.nS)):
                 for action in range(self.nA):
                     for new_state in range(self.nS):
-                        outcomes = self.P_lookups_next[start_state][action][new_state] # {(prob, reward)}
+                        outcomes = self.P_lookups_next[start_state, action, new_state] # {(prob, reward)}
                         prob = sum([outcome[0] for outcome in outcomes])
                         if prob > 0:
                             reward = sum(outcome[0] * outcome[1] for outcome in outcomes) / prob
                         else:
                             reward = 0
-                        self.P_lookup_prev[start_state][action][new_state] = (prob, reward)
+                        self.P_lookup_prev[start_state, action, new_state] = (prob, reward)
 
-        for state in range(self.nS):
+        print(f'Converting multi-step lookup table to outcomes list')
+        for state in tqdm(range(self.nS)):
             for action in range(self.nA):
                 for new_state in range(self.nS):
-                    prob, reward = self.P_lookup_prev[state][action][new_state]
+                    # TODO: way to speed this up? Just by flattening the array in some efficient way, rather than 3x for loop?
+                    # Of course, not even sure this is a slow part of the code...
+                    prob, reward = self.P_lookup_prev[state, action, new_state]
                     done = False
                     outcome = (prob, new_state, reward, done)
-                    self.P[state][action].append(outcome)
+                    if not self.P[state, action]:
+                        self.P[state, action] = []
+                    self.P[state, action].append(outcome)
                     
         save_pickle(self.P, file_name)
         return self.P
@@ -359,7 +407,7 @@ class PandemicEnv(gym.Env):
         new_env.macro_step = macro_step
 
     def _param_string(self, action_frequency, **kwargs):
-        return f'distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},vaccine_start_idx={self.vaccine_start_idx},vaccine_final_susceptible={self.vaccine_final_susceptible},custom={self.kwargs}'
+        return f'R_0={self.R_0},distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},vaccine_start_idx={self.vaccine_start_idx},vaccine_final_susceptible={self.vaccine_final_susceptible},custom={self.kwargs}'
         
     def _dynamics_file_name(self, iterations, lookup=False, **kwargs):
         param_str = self._param_string(iterations, **kwargs)
