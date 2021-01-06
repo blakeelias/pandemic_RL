@@ -78,21 +78,21 @@ class PandemicEnv(gym.Env):
                                                     self.max_infected
                                                 ]),
                                                 shape=(2,), dtype=np.uint16)
-            # Observation: (num_susceptible, num_infected)
-            self.states = list(
-                itertools.product(
-                    range(self.observation_space.low[0], self.observation_space.high[0] + 1),
-                    range(self.observation_space.low[1], self.observation_space.high[1] + 1),
-                ))
         else:
-            self.observation_space = spaces.Box(low=0,
-                                                high=self.max_infected,
-                                                shape=(1,), dtype=np.uint16)
-            # self.observation_space = spaces.Discrete(self.nS)
-            self.states = list(range(self.observation_space.low[0],
-                                     self.observation_space.high[0] + 1))
+            self.observation_space = spaces.Box(low=np.array([self.num_population, 0]),
+                                                high=np.array([
+                                                    self.num_population,
+                                                    self.max_infected
+                                                ]),
+                                                shape=(2,), dtype=np.uint16)
             
-            
+        # Observation: (num_susceptible, num_infected)
+        self.states = list(
+            itertools.product(
+                range(self.observation_space.low[0], self.observation_space.high[0] + 1),
+                range(self.observation_space.low[1], self.observation_space.high[1] + 1),
+            ))
+        
         self.state_to_idx = {self.states[idx]: idx for idx in range(len(self.states))}
         self.nS = len(self.states)
 
@@ -163,7 +163,13 @@ class PandemicEnv(gym.Env):
     
     def reset(self):
         # Reset the state of the environment to an initial state
-        self.state = self.initial_num_infected
+        num_infected = self.initial_num_infected
+        if self.track_immunity():
+            num_susceptible = self.num_population - self.initial_num_infected
+        else:
+            num_susceptible = self.num_population
+
+        self.state = (num_infected, num_infected)
         self.time_idx = 0
         obs = self.state
 
