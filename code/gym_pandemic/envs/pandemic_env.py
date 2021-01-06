@@ -185,24 +185,23 @@ class PandemicEnv(gym.Env):
         return (num_susceptible, num_infected)
         
     def _reward(self, state, action, time_idx=None, **kwargs):
-        num_infected = state
-        factor_contact = self.contact_factor[action] # What percentage of contact are we allowing
 
-        R_t = self.R_t(action, time_idx)
         
         # Do not allow exceeding hospital capacity
-        expected_new_cases = self._expected_new_state(num_infected, R_t)
+        expected_new_cases = self._expected_new_state(state, action)
         if expected_new_cases > self.max_infected:
             return -np.inf
         
-        return -self._cost_of_infections(num_infected, **kwargs) \
+        return -self._cost_of_infections(state, **kwargs) \
                -self._cost_of_contact_factor(factor_contact, **kwargs)
              # -self._cost_of_r_linear(r, self.R_0, self.R_0, **kwargs)
     
-    def _cost_of_contact_factor(self, factor_contact, **kwargs):
+    def _cost_of_contact_factor(self, action, **kwargs):
         '''
         `factor_contact` \in (0, 1]
         '''
+        factor_contact = self.contact_factor[action] # What percentage of contact are we allowing
+        
         baseline = 1/(1 ** self.power)
         actual = 1/(factor_contact ** self.power)
 
@@ -267,13 +266,16 @@ class PandemicEnv(gym.Env):
         else:
             return n # * self.scenario.cost_per_case
 
-    def _expected_new_state(self, num_infected, r, fraction_susceptible=1, **kwargs):
-        expected_new_cases = (num_infected * r) * fraction_susceptible + self.imported_cases_per_step
+    def _expected_new_infected(self, state, action, time_idx=None, **kwargs):
+        R_t = self.R_t(action, time_idx)
+        num_susceptible, num_infected = state
+        fraction_susceptible = num_susceptible / self.num_population
+        expected_new_infected = (num_infected * R_t) * fraction_susceptible + self.imported_cases_per_step
         return expected_new_cases
 
-    def _new_state_distribution(self, num_infected, action_r, **kwargs):
+    def _new_infected_distribution(self, state, action, time_idx=None, **kwargs):
         # distr_family: 'poisson' or 'nbinom' or 'deterministic'
-        lam = self._expected_new_state(num_infected, action_r, **kwargs)
+        lam = self._expected_new_infected(state, action, time_idx, **kwargs)
 
         if self.distr_family == 'poisson':
             distr = poisson(lam)
@@ -298,12 +300,27 @@ class PandemicEnv(gym.Env):
     
     def transitions(self, state, action, time_idx=None):
         reward = self._reward(state, action, time_idx)
-        R_t = self.R_t(action, time_idx)
-        distr = self._new_state_distribution(state, R_t)
+        distr = self._new_infected_distribution(state, action, time_idx)
         feasible_range = range(self.nS)
         probs = distr.pmf(feasible_range)
         done = False
-        outcomes = [(probs[i], feasible_range[i], reward, done) for i in range(len(feasible_range))]
+
+        num_susceptible, num_infected = state
+
+        if self.track_immunity():
+            outcomes = [(
+                probs[i],
+                (num_susceptible - feasible_range[i], feasible_range[i]), # Reduce number susceptible by number new infected
+                reward,
+                done
+            ) for i in range(len(feasible_range))]
+        else:
+            outcomes = [(
+                probs[i],
+                (num_susceptible, feasible_range[i]), # Keep same number susceptible as before
+                reward,
+                done
+            ) for i in range(len(feasible_range))]
         return outcomes
     
     def _set_transition_probabilities_1_step(self, **kwargs):
