@@ -64,14 +64,14 @@ array([4. , 4. , 3.5, 3.5, 3.5, 3.5, 3. , 3. , 3. , 3. , 2.5, 2.5, 2.5,
 
 def schedule_custom(horizon):
     milestones = [
-        (horizon * 0.2, 0.1),
-        (horizon * 0.4, 0.25),
-        (horizon * 0.5, 0.5),
-        (horizon * 0.6, 0.75),
-        (horizon * 0.7, 0.85),
-        (horizon * 0.8, 0.9),
-        (horizon * 0.9, 0.95),
-        (horizon * 1.0, 1.0)
+        (horizon * 0.2, 1 - 0.1),
+        (horizon * 0.4, 1 - 0.25),
+        (horizon * 0.5, 1 - 0.5),
+        (horizon * 0.6, 1 - 0.75),
+        (horizon * 0.7, 1 - 0.85),
+        (horizon * 0.8, 1 - 0.9),
+        (horizon * 0.9, 1 - 0.95),
+        (horizon * 1.0, 1 - 1.0)
     ]
     return vaccine_schedule(horizon, milestones)
 
@@ -102,6 +102,16 @@ def schedule_none(horizon):
     '''
     milestones = [(1, 1.0), (horizon, 1.0)]
     return vaccine_schedule(horizon, milestones)
+
+
+def schedule_custom_delay(horizon, delay_horizon):
+    none_horizon = delay_horizon
+    even_horizon = horizon - delay_horizon
+
+    schedule_1 = schedule_none(none_horizon)
+    schedule_2 = schedule_custom(even_horizon)
+
+    return np.hstack((schedule_1, schedule_2))
 
 
 def schedule_even_delay(horizon, delay_horizon, num_increments, final_susceptible):

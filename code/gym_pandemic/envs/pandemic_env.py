@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from utils import save_pickle, load_pickle, cap_distribution
 from scenarios import US, Test
-from vaccine_schedule import schedule_even_delay
+from vaccine_schedule import schedule_even_delay, schedule_custom_delay
 
 class PandemicEnv(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -82,7 +82,7 @@ class PandemicEnv(gym.Env):
         self.vaccine_final_susceptible = vaccine_final_susceptible
         self.vaccine_start_idx = round(self.horizon_effective * vaccine_start)
         num_steps = 4
-        vaccine_schedule = schedule_even_delay(self.horizon_effective + 1, self.vaccine_start_idx, num_steps, self.vaccine_final_susceptible)   # TODO: make this horizon, not horizon + 1
+        vaccine_schedule = schedule_custom_delay(self.horizon_effective + 1, self.vaccine_start_idx)   # TODO: make this horizon, not horizon + 1
         self.transmissibility_schedule = vaccine_schedule
         b()
         
