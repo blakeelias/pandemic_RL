@@ -84,6 +84,7 @@ class PandemicEnv(gym.Env):
         num_steps = 4
         vaccine_schedule = schedule_even_delay(self.horizon_effective + 1, self.vaccine_start_idx, num_steps, self.vaccine_final_susceptible)   # TODO: make this horizon, not horizon + 1
         self.transmissibility_schedule = vaccine_schedule
+        b()
         
         # Infectiousness can go down over time due to better treatments
         self.infectious_schedule = [1 for time_idx in range(self.horizon_effective + 1)] if self.horizon < np.inf else None

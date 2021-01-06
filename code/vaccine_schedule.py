@@ -47,11 +47,14 @@ array([4. , 4. , 3.5, 3.5, 3.5, 3.5, 3. , 3. , 3. , 3. , 2.5, 2.5, 2.5,
     milestones.sort()
 
     for i in range(len(milestones) - 1):
-        factor = milestones[i][1]
+        factor_start = milestones[i][1]
+        factor_end = milestones[i+1][1]
         t_start = round(milestones[i][0])
         t_end = round(milestones[i+1][0])
         for t in range(t_start, t_end):
             if t < len(schedule):
+                ratio = (t - t_start) / (t_end - t_start)
+                factor = factor_start * (1 - ratio) + factor_end * ratio
                 schedule[t] = factor
             else:
                 logging.warning(f'Vaccination milestones ([{t_start}, {t_end})) extend outside time horizon ({horizon}).')
