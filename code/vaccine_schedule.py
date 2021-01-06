@@ -62,6 +62,20 @@ array([4. , 4. , 3.5, 3.5, 3.5, 3.5, 3. , 3. , 3. , 3. , 2.5, 2.5, 2.5,
     return schedule
 
 
+def schedule_custom(horizon):
+    milestones = [
+        (horizon * 0.2, 0.1),
+        (horizon * 0.4, 0.25),
+        (horizon * 0.5, 0.5),
+        (horizon * 0.6, 0.75),
+        (horizon * 0.7, 0.85),
+        (horizon * 0.8, 0.9),
+        (horizon * 0.9, 0.95),
+        (horizon * 1.0, 1.0)
+    ]
+    return vaccine_schedule(horizon, milestones)
+
+
 def schedule_even(horizon, num_increments, final_susceptible):
     '''
     >>> from vaccine_schedule import schedule_even
