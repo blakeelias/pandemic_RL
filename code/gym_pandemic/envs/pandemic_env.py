@@ -54,31 +54,51 @@ class PandemicEnv(gym.Env):
         
         # Define action and observation space
         # They must be gym.spaces objects
-        # Example when using discrete actions
+        # Here using discrete actions
+
         
-        # Actions in increments of 0.5 up to R_0
+        ### Action space
+        #   in increments of 0.5 up to R_0
         self.actions_r = np.array(
             [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
             list(np.arange(1.5, self.R_0, 0.5)) + \
             [self.R_0]
         )
         self.contact_factor = self.actions_r / self.R_0
-        
         self.nA = self.actions_r.shape[0]
         self.action_space = spaces.Discrete(self.nA)
 
-        # Use entire state space
-        self.observation_space = spaces.Box(low=0,
-                                            high=self.max_infected,
-                                            shape=(1,), dtype=np.uint16)  # maximum infected = 2**16 == 65536
-        # self.observation_space = spaces.Discrete(self.nS)
-        self.states = list(range(self.observation_space.low[0],
-                                 self.observation_space.high[0] + 1))
+        
+        ### State space
+        if self.track_immunity():
+            # State: (num_susceptible, num_infected)
+            self.observation_space = spaces.Box(low=np.array([0, 0]),
+                                                high=np.array([
+                                                    self.num_population,
+                                                    self.max_infected
+                                                ]),
+                                                shape=(2,), dtype=np.uint16)
+            # Observation: (num_susceptible, num_infected)
+            self.states = list(
+                itertools.product(
+                    range(self.observation_space.low[0], self.observation_space.high[0] + 1),
+                    range(self.observation_space.low[1], self.observation_space.high[1] + 1),
+                ))
+        else:
+            self.observation_space = spaces.Box(low=0,
+                                                high=self.max_infected,
+                                                shape=(1,), dtype=np.uint16)
+            # self.observation_space = spaces.Discrete(self.nS)
+            self.states = list(range(self.observation_space.low[0],
+                                     self.observation_space.high[0] + 1))
+            
+            
         self.state_to_idx = {self.states[idx]: idx for idx in range(len(self.states))}
         self.nS = len(self.states)
 
         
-        # Transmissibility goes down over time due to vaccinations
+        ### Transmissibility:
+        #   goes down over time due to vaccinations
         self.vaccine_final_susceptible = vaccine_final_susceptible
         self.vaccine_start_idx = round(self.horizon_effective * vaccine_start)
         num_steps = 4
@@ -86,12 +106,15 @@ class PandemicEnv(gym.Env):
         self.transmissibility_schedule = vaccine_schedule
         b()
         
-        # Infectiousness can go down over time due to better treatments
+
+        ### Infectiousness:
+        #   can go down over time due to better treatments
         self.infectious_schedule = [1 for time_idx in range(self.horizon_effective + 1)] if self.horizon < np.inf else None
         
-        # Contact rate can go down over time: people independently learn to limit contact in low-cost ways
-        # (e.g. adoption of masks, safer business practices, etc.)
-        # Gets multiplied by the contact reduction the policymaker sets, but policymaker does not get charged for it 
+        ### Contact rate:
+        #   can go down over time: people independently learn to limit contact in low-cost ways
+        #   (e.g. adoption of masks, safer business practices, etc.)
+        #   Gets multiplied by the contact reduction the policymaker sets, but policymaker does not get charged for it 
         self.contact_rate_schedule = [1 for time_idx in range(self.horizon_effective + 1)] if self.horizon < np.inf else None
         
         self.P = None
@@ -108,24 +131,26 @@ class PandemicEnv(gym.Env):
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
 
         
+    def track_immunity(self):
+        return self.dynamics == 'SIR'
+
+    
     def step(self, action):
-        # TODO: switch to contact-rate actions
-        raise Exception('Not implemented (step() must be updated to use contact-rate actions rather than R actions)')
-        # Execute one time step within the environment
-        prev_cases = self.state
-        r = self.actions_r[action]
-        distr = self._new_state_distribution(prev_cases, r, imported_cases_per_step=self.imported_cases_per_step)
-        new_cases = distr.rvs()
-        new_cases = min(new_cases, self.max_infected)
-        new_state = new_cases
+        outcomes = self.transitions(self.state, action, self.time_idx)
+        # outcomes = [(probs[i], feasible_range[i], reward, done) for i in range(len(feasible_range))]
+        outcome_idxs = list(range(len(outcomes)))
+        probs = [outcome[0] for outcome in outcomes]
+        outcome_distr = rv_discrete(values=(outcome_idxs, probs))
+        outcome_idx = outcome_distr.rvs()
+        outcome = outcomes[outcome_idx]
 
-        reward = self._reward(new_state, self.actions_r[action])
-
-        # Add new observation to state array
-        self.state = new_state
-
+        self.state = outcome[1]
+        reward = outcome[2]
+        self.done = outcome[3]
+        
         obs = self.state
         done = self.done
+        self.time_idx += 1
 
         return obs, reward, done, {}
 
@@ -139,6 +164,7 @@ class PandemicEnv(gym.Env):
     def reset(self):
         # Reset the state of the environment to an initial state
         self.state = self.initial_num_infected
+        self.time_idx = 0
         obs = self.state
 
         return obs
