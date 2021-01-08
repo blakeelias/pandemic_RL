@@ -140,10 +140,7 @@ def main(args):
         parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
         print(f'Experiment {i}: {parameters}')
         
-        if parameters['dynamics'] == 'SIR':
-            env = PandemicImmunityEnv(**parameters)
-        else:
-            env = PandemicEnv(**parameters)
+        env = PandemicEnv(**parameters)
         policy, V, file_name_prefix = train_environment(env)
         policies[particular_parameters] = policy
         Vs[particular_parameters] = V
