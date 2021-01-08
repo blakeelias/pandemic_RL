@@ -85,7 +85,6 @@ class PandemicEnv(gym.Env):
                                                     self.max_infected
                                                 ]),
                                                 shape=(2,), dtype=np.uint16)
-        b()
         # Observation: (num_susceptible, num_infected)
         self.states = list(
             itertools.product(
@@ -104,7 +103,6 @@ class PandemicEnv(gym.Env):
         num_steps = 4
         vaccine_schedule = schedule_custom_delay(self.horizon_effective + 1, self.vaccine_start_idx)   # TODO: make this horizon, not horizon + 1
         self.transmissibility_schedule = vaccine_schedule
-        b()
         
 
         ### Infectiousness:
@@ -186,8 +184,8 @@ class PandemicEnv(gym.Env):
         
     def _reward(self, state, action, time_idx=None, **kwargs):        
         # Do not allow exceeding hospital capacity
-        expected_new_cases = self._expected_new_state(state, action)
-        if expected_new_cases > self.max_infected:
+        expected_new_infected = self._expected_new_infected(state, action)
+        if expected_new_infected > self.max_infected:
             return -np.inf
         # TODO: replace with:
         #  if Prob(actual_new_cases > self.max_infected) > .05:  return -np.inf
@@ -271,7 +269,7 @@ class PandemicEnv(gym.Env):
         num_susceptible, num_infected = self.states[state]
         fraction_susceptible = num_susceptible / self.num_population
         expected_new_infected = (num_infected * R_t) * fraction_susceptible + self.imported_cases_per_step
-        return expected_new_cases
+        return expected_new_infected
 
     def _new_infected_distribution(self, state, action, time_idx=None, **kwargs):
         # distr_family: 'poisson' or 'nbinom' or 'deterministic'
@@ -306,9 +304,9 @@ class PandemicEnv(gym.Env):
         reward = self._reward(state, action, time_idx)
         distr = self._new_infected_distribution(state, action, time_idx)
         num_susceptible, num_infected = self.states[state]
-        max_infected = min(self.max_num_infected, num_susceptible)
-        feasible_num_infected_range = range(max_infected + 1)
-        probs = distr.pmf(feasible_range)
+        max_infected = min(self.max_infected, num_susceptible)
+        feasible_num_infected_range = list(range(max_infected + 1))
+        probs = distr.pmf(feasible_num_infected_range)
         done = False
 
         if self.track_immunity():
@@ -317,14 +315,14 @@ class PandemicEnv(gym.Env):
                 self.state_to_idx[(num_susceptible - new_num_infected, new_num_infected)], # Reduce number susceptible by number new infected
                 reward,
                 done
-            ) for new_num_infected in feasible_num_infected_range]
+            ) for i, new_num_infected in enumerate(feasible_num_infected_range)]
         else:
             outcomes = [(
                 probs[i],
                 self.state_to_idx[(num_susceptible, new_num_infected)], # Keep same number susceptible as before
                 reward,
                 done
-            ) for new_num_infected in feasible_num_infected_range]
+            ) for i, new_num_infected in enumerate(feasible_num_infected_range)]
         return outcomes
 
     
