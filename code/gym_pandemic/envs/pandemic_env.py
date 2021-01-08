@@ -184,22 +184,21 @@ class PandemicEnv(gym.Env):
         num_susceptible = self.max_infected
         return (num_susceptible, num_infected)
         
-    def _reward(self, state, action, time_idx=None, **kwargs):
-
-        
+    def _reward(self, state, action, time_idx=None, **kwargs):        
         # Do not allow exceeding hospital capacity
         expected_new_cases = self._expected_new_state(state, action)
         if expected_new_cases > self.max_infected:
             return -np.inf
         
         return -self._cost_of_infections(state, **kwargs) \
-               -self._cost_of_contact_factor(factor_contact, **kwargs)
+               -self._cost_of_contact_factor(action, **kwargs)
              # -self._cost_of_r_linear(r, self.R_0, self.R_0, **kwargs)
     
     def _cost_of_contact_factor(self, action, **kwargs):
         '''
-        `factor_contact` \in (0, 1]
+        `action` in [0..self.nA]
         '''
+        # `factor_contact` \in (0, 1]
         factor_contact = self.contact_factor[action] # What percentage of contact are we allowing
         
         baseline = 1/(1 ** self.power)
@@ -253,6 +252,7 @@ class PandemicEnv(gym.Env):
 >>> env._cost_of_r_linear(0.0, 3.0, 4.0, 1e6)
 750000.0
         '''
+        raise Exception('Needs to be re-implemented to take `action` argument')
         cost_of_full_lockdown = self.days_per_step * self.scenario.gdp_per_day * self.scenario.fraction_gdp_lost
         r = max(r, 0) # cannot physically make r < 0
         fraction_locked_down = (R_0_orig - r) / R_0_orig
@@ -260,11 +260,9 @@ class PandemicEnv(gym.Env):
         net_cost = cost_of_full_lockdown * (fraction_locked_down - fraction_for_free)
         return max(net_cost, 0) # cannot incur negative cost (i.e. make money) by making r > R_0_new
 
-    def _cost_of_infections(self, n, **kwargs):
-        if n <= 0:
-            return 0
-        else:
-            return n # * self.scenario.cost_per_case
+    def _cost_of_infections(self, state, **kwargs):
+        num_susceptible, num_infected = state
+        return max(num_infected, 0) # * self.scenario.cost_per_case
 
     def _expected_new_infected(self, state, action, time_idx=None, **kwargs):
         R_t = self.R_t(action, time_idx)
@@ -290,6 +288,7 @@ class PandemicEnv(gym.Env):
         feasible_range = range(self.nS)
         return cap_distribution(distr, feasible_range)
 
+    
     def R_t(self, action, time_idx):
         factor_transmissibility = self.transmissibility_schedule[time_idx] if time_idx else 1
         factor_contact = self.contact_factor[action] * (self.contact_rate_schedule[time_idx] if time_idx else 1)
@@ -297,11 +296,12 @@ class PandemicEnv(gym.Env):
 
         R_t = self.R_0 * factor_transmissibility * factor_contact * factor_infectious_period
         return R_t
+
     
     def transitions(self, state, action, time_idx=None):
         reward = self._reward(state, action, time_idx)
         distr = self._new_infected_distribution(state, action, time_idx)
-        feasible_range = range(self.nS)
+        feasible_num_infected_range = range(self.nS)
         probs = distr.pmf(feasible_range)
         done = False
 
@@ -310,18 +310,19 @@ class PandemicEnv(gym.Env):
         if self.track_immunity():
             outcomes = [(
                 probs[i],
-                (num_susceptible - feasible_range[i], feasible_range[i]), # Reduce number susceptible by number new infected
+                (num_susceptible - new_num_infected, new_num_infected), # Reduce number susceptible by number new infected
                 reward,
                 done
-            ) for i in range(len(feasible_range))]
+            ) for new_num_infected in feasible_num_infected_range]
         else:
             outcomes = [(
                 probs[i],
-                (num_susceptible, feasible_range[i]), # Keep same number susceptible as before
+                (num_susceptible, new_num_infected), # Keep same number susceptible as before
                 reward,
                 done
-            ) for i in range(len(feasible_range))]
+            ) for new_num_infected in feasible_num_infected_range]
         return outcomes
+
     
     def _set_transition_probabilities_1_step(self, **kwargs):
         # TODO: switch to contact-rate actions
