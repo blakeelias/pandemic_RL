@@ -314,14 +314,14 @@ class PandemicEnv(gym.Env):
         if self.track_immunity():
             outcomes = [(
                 probs[i],
-                (num_susceptible - new_num_infected, new_num_infected), # Reduce number susceptible by number new infected
+                self.state_to_idx[(num_susceptible - new_num_infected, new_num_infected)], # Reduce number susceptible by number new infected
                 reward,
                 done
             ) for new_num_infected in feasible_num_infected_range]
         else:
             outcomes = [(
                 probs[i],
-                (num_susceptible, new_num_infected), # Keep same number susceptible as before
+                self.state_to_idx[(num_susceptible, new_num_infected)], # Keep same number susceptible as before
                 reward,
                 done
             ) for new_num_infected in feasible_num_infected_range]
