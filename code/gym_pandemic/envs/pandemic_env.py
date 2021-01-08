@@ -70,7 +70,7 @@ class PandemicEnv(gym.Env):
 
         
         ### State space
-        if self.track_immunity():
+        if self.track_immunity():  # SIR
             # State: (num_susceptible, num_infected)
             self.observation_space = spaces.Box(low=np.array([0, 0]),
                                                 high=np.array([
@@ -78,14 +78,14 @@ class PandemicEnv(gym.Env):
                                                     self.max_infected
                                                 ]),
                                                 shape=(2,), dtype=np.uint16)
-        else:
+        else:  # SIS
             self.observation_space = spaces.Box(low=np.array([self.num_population, 0]),
                                                 high=np.array([
                                                     self.num_population,
                                                     self.max_infected
                                                 ]),
                                                 shape=(2,), dtype=np.uint16)
-            
+        b()
         # Observation: (num_susceptible, num_infected)
         self.states = list(
             itertools.product(
@@ -189,6 +189,8 @@ class PandemicEnv(gym.Env):
         expected_new_cases = self._expected_new_state(state, action)
         if expected_new_cases > self.max_infected:
             return -np.inf
+        # TODO: replace with:
+        #  if Prob(actual_new_cases > self.max_infected) > .05:  return -np.inf
         
         return -self._cost_of_infections(state, **kwargs) \
                -self._cost_of_contact_factor(action, **kwargs)
@@ -274,7 +276,8 @@ class PandemicEnv(gym.Env):
     def _new_infected_distribution(self, state, action, time_idx=None, **kwargs):
         # distr_family: 'poisson' or 'nbinom' or 'deterministic'
         lam = self._expected_new_infected(state, action, time_idx, **kwargs)
-
+        num_susceptible, num_infected = state
+        
         if self.distr_family == 'poisson':
             distr = poisson(lam)
         elif self.distr_family == 'nbinom':
@@ -285,7 +288,8 @@ class PandemicEnv(gym.Env):
         elif self.distr_family == 'deterministic':
             distr = rv_discrete(values=([lam], [1.0]))
 
-        feasible_range = range(self.nS)
+        max_infectable = min(num_susceptible, self.max_infected)
+        feasible_range = range(max_infectable + 1)
         return cap_distribution(distr, feasible_range)
 
     
