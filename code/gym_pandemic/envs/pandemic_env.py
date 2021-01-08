@@ -263,12 +263,12 @@ class PandemicEnv(gym.Env):
         return max(net_cost, 0) # cannot incur negative cost (i.e. make money) by making r > R_0_new
 
     def _cost_of_infections(self, state, **kwargs):
-        num_susceptible, num_infected = state
+        num_susceptible, num_infected = self.states[state]
         return max(num_infected, 0) # * self.scenario.cost_per_case
 
     def _expected_new_infected(self, state, action, time_idx=None, **kwargs):
         R_t = self.R_t(action, time_idx)
-        num_susceptible, num_infected = state
+        num_susceptible, num_infected = self.states[state]
         fraction_susceptible = num_susceptible / self.num_population
         expected_new_infected = (num_infected * R_t) * fraction_susceptible + self.imported_cases_per_step
         return expected_new_cases
@@ -276,7 +276,7 @@ class PandemicEnv(gym.Env):
     def _new_infected_distribution(self, state, action, time_idx=None, **kwargs):
         # distr_family: 'poisson' or 'nbinom' or 'deterministic'
         lam = self._expected_new_infected(state, action, time_idx, **kwargs)
-        num_susceptible, num_infected = state
+        num_susceptible, num_infected = self.states[state]
         
         if self.distr_family == 'poisson':
             distr = poisson(lam)
@@ -305,11 +305,11 @@ class PandemicEnv(gym.Env):
     def transitions(self, state, action, time_idx=None):
         reward = self._reward(state, action, time_idx)
         distr = self._new_infected_distribution(state, action, time_idx)
-        feasible_num_infected_range = range(self.nS)
+        num_susceptible, num_infected = self.states[state]
+        max_infected = min(self.max_num_infected, num_susceptible)
+        feasible_num_infected_range = range(max_infected + 1)
         probs = distr.pmf(feasible_range)
         done = False
-
-        num_susceptible, num_infected = state
 
         if self.track_immunity():
             outcomes = [(
