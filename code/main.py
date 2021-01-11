@@ -86,7 +86,7 @@ def parse_args():
     parser.add_argument('--vaccine_final_susceptible',
                         type=float,
                         nargs='+',
-                        default=[0])
+                        default=[1])
     
     parser.add_argument('--tags',
                         type=str,

@@ -101,9 +101,17 @@ class PandemicEnv(gym.Env):
         self.vaccine_final_susceptible = vaccine_final_susceptible
         self.vaccine_start_idx = round(self.horizon_effective * vaccine_start)
         num_steps = 4
-        vaccine_schedule = schedule_custom_delay(self.horizon_effective + 1, self.vaccine_start_idx)   # TODO: make this horizon, not horizon + 1
+        # vaccine_schedule = schedule_custom_delay(self.horizon_effective + 1, self.vaccine_start_idx)   # TODO: make this horizon, not horizon + 1
+        '''vaccine_schedule = schedule_even_delay(
+            self.horizon_effective + 1,
+            self.vaccine_start_idx,
+            8,
+            self.vaccine_final_susceptible)   # TODO: make this horizon, not horizon + 1'''
+        # No vaccine roll-out. Instantly 100% immune after horizon is over
+        # (TODO: change to allow vaccine roll-out or not)
+        vaccine_schedule = np.ones((self.horizon_effective + 1,))
         self.transmissibility_schedule = vaccine_schedule
-        
+        b()
 
         ### Infectiousness:
         #   can go down over time due to better treatments
