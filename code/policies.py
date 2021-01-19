@@ -28,3 +28,6 @@ def policy_fn_R_eq_1(env, state_idx, time_idx):
     print(f'R_t: {R_ts[action]}')
     
     return action
+
+
+default_policies = [policy_fn_R_eq_1]

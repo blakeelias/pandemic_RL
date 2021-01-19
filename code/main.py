@@ -9,7 +9,7 @@ import replicate
 import numpy as np
 
 from train import train_environment
-from test import test_environment
+from test import test_environment, compare_policies
 from gym_pandemic.envs.pandemic_env import PandemicEnv
 from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
@@ -93,7 +93,14 @@ def parse_args():
                         nargs='+',
                         default=[None],
                         help='Custom argument to be recorded in output directory name')
-    
+
+    parser.add_argument('--policy-comparison', dest='policy_comparison', action='store_true')
+    parser.add_argument('--no-feature', dest='policy_comparison', action='store_false')
+    parser.set_defaults(policy_comparison=True)
+
+    parser.add_argument('--policy-optimization', dest='policy_optimization', action='store_true')
+    parser.add_argument('--no-policy-optimization', dest='policy_optimization', action='store_false')
+    parser.set_defaults(policy_optimization=False)
     
     return parser.parse_args()
 
@@ -136,20 +143,29 @@ def main(args):
     policies = {}
     Vs = {}
 
+    discount_factor = 1.0
+
     for i, particular_parameters in enumerate(parameters_sweep):
         parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
         print(f'Experiment {i}: {parameters}')
         
         env = PandemicEnv(**parameters)
-        policy, V, file_name_prefix = train_environment(env)
-        policies[particular_parameters] = policy
-        Vs[particular_parameters] = V
 
-        print(particular_parameters)
-        # For finite time horizon, these tests are less appropriate
-        # Because the policy is time-varying
-        test_environment(env, policy, V, file_name_prefix)
+        optimized_policy = None
+        if args.policy_optimization:
+            optimized_policy, V, file_name_prefix = train_environment(env, discount_factor)
+            policies[particular_parameters] = optimized_policy
+            Vs[particular_parameters] = V
+            
+            print(particular_parameters)
+            # For finite time horizon, these tests are less appropriate
+            # Because the policy is time-varying
+            test_environment(env, optimized_policy, V, discount_factor, file_name_prefix)
 
+        if args.policy_comparison:
+            values = compare_policies(env, custom_policies=[optimized_policy])
+            
+            
     # experiment.checkpoint(path="lookup_tables")
 
 if __name__ == '__main__':

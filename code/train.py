@@ -9,9 +9,7 @@ from value_iteration import value_iteration
 from utils import save_pickle, load_pickle
 
 
-DISCOUNT_FACTOR = 1.0
-
-def train_environment(env, convergence_threshold=0.0001, discount_factor=DISCOUNT_FACTOR):
+def train_environment(env, discount_factor, convergence_threshold=0.0001):
     reward_param_str = env.reward_param_str + f',convergence_threshold={convergence_threshold},discount_factor={discount_factor}'
     file_name_prefix = f'../results/env=({env.dynamics_param_str})/reward=({reward_param_str})/'
     file_name = file_name_prefix + 'policy.pickle'

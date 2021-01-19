@@ -9,10 +9,10 @@ from mpl_toolkits.mplot3d import axes3d
 from einops import rearrange
 
 from value_iteration import one_step_lookahead
-from policies import policy_fn_generator, policy_fn_R_eq_1
+from policies import policy_fn_generator, default_policies
 
 
-def test_environment(env, policy, V, file_name_prefix):
+def test_environment(env, policy, V, discount_factor, file_name_prefix):
     # policy: (time, env.nS, env.nA)
     # V: (time, env.nS)
     
@@ -106,7 +106,9 @@ def test_environment(env, policy, V, file_name_prefix):
     plt.savefig(file_name_prefix + 'value_start.png')
 
     policy_fn = policy_fn_generator(policy)
-    trajectory(env, policy_fn, gamma)
+
+    # TODO: what to do with this? Print it? Do nothing?
+    trajectory(env, policy_fn, discount_factor)
     
     env.close()
 
@@ -157,8 +159,14 @@ def plot_value_function(env, policy, V):
     ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
     plt.show()
 
+
+def compare_policies(env, gamma, custom_policies=None):
+    custom_policy_fns = [policy_fn_generator(policy) for policy in custom_policies]
+    policy_fns = default_policy_fns + custom_policy_fns
+    return [trajectory_value(env, policy_fn, gamma) for policy_fn in policy_fns]
     
-def trajectory(env, policy_fn, gamma):
+    
+def trajectory_value(env, policy_fn, gamma):
     ### Trajectory
     # Step through a trajectory
     # TODO: put this back and actually plot a few trajectories
@@ -213,11 +221,14 @@ def trajectory(env, policy_fn, gamma):
         gamma_cum *= gamma
 
         t += 1
-    '''
 
     # Duration of each time step:
     time_step_days = 4
 
+    return total_reward
+
+    
+    # TODO: put back these plots?
     '''
     # print('num susceptible')
     times = [time_step_days * t for t in range(len(num_susceptible_t))]
@@ -266,3 +277,4 @@ def trajectory(env, policy_fn, gamma):
     
     print(f'total reward: {total_reward}')
     '''
+    
