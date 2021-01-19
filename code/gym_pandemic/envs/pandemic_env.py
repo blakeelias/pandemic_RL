@@ -302,7 +302,7 @@ class PandemicEnv(gym.Env):
     
     def R_t(self, action, time_idx):
         factor_transmissibility = self.transmissibility_schedule[time_idx] if time_idx else 1
-        factor_contact = self.contact_factor[action] * (self.contact_rate_schedule[time_idx] if time_idx else 1)
+        factor_contact = (self.contact_rate_schedule[time_idx] if time_idx else 1) * self.contact_factor[action]
         factor_infectious_period = self.infectious_schedule[time_idx] if time_idx else 1
 
         R_t = self.R_0 * factor_transmissibility * factor_contact * factor_infectious_period
