@@ -9,7 +9,7 @@ from mpl_toolkits.mplot3d import axes3d
 from einops import rearrange
 
 from value_iteration import one_step_lookahead
-from policies import policy_fn_generator, default_policies
+from policies import policy_fn_generator, default_policy_fns
 
 
 def test_environment(env, policy, V, discount_factor, file_name_prefix):
@@ -209,7 +209,7 @@ def trajectory_value(env, policy_fn, gamma):
             # observation = min(observation, env.nS - 1) # max number infected
             #b()
             state_idx = observation
-            action = policy_fn(state_idx)
+            action = policy_fn(env, state_idx, t)
             
         actions_taken_t.append(env.actions_r[action])
         observation, reward, done, info = env.step(action)

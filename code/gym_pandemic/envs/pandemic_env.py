@@ -111,8 +111,7 @@ class PandemicEnv(gym.Env):
         # (TODO: change to allow vaccine roll-out or not)
         vaccine_schedule = np.ones((self.horizon_effective + 1,))
         self.transmissibility_schedule = vaccine_schedule
-        b()
-
+        
         ### Infectiousness:
         #   can go down over time due to better treatments
         self.infectious_schedule = [1 for time_idx in range(self.horizon_effective + 1)] if self.horizon < np.inf else None
@@ -175,9 +174,9 @@ class PandemicEnv(gym.Env):
         else:
             num_susceptible = self.num_population
 
-        self.state = (num_infected, num_infected)
+        self.state = (num_susceptible, num_infected)
         self.time_idx = 0
-        obs = self.state
+        obs = self.state_to_idx[self.state]
 
         return obs
     
@@ -275,6 +274,7 @@ class PandemicEnv(gym.Env):
 
     def _expected_new_infected(self, state, action, time_idx=None, **kwargs):
         R_t = self.R_t(action, time_idx)
+        b()
         num_susceptible, num_infected = self.states[state]
         fraction_susceptible = num_susceptible / self.num_population
         expected_new_infected = (num_infected * R_t) * fraction_susceptible + self.imported_cases_per_step

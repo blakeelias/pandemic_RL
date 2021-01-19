@@ -15,7 +15,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'tags'])
+Params = namedtuple('Params', ['num_population', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'initial_fraction_infected', 'tags'])
 
 
 def parse_args():
@@ -87,6 +87,11 @@ def parse_args():
                         type=float,
                         nargs='+',
                         default=[1])
+
+    parser.add_argument('--initial_fraction_infected',
+                        type=float,
+                        nargs='+',
+                        default=[0.001])
     
     parser.add_argument('--tags',
                         type=str,
@@ -95,7 +100,7 @@ def parse_args():
                         help='Custom argument to be recorded in output directory name')
 
     parser.add_argument('--policy-comparison', dest='policy_comparison', action='store_true')
-    parser.add_argument('--no-feature', dest='policy_comparison', action='store_false')
+    parser.add_argument('--no-policy-comparison', dest='policy_comparison', action='store_false')
     parser.set_defaults(policy_comparison=True)
 
     parser.add_argument('--policy-optimization', dest='policy_optimization', action='store_true')
@@ -118,7 +123,6 @@ def main(args):
     experiment_parameters = {
         'time_lumping': False,
         #'num_population': args['num_population'],
-        'initial_fraction_infected': 0.1,
     }
     
     # experiment = replicate.init(combine_dicts(args, experiment_parameters))
@@ -136,6 +140,7 @@ def main(args):
             args.action_frequency,
             args.vaccine_start,
             args.vaccine_final_susceptible,
+            args.initial_fraction_infected,
             args.tags,
         )
     ]
@@ -163,7 +168,7 @@ def main(args):
             test_environment(env, optimized_policy, V, discount_factor, file_name_prefix)
 
         if args.policy_comparison:
-            values = compare_policies(env, custom_policies=[optimized_policy])
+            values = compare_policies(env, discount_factor, custom_policies=[optimized_policy])
             
             
     # experiment.checkpoint(path="lookup_tables")

@@ -19,7 +19,7 @@ def policy_fn_R_eq_1(env, state_idx, time_idx):
     
     valid_actions = np.where(R_ts <= 1)[0]
     if valid_actions.shape[0] > 0:
-        valid_Rts = R_ts[valid_idxs]
+        valid_Rts = R_ts[valid_actions]
         action = valid_actions[valid_Rts.argmax()]
     else:
         action = R_ts.argmin()
@@ -30,4 +30,4 @@ def policy_fn_R_eq_1(env, state_idx, time_idx):
     return action
 
 
-default_policies = [policy_fn_R_eq_1]
+default_policy_fns = [policy_fn_R_eq_1]
