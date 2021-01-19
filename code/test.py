@@ -9,6 +9,7 @@ from mpl_toolkits.mplot3d import axes3d
 from einops import rearrange
 
 from value_iteration import one_step_lookahead
+from policies import policy_fn_generator, policy_fn_R_eq_1
 
 
 def test_environment(env, policy, V, file_name_prefix):
@@ -104,14 +105,65 @@ def test_environment(env, policy, V, file_name_prefix):
     ax1.bar(range(env.nS), V_start)
     plt.savefig(file_name_prefix + 'value_start.png')
 
+    policy_fn = policy_fn_generator(policy)
+    trajectory(env, policy_fn, gamma)
+    
+    env.close()
 
+
+def plot_policy(best_action_idx):
+    ax = sns.barplot(list(range(num_states)),
+                [actions[int(best_action_idx[n])] for n in range(num_states)])
+    # ax.set(xlabel='common xlabel', ylabel='common ylabel')
+    ax.set_xticks(range(int(len(states) / 1)))
+    ax.set_xticklabels([state for i, state in enumerate(states) if i % 1 == 0])
+    plt.show()
+    
+
+def plot_value_function(env, policy, V):
+    state_to_value = {}
+    state_to_action = {}
+
+    for packed_state in env.states:
+        idx = env.state_to_idx[packed_state]
+        unpacked_state = env._unpack_state(packed_state)
+        state_to_value[unpacked_state] = V[idx]
+        state_to_action[unpacked_state] = env.actions_r[policy[idx].argmax()]
+
+    def reshape(array):
+        h = env.observation_space.high[0] - env.observation_space.low[0] + 1
+        relevant_array = array[:-1] # remove last entry, for 'saturated state'
+        return rearrange(relevant_array, '(h w) -> h w', h=h)
+
+    unpacked_states = [env._unpack_state(packed_state) for packed_state in env.states]
+
+    X = reshape(np.array([state[0] for state in unpacked_states]))
+    Y = reshape(np.array([state[1] for state in unpacked_states]))
+    Z_value = reshape(np.array([state_to_value[state] for state in unpacked_states]))
+    Z_policy = reshape(np.array([state_to_action[state] for state in unpacked_states]))
+
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    #print('Value function')
+    
+    #ax.bar_wireframe(X, Y, Z_value, rstride=10, cstride=10)
+    #plt.show()
+
+        
+    #fig = plt.figure()
+    print('Policy')
+    ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
+    plt.show()
+
+    
+def trajectory(env, policy_fn, gamma):
     ### Trajectory
     # Step through a trajectory
     # TODO: put this back and actually plot a few trajectories
     # Must change to use time-varying policy
-    
-    '''
-    gamma = 0.99
+
     num_susceptible_t = []
     num_infected_t = []
     actions_taken_t = []
@@ -124,18 +176,18 @@ def test_environment(env, policy, V, file_name_prefix):
     # plot_value_function(env, policy, V)
 
     print('Best action?')
-    env._set_transition_probabilities()
+    # env._set_transition_probabilities() # Should no longer be needed
     state_idx = 0
-    packed_state = env.states[state_idx]
-    unpacked_state = env._unpack_state(packed_state)
-    print(f'State: {unpacked_state}')
-    expected_action_values = one_step_lookahead(env, state_idx, V)
-    print(f'expected_action_values: {expected_action_values}')
-    print(f'best action: {expected_action_values.argmax()}')
+    state = env.states[state_idx]
+    # num_susceptible, num_immune = state
+    # print(f'State: {unpacked_state}')
+    # expected_action_values = one_step_lookahead(env, state_idx, V)
+    # print(f'expected_action_values: {expected_action_values}')
+    # print(f'best action: {expected_action_values.argmax()}')
 
     t = 0
     while t < min(env.horizon, 100):
-        new_state = env._unpack_state(observation)
+        new_state = env.states[observation]
         if type(new_state) == tuple:
             num_susceptible, num_infected = new_state
             num_infected_t.append(num_infected)
@@ -148,8 +200,8 @@ def test_environment(env, policy, V, file_name_prefix):
             # Allowed to take a new action once every {env.action_frequency} steps
             # observation = min(observation, env.nS - 1) # max number infected
             #b()
-            state_idx = env.state_to_idx[observation]
-            action = policy[state_idx].argmax()
+            state_idx = observation
+            action = policy_fn(state_idx)
             
         actions_taken_t.append(env.actions_r[action])
         observation, reward, done, info = env.step(action)
@@ -214,54 +266,3 @@ def test_environment(env, policy, V, file_name_prefix):
     
     print(f'total reward: {total_reward}')
     '''
-    
-    env.close()
-
-
-def plot_policy(best_action_idx):
-    ax = sns.barplot(list(range(num_states)),
-                [actions[int(best_action_idx[n])] for n in range(num_states)])
-    # ax.set(xlabel='common xlabel', ylabel='common ylabel')
-    ax.set_xticks(range(int(len(states) / 1)))
-    ax.set_xticklabels([state for i, state in enumerate(states) if i % 1 == 0])
-    plt.show()
-    
-
-def plot_value_function(env, policy, V):
-    state_to_value = {}
-    state_to_action = {}
-
-    for packed_state in env.states:
-        idx = env.state_to_idx[packed_state]
-        unpacked_state = env._unpack_state(packed_state)
-        state_to_value[unpacked_state] = V[idx]
-        state_to_action[unpacked_state] = env.actions_r[policy[idx].argmax()]
-
-    def reshape(array):
-        h = env.observation_space.high[0] - env.observation_space.low[0] + 1
-        relevant_array = array[:-1] # remove last entry, for 'saturated state'
-        return rearrange(relevant_array, '(h w) -> h w', h=h)
-
-    unpacked_states = [env._unpack_state(packed_state) for packed_state in env.states]
-
-    X = reshape(np.array([state[0] for state in unpacked_states]))
-    Y = reshape(np.array([state[1] for state in unpacked_states]))
-    Z_value = reshape(np.array([state_to_value[state] for state in unpacked_states]))
-    Z_policy = reshape(np.array([state_to_action[state] for state in unpacked_states]))
-
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    #print('Value function')
-    
-    #ax.bar_wireframe(X, Y, Z_value, rstride=10, cstride=10)
-    #plt.show()
-
-        
-    #fig = plt.figure()
-    print('Policy')
-    ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
-    plt.show()
-
-    

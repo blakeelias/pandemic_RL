@@ -186,9 +186,10 @@ class PandemicEnv(gym.Env):
         print(self.state)
 
     def _unpack_state(self, packed_state):
-        num_infected = packed_state
-        num_susceptible = self.max_infected
-        return (num_susceptible, num_infected)
+        raise Exception('Not implemented')
+        # num_infected = packed_state
+        # num_susceptible = self.max_infected
+        # return (num_susceptible, num_infected)
         
     def _reward(self, state, action, time_idx=None, **kwargs):        
         # Do not allow exceeding hospital capacity
