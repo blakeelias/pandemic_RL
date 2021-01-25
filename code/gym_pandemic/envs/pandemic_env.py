@@ -276,10 +276,9 @@ class PandemicEnv(gym.Env):
         return max(num_infected, 0) # * self.scenario.cost_per_case
 
     def _expected_new_infected(self, state, action, time_idx=None, **kwargs):
-        R_t = self.R_t(action, time_idx)
         num_susceptible, num_infected = self.states[state]
-        fraction_susceptible = num_susceptible / self.num_population
-        expected_new_infected = (num_infected * R_t) * fraction_susceptible + self.imported_cases_per_step
+        R_t = self.R_t(action, time_idx, num_susceptible)
+        expected_new_infected = (num_infected * R_t) + self.imported_cases_per_step
         return expected_new_infected
 
     def _new_infected_distribution(self, state, action, time_idx=None, **kwargs):
@@ -302,7 +301,7 @@ class PandemicEnv(gym.Env):
         return cap_distribution(distr, feasible_range)
 
     
-    def R_t(self, action, time_idx, num_susceptible=self.num_population):
+    def R_t(self, action, time_idx, num_susceptible):
         factor_transmissibility = self.transmissibility_schedule[time_idx] if time_idx else 1
         factor_contact = (self.contact_rate_schedule[time_idx] if time_idx else 1) * self.contact_factor[action]
         factor_infectious_period = self.infectious_schedule[time_idx] if time_idx else 1
