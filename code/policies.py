@@ -75,7 +75,7 @@ def policy_fn_cases_generator(target_cases):
     return policy_fn
 
 
-possible_Rs = [0.8, 0.9, 1.0, 1.1, 1.2]
+possible_Rs = [0.5, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 2.5]
 policy_fns_R = [policy_fn_R_generator(R) for R in possible_Rs]
 
 possible_case_levels = [5, 10, 100, 200, 500]
