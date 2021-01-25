@@ -71,7 +71,7 @@ def policy_fn_cases(env, state_idx, time_idx, target_cases):
 
 def policy_fn_cases_generator(target_cases):
     def policy_fn(env, state_idx, time_idx):
-        return policy_fn_R(env, state_idx, time_idx, target_cases)
+        return policy_fn_cases(env, state_idx, time_idx, target_cases)
     return policy_fn
 
 
