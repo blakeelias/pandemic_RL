@@ -33,9 +33,6 @@ def policy_fn_R(env, state_idx, time_idx, R_t):
     else:
         action = R_ts.argmin()
         
-    print(f'Action index chosen: {action}')
-    print(f'R_t: {R_ts[action]}')
-    
     return action
 
 
@@ -69,9 +66,6 @@ def policy_fn_cases(env, state_idx, time_idx, target_cases):
     else:
         action = R_ts.argmin()
         
-    print(f'Action index chosen: {action}')
-    print(f'R_t: {R_ts[action]}')
-    
     return action
 
 

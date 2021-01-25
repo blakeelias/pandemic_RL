@@ -15,7 +15,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'initial_fraction_infected', 'tags'])
+Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'initial_fraction_infected', 'tags'])
 
 
 def parse_args():
@@ -28,6 +28,12 @@ def parse_args():
                         nargs='+',
                         default=[1000], help='Size of total population')
 
+    parser.add_argument('--hospital_capacity_proportion',
+                        metavar='hospital_capacity_proportion',
+                        type=float,
+                        nargs='+',
+                        default=[0.01], help='Maximum fraction of population to allow infected at one time step')
+    
     parser.add_argument('--R_0',
                         metavar='R_0',
                         type=float,
@@ -130,6 +136,7 @@ def main(args):
     parameters_sweep = [
         Params(*parameters) for parameters in product(
             args.num_population,
+            args.hospital_capacity_proportion,
             args.R_0,
             args.imported_cases_per_step_range,
             args.powers,
