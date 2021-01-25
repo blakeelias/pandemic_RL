@@ -302,12 +302,13 @@ class PandemicEnv(gym.Env):
         return cap_distribution(distr, feasible_range)
 
     
-    def R_t(self, action, time_idx):
+    def R_t(self, action, time_idx, num_susceptible=self.num_population):
         factor_transmissibility = self.transmissibility_schedule[time_idx] if time_idx else 1
         factor_contact = (self.contact_rate_schedule[time_idx] if time_idx else 1) * self.contact_factor[action]
         factor_infectious_period = self.infectious_schedule[time_idx] if time_idx else 1
-
-        R_t = self.R_0 * factor_transmissibility * factor_contact * factor_infectious_period
+        fraction_susceptible = num_susceptible / self.num_population
+        
+        R_t = self.R_0 * factor_transmissibility * factor_contact * factor_infectious_period * fraction_susceptible
         return R_t
 
     
