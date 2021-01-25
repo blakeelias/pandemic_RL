@@ -160,7 +160,7 @@ def plot_value_function(env, policy, V):
     plt.show()
 
 
-def compare_policies(env, gamma, custom_policies=None):
+def compare_policies(env, gamma, custom_policies=()):
     custom_policy_fns = [policy_fn_generator(policy) for policy in custom_policies]
     policy_fns = default_policy_fns + custom_policy_fns
     return [trajectory_value(env, policy_fn, gamma) for policy_fn in policy_fns]

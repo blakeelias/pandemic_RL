@@ -168,9 +168,13 @@ def main(args):
             test_environment(env, optimized_policy, V, discount_factor, file_name_prefix)
 
         if args.policy_comparison:
-            values = compare_policies(env, discount_factor, custom_policies=[optimized_policy])
-            
-            
+            if args.policy_optimization:
+                values = compare_policies(env, discount_factor, custom_policies=[optimized_policy])
+            else:
+                values = compare_policies(env, discount_factor)
+        b()
+        print(values)
+                
     # experiment.checkpoint(path="lookup_tables")
 
 if __name__ == '__main__':

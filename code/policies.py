@@ -1,8 +1,11 @@
 import numpy as np
 
+from pdb import set_trace as b
+
 
 def policy_fn_generator(policy):
     def policy_fn(env, state_idx, time_idx):
+        b()
         return policy[state_idx].argmax()
     return policy_fn
 

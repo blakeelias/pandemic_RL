@@ -174,10 +174,13 @@ class PandemicEnv(gym.Env):
         else:
             num_susceptible = self.num_population
 
-        self.state = (num_susceptible, num_infected)
+        state_vector = (num_susceptible, num_infected)
         self.time_idx = 0
-        obs = self.state_to_idx[self.state]
-
+        
+        state = self.state_to_idx[state_vector]
+        obs = state
+        self.state = state
+        
         return obs
     
     def render(self, mode='human', close=False):
@@ -274,7 +277,6 @@ class PandemicEnv(gym.Env):
 
     def _expected_new_infected(self, state, action, time_idx=None, **kwargs):
         R_t = self.R_t(action, time_idx)
-        b()
         num_susceptible, num_infected = self.states[state]
         fraction_susceptible = num_susceptible / self.num_population
         expected_new_infected = (num_infected * R_t) * fraction_susceptible + self.imported_cases_per_step
