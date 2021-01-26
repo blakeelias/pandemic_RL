@@ -65,6 +65,8 @@ def policy_fn_cases(env, state_idx, time_idx, target_cases):
         action = valid_actions[valid_Rts.argmax()]
     else:
         action = R_ts.argmin()
+
+    print(f'{num_susceptible}, {num_infected}, {R_ts[action]}, {num_infected * R_ts[action]}')
         
     return action
 
@@ -78,8 +80,9 @@ def policy_fn_cases_generator(target_cases):
 possible_Rs = [0.5, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 2.5]
 policy_fns_R = [policy_fn_R_generator(R) for R in possible_Rs]
 
-possible_case_levels = [5, 10, 100, 200, 500]
+possible_case_levels = [5, 10, 20, 50, 100, 200, 500, 1000]
 policy_fns_case_level = [policy_fn_cases_generator(target_cases) for target_cases in possible_case_levels]
 
 
-default_policy_fns = policy_fns_R + policy_fns_case_level
+# default_policy_fns = policy_fns_R + policy_fns_case_level
+default_policy_fns = policy_fns_case_level

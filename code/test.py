@@ -180,10 +180,9 @@ def trajectory_value(env, policy_fn, gamma):
     gamma_cum = 1
 
     print(f'initial num infected: {env.state}')
-
+    print('{num_susceptible}, {num_infected}, {R_ts[action]}, {num_infected * R_ts[action]}')
     # plot_value_function(env, policy, V)
 
-    print('Best action?')
     # env._set_transition_probabilities() # Should no longer be needed
     state_idx = 0
     state = env.states[state_idx]

@@ -197,6 +197,7 @@ class PandemicEnv(gym.Env):
         # Do not allow exceeding hospital capacity
         expected_new_infected = self._expected_new_infected(state, action)
         if expected_new_infected > self.max_infected:
+            # b()
             return -np.inf
         # TODO: replace with:
         #  if Prob(actual_new_cases > self.max_infected) > .05:  return -np.inf
