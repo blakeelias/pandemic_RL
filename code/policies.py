@@ -44,8 +44,8 @@ def policy_fn_R_generator(R):
 
 def policy_fn_cases(env, state_idx, time_idx, target_cases):
     '''
-    `R_t`: Target R value for all time steps. 
-    Chooses the max value of R less than this R_t.
+    `target_cases`: Target number of cases for all time steps
+    Chooses the max value of R such that expected number of cases is less than {target_cases}.
     '''
     
     state = env.states[state_idx]
