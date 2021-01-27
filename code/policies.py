@@ -10,6 +10,12 @@ def policy_fn_generator(policy):
     return policy_fn
 
 
+def policy_fn_do_nothing(env, state_idx, time_idx):
+    # Pick the action which applies no restrictions
+    actions = list(range(env.nA))
+    return actions[-1]
+
+
 def policy_fn_R(env, state_idx, time_idx, R_t):
     '''
     `R_t`: Target R value for all time steps. 
@@ -81,9 +87,9 @@ possible_Rs = [0.5, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 2.5]
 policy_fns_R = [(f'R={R}', policy_fn_R_generator(R)) for R in possible_Rs]
 
 # possible_case_levels = [5, 10, 20, 50, 100, 200, 500, 1000]
-possible_case_levels = [10, 100, 1000]
+possible_case_levels = [0, 10, 100, 1000]
 policy_fns_case_level = [(f'cases={target_cases}', policy_fn_cases_generator(target_cases)) for target_cases in possible_case_levels]
 
 
 # default_policy_fns = policy_fns_R + policy_fns_case_level
-default_policy_fns = policy_fns_case_level
+default_policy_fns = policy_fns_case_level + [('do nothing', policy_fn_do_nothing)]
