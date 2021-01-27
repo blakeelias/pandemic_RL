@@ -85,17 +85,18 @@ class PandemicEnv(gym.Env):
                                                     self.max_infected
                                                 ]),
                                                 shape=(2,), dtype=np.uint16)
+
         # Observation: (num_susceptible, num_infected)
         self.states = list(
             itertools.product(
                 range(self.observation_space.low[0], self.observation_space.high[0] + 1),
                 range(self.observation_space.low[1], self.observation_space.high[1] + 1),
             ))
+
+        self._state_to_idx = None
         
-        self.state_to_idx = {self.states[idx]: idx for idx in range(len(self.states))}
         self.nS = len(self.states)
 
-        
         ### Transmissibility:
         #   goes down over time due to vaccinations
         self.vaccine_final_susceptible = vaccine_final_susceptible
@@ -177,7 +178,7 @@ class PandemicEnv(gym.Env):
         state_vector = (num_susceptible, num_infected)
         self.time_idx = 0
         
-        state = self.state_to_idx[state_vector]
+        state = self.state_obj_to_idx(state_vector)
         obs = state
         self.state = state
         
@@ -324,14 +325,14 @@ class PandemicEnv(gym.Env):
         if self.track_immunity():
             outcomes = [(
                 probs[i],
-                self.state_to_idx[(num_susceptible - new_num_infected, new_num_infected)], # Reduce number susceptible by number new infected
+                self.state_obj_to_idx((num_susceptible - new_num_infected, new_num_infected)), # Reduce number susceptible by number new infected
                 reward,
                 done
             ) for i, new_num_infected in enumerate(feasible_num_infected_range)]
         else:
             outcomes = [(
                 probs[i],
-                self.state_to_idx[(num_susceptible, new_num_infected)], # Keep same number susceptible as before
+                self.state_obj_to_idx((num_susceptible, new_num_infected)), # Keep same number susceptible as before
                 reward,
                 done
             ) for i, new_num_infected in enumerate(feasible_num_infected_range)]
@@ -460,6 +461,25 @@ class PandemicEnv(gym.Env):
         save_pickle(self.P, file_name)
         return self.P
 
+    def state_obj_to_idx(self, state_obj):
+        # Could be instead:
+        # if not self._state_to_idx:
+        #     self._state_to_idx = {self.states[idx]: idx for idx in range(len(self.states))}
+        # return self._state_to_idx[state_obj]
+
+        # Test for equivalence:
+        # state_objs = [(0, 1000), (0, 2000), (5000, 0), (1, 1000), (8000, 1500), (9500, 1000)]
+        # state_objs = [(0, 1000), (0, 2000), (8000, 1500), (9500, 1000)]
+        # for state_obj in state_objs:
+        #     print(state_obj, self.state_obj_to_idx(state_obj), self._state_to_idx[state_obj])
+        #     assert (env.state_obj_to_idx(state_obj) == env._state_to_idx[state_obj])
+        
+        num_susceptible, num_infected = state_obj
+        num_infected_range = (self.observation_space.high[1] - self.observation_space.low[1] + 1)
+        idx = num_infected_range * num_susceptible + num_infected
+
+        return idx
+    
     def create_iterated_env(self, iterations=4):
         self._set_iterated_probabilities(iterations=iterations)
         new_env = copy.copy(self)
