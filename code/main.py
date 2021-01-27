@@ -179,7 +179,8 @@ def main(args):
                 values = compare_policies(env, discount_factor, custom_policies=[optimized_policy])
             else:
                 values = compare_policies(env, discount_factor)
-        b()
+
+        print('Policy Comparison:')
         print(values)
                 
     # experiment.checkpoint(path="lookup_tables")

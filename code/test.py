@@ -161,9 +161,9 @@ def plot_value_function(env, policy, V):
 
 
 def compare_policies(env, gamma, custom_policies=()):
-    custom_policy_fns = [policy_fn_generator(policy) for policy in custom_policies]
+    custom_policy_fns = [(name, policy_fn_generator(policy)) for name, policy in custom_policies]
     policy_fns = default_policy_fns + custom_policy_fns
-    return [trajectory_value(env, policy_fn, gamma) for policy_fn in policy_fns]
+    return {name: trajectory_value(env, policy_fn, gamma) for name, policy_fn in policy_fns}
     
     
 def trajectory_value(env, policy_fn, gamma):
@@ -179,8 +179,8 @@ def trajectory_value(env, policy_fn, gamma):
     total_reward = 0
     gamma_cum = 1
 
-    print(f'initial num infected: {env.state}')
-    print('{num_susceptible}, {num_infected}, {R_ts[action]}, {num_infected * R_ts[action]}')
+    # print(f'initial num infected: {env.state}')
+    # print('{num_susceptible}, {num_infected}, {R_ts[action]}, {num_infected * R_ts[action]}')
     # plot_value_function(env, policy, V)
 
     # env._set_transition_probabilities() # Should no longer be needed
