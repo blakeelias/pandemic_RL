@@ -2,6 +2,7 @@ import pickle
 from pathlib import Path
 from scipy.stats import rv_discrete
 import numpy as np
+from pdb import set_trace as b
 
 def save_pickle(obj, file_name):
     Path(Path(file_name).parent).mkdir(parents=True, exist_ok=True)
@@ -49,4 +50,7 @@ def cap_distribution(distribution, feasible_range):
     probs[low] = distribution.pmf(support[low]) + distribution.cdf(support[low] - 1)
     probs[high] = 1 - distribution.cdf(support[high] - 1)
 
-    return rv_discrete(values=(support, probs))
+    try:
+        return rv_discrete(values=(support, probs))
+    except:
+        b()

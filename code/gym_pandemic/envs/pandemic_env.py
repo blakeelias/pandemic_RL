@@ -296,7 +296,7 @@ class PandemicEnv(gym.Env):
             p = lam / (r + lam)
             distr = nbinom(r, 1 - p)
         elif self.distr_family == 'deterministic':
-            distr = rv_discrete(values=([lam], [1.0]))
+            distr = rv_discrete(values=([int(lam)], [1.0]))
 
         max_infectable = min(num_susceptible, self.max_infected)
         feasible_range = range(max_infectable + 1)
