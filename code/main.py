@@ -182,7 +182,8 @@ def main(args):
 
         print('Policy Comparison:')
         print(values)
-                
+
+        del env
     # experiment.checkpoint(path="lookup_tables")
 
 if __name__ == '__main__':

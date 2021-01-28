@@ -13,7 +13,7 @@ class US:
     cost_per_case = death_rate * cost_per_death + hospitalization_rate * cost_per_hospitalization
 
 class Test:
-    population = 20
+    population = 10000
     gdp_per_day = population / US.population * US.gdp_per_day
     fraction_gdp_lost = 0.35
     death_rate = 0.01

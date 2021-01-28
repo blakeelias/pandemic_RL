@@ -284,7 +284,7 @@ def trajectory_value(env, policy_fn, policy_name, gamma):
     ax1.set_ylabel('Reproductive Number, $R_t$')
     ax1.set_xlabel('Time (days)')
     ax1.set_title('Reproductive Number ($R_t$)')
-    ax1.bar(times, actions_taken_t)
+    ax1.bar(times, R_t)
     fig.savefig(file_name_prefix + 'R_t.png')
 
     # Cost incurred

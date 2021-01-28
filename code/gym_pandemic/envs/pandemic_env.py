@@ -60,7 +60,8 @@ class PandemicEnv(gym.Env):
         ### Action space
         #   in increments of 0.5 up to R_0
         self.actions_r = np.array(
-            [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
+            # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
+            [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
             list(np.arange(1.5, self.R_0, 0.5)) + \
             [self.R_0]
         )
@@ -219,11 +220,13 @@ class PandemicEnv(gym.Env):
         baseline = 1/(1 ** self.power)
         actual = 1/(factor_contact ** self.power)
 
+        cost_of_full_lockdown = self.days_per_step * self.scenario.gdp_per_day * self.scenario.fraction_gdp_lost
+        
         # cost_to_keep_half_home / (1/((num_population/4)**power) - 1/(R_0 ** power))
         if factor_contact >= 1:
             return 0
         else:
-            return (actual - baseline) * self.scale_factor / (self.R_0 ** self.power)
+            return (actual - baseline) * self.scale_factor / (self.R_0 ** self.power) * cost_of_full_lockdown
             # put back in the factor of self.R_0 ** self.power that's been divided out
             # by dividing the denominator of both baseline and actual by R_0
             # (was previously measured on the scale of 0 to R_0; now on the scale of 0 to 1
@@ -277,7 +280,7 @@ class PandemicEnv(gym.Env):
 
     def _cost_of_infections(self, state, **kwargs):
         num_susceptible, num_infected = self.states[state]
-        return max(num_infected, 0) # * self.scenario.cost_per_case
+        return max(num_infected, 0) * self.scenario.cost_per_case
 
     def _expected_new_infected(self, state, action, time_idx=None, **kwargs):
         num_susceptible, num_infected = self.states[state]
