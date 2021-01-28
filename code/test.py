@@ -1,4 +1,5 @@
 from pdb import set_trace as b
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -164,37 +165,35 @@ def plot_value_function(env, policy, V):
 def compare_policies(env, gamma, custom_policies=()):
     custom_policy_fns = [(name, policy_fn_generator(policy)) for name, policy in custom_policies]
     policy_fns = default_policy_fns + custom_policy_fns
-    return {name: trajectory_value(env, policy_fn, gamma) for name, policy_fn in policy_fns}
+    return {name: trajectory_value(env, policy_fn, policy_name, gamma) for policy_name, policy_fn in policy_fns}
     
     
-def trajectory_value(env, policy_fn, gamma):
-    file_name_prefix = env.file_name_prefix
+def trajectory_value(env, policy_fn, policy_name, gamma):
+    file_name_prefix = env.file_name_prefix + f'/policy={policy_name}/'
+    Path(file_name_prefix).mkdir(parents=True, exist_ok=True)
     
     ### Trajectory
     # Step through a trajectory
     # TODO: put this back and actually plot a few trajectories
     # Must change to use time-varying policy
 
+    # Time Series to Save
     num_susceptible_t = []
     num_infected_t = []
     actions_taken_t = []
+    R_t = []
+    cost_t = []
+    
     observation = env.reset()
     total_reward = 0
     gamma_cum = 1
 
+    # Track trajectory as it's generated (no longer needed if plots work)
     # print(f'initial num infected: {env.state}')
     # print('{num_susceptible}, {num_infected}, {R_ts[action]}, {num_infected * R_ts[action]}')
     # plot_value_function(env, policy, V)
 
-    # env._set_transition_probabilities() # Should no longer be needed
-    state_idx = 0
-    state = env.states[state_idx]
-    # num_susceptible, num_immune = state
-    # print(f'State: {unpacked_state}')
-    # expected_action_values = one_step_lookahead(env, state_idx, V)
-    # print(f'expected_action_values: {expected_action_values}')
-    # print(f'best action: {expected_action_values.argmax()}')
-
+    
     t = 0
     while t < min(env.horizon, 100):
         new_state = env.states[observation]
@@ -215,6 +214,8 @@ def trajectory_value(env, policy_fn, gamma):
             
         actions_taken_t.append(env.contact_factor[action])
         observation, reward, done, info = env.step(action)
+        cost_t.append(reward)
+        R_t.append(env.R_t(action, t, num_susceptible))
         
         if done:
             print("Episode finished after {} timesteps".format(t+1))
@@ -267,11 +268,38 @@ def trajectory_value(env, policy_fn, gamma):
     fig = plt.figure()
     # fig.subplots_adjust(top=0.8)
     ax1 = fig.add_subplot()
-    ax1.set_ylabel('Level of Lockdown, $R_t$')
+    ax1.set_ylabel('Level of Lockdown (Percentage Contact Reduction)')
     ax1.set_xlabel('Time (days)')
-    ax1.set_title('Intervention Taken ($R_t$)')
+    ax1.set_title('Intervention Taken')
     ax1.bar(times, actions_taken_t)
     fig.savefig(file_name_prefix + 'actions.png')
+
+    # R achieved
+    times = [time_step_days * t for t in range(len(R_t))]
+    df_actions = pd.DataFrame({'time': times, 'action_taken': R_t})
+    df_actions.to_csv(file_name_prefix + 'R_t.txt')
+    fig = plt.figure()
+    # fig.subplots_adjust(top=0.8)
+    ax1 = fig.add_subplot()
+    ax1.set_ylabel('Reproductive Number, $R_t$')
+    ax1.set_xlabel('Time (days)')
+    ax1.set_title('Reproductive Number ($R_t$)')
+    ax1.bar(times, actions_taken_t)
+    fig.savefig(file_name_prefix + 'R_t.png')
+
+    # Cost incurred
+    times = [time_step_days * t for t in range(len(cost_t))]
+    df_actions = pd.DataFrame({'time': times, 'cost': cost_t})
+    df_actions.to_csv(file_name_prefix + 'cost.txt')
+    fig = plt.figure()
+    # fig.subplots_adjust(top=0.8)
+    ax1 = fig.add_subplot()
+    ax1.set_ylabel('Cost (USD)')
+    ax1.set_xlabel('Time (days)')
+    ax1.set_title('Costs over Time')
+    ax1.bar(times, cost_t)
+    fig.savefig(file_name_prefix + 'cost.png')
+
     
     print(f'total reward: {total_reward}')
     
