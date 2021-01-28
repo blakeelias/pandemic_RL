@@ -165,7 +165,7 @@ def plot_value_function(env, policy, V):
 def compare_policies(env, gamma, custom_policies=()):
     custom_policy_fns = [(name, policy_fn_generator(policy)) for name, policy in custom_policies]
     policy_fns = default_policy_fns + custom_policy_fns
-    return {name: trajectory_value(env, policy_fn, policy_name, gamma) for policy_name, policy_fn in policy_fns}
+    return {policy_name: trajectory_value(env, policy_fn, policy_name, gamma) for policy_name, policy_fn in policy_fns}
     
     
 def trajectory_value(env, policy_fn, policy_name, gamma):
