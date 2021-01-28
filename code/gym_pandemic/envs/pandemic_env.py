@@ -132,10 +132,12 @@ class PandemicEnv(gym.Env):
         self.reward = 0
 
         self.reset()
-        
+
+        # File name
         self.dynamics_param_str = self._param_string(self.action_frequency, **self.kwargs)
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
-
+        self.file_name_prefix = f'../results/env=({self.dynamics_param_str})/reward=({self.reward_param_str})/'
+        
         
     def track_immunity(self):
         return self.dynamics == 'SIR'

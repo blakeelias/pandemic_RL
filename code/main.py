@@ -165,14 +165,14 @@ def main(args):
 
         optimized_policy = None
         if args.policy_optimization:
-            optimized_policy, V, file_name_prefix = train_environment(env, discount_factor)
+            optimized_policy, V = train_environment(env, discount_factor)
             policies[particular_parameters] = optimized_policy
             Vs[particular_parameters] = V
             
             print(particular_parameters)
             # For finite time horizon, these tests are less appropriate
             # Because the policy is time-varying
-            test_environment(env, optimized_policy, V, discount_factor, file_name_prefix)
+            test_environment(env, optimized_policy, V, discount_factor)
 
         if args.policy_comparison:
             if args.policy_optimization:

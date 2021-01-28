@@ -12,10 +12,11 @@ from value_iteration import one_step_lookahead
 from policies import policy_fn_generator, default_policy_fns
 
 
-def test_environment(env, policy, V, discount_factor, file_name_prefix):
+def test_environment(env, policy, V, discount_factor):
     # policy: (time, env.nS, env.nA)
     # V: (time, env.nS)
-    
+
+    file_name_prefix = env.file_name_prefix
     ### Save full policy
     # (time, env.nS)
     policy_idxs = policy.argmax(axis=-1)
@@ -167,6 +168,8 @@ def compare_policies(env, gamma, custom_policies=()):
     
     
 def trajectory_value(env, policy_fn, gamma):
+    file_name_prefix = env.file_name_prefix
+    
     ### Trajectory
     # Step through a trajectory
     # TODO: put this back and actually plot a few trajectories
@@ -210,7 +213,7 @@ def trajectory_value(env, policy_fn, gamma):
             state_idx = observation
             action = policy_fn(env, state_idx, t)
             
-        actions_taken_t.append(env.actions_r[action])
+        actions_taken_t.append(env.contact_factor[action])
         observation, reward, done, info = env.step(action)
         
         if done:
@@ -223,13 +226,9 @@ def trajectory_value(env, policy_fn, gamma):
 
     # Duration of each time step:
     time_step_days = 4
-
-    return total_reward
-
     
     # TODO: put back these plots?
-    '''
-    # print('num susceptible')
+
     times = [time_step_days * t for t in range(len(num_susceptible_t))]
     df_susceptible = pd.DataFrame({'time': times, 'num_susceptible': num_susceptible_t})
     df_susceptible.to_csv(file_name_prefix + 'susceptible.txt')
@@ -275,5 +274,6 @@ def trajectory_value(env, policy_fn, gamma):
     fig.savefig(file_name_prefix + 'actions.png')
     
     print(f'total reward: {total_reward}')
-    '''
     
+    
+    return total_reward

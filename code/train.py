@@ -10,9 +10,7 @@ from utils import save_pickle, load_pickle
 
 
 def train_environment(env, discount_factor, convergence_threshold=0.0001):
-    reward_param_str = env.reward_param_str + f',convergence_threshold={convergence_threshold},discount_factor={discount_factor}'
-    file_name_prefix = f'../results/env=({env.dynamics_param_str})/reward=({reward_param_str})/'
-    file_name = file_name_prefix + 'policy.pickle'
+    file_name = env.file_name_prefix + 'policy.pickle'
 
     try:
         policy, V = load_pickle(file_name)
