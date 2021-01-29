@@ -81,9 +81,9 @@ def schedule_custom(horizon):
 def sigmoid(x):
   return 1 / (1 + math.exp(-x))
 
-def schedule_logistic(horizon, halfway_point, max_vaccinated):
+def schedule_sigmoid(horizon, halfway_point, rate, max_vaccinated):
     time_steps = range(horizon)
-    schedule = [sigmoid(t) for t in time_steps]
+    schedule = np.array([max_vaccinated * sigmoid(rate * (t - halfway_point)) for t in time_steps])
     return schedule
     
 

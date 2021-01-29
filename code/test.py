@@ -196,7 +196,10 @@ def trajectory_value(env, policy_fn, policy_name, gamma):
     
     t = 0
     while t < min(env.horizon, 100):
-        new_state = env.states[observation]
+        try:
+            new_state = env.states[observation]
+        except:
+            b()
         if type(new_state) == tuple:
             num_susceptible, num_infected = new_state
             num_infected_t.append(num_infected)

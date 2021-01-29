@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from utils import save_pickle, load_pickle, cap_distribution
 from scenarios import US, Test
-from vaccine_schedule import schedule_even_delay, schedule_custom_delay
+from vaccine_schedule import schedule_even_delay, schedule_custom_delay, schedule_sigmoid
 
 class PandemicEnv(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -101,7 +101,10 @@ class PandemicEnv(gym.Env):
         ### Transmissibility:
         #   goes down over time due to vaccinations
         self.vaccine_final_susceptible = vaccine_final_susceptible
-        self.vaccine_start_idx = round(self.horizon_effective * vaccine_start)
+        # self.vaccine_start_idx = round(self.horizon_effective * vaccine_start)
+        time_til_half_vaccinated = 32
+        vaccination_rate = 0.1
+
         num_steps = 4
         # vaccine_schedule = schedule_custom_delay(self.horizon_effective + 1, self.vaccine_start_idx)   # TODO: make this horizon, not horizon + 1
         '''vaccine_schedule = schedule_even_delay(
@@ -109,13 +112,22 @@ class PandemicEnv(gym.Env):
             self.vaccine_start_idx,
             8,
             self.vaccine_final_susceptible)   # TODO: make this horizon, not horizon + 1'''
-        # No vaccine roll-out. Instantly 100% immune after horizon is over
-        # (TODO: change to allow vaccine roll-out or not)
-        vaccine_schedule = np.ones((self.horizon_effective + 1,))
-        self.transmissibility_schedule = vaccine_schedule
+
+        # Vaccine roll-out. Then, 100% immune after horizon is over
+        vaccine_schedule = schedule_sigmoid(
+            self.horizon_effective + 1,
+            time_til_half_vaccinated,
+            vaccination_rate,
+            1 - self.vaccine_final_susceptible)
+        
+        self.transmissibility_schedule = 1 - vaccine_schedule
         
         ### Infectiousness:
-        #   can go down over time due to better treatments
+        #   can go down over time due to better treatments or vaccines
+        #   This could go down due to vaccination
+        #   Right now, being optimistic with the vaccination and assuming those people just never become infectious at all
+        #   To be less optimistic, move vaccination from transmissibility and into infectiousness
+        #    (i.e., those people can still get infected, they're just a bit less infectious)
         self.infectious_schedule = [1 for time_idx in range(self.horizon_effective + 1)] if self.horizon < np.inf else None
         
         ### Contact rate:
@@ -478,11 +490,14 @@ class PandemicEnv(gym.Env):
         # for state_obj in state_objs:
         #     print(state_obj, self.state_obj_to_idx(state_obj), self._state_to_idx[state_obj])
         #     assert (env.state_obj_to_idx(state_obj) == env._state_to_idx[state_obj])
-        
-        num_susceptible, num_infected = state_obj
-        num_infected_range = (self.observation_space.high[1] - self.observation_space.low[1] + 1)
-        idx = num_infected_range * num_susceptible + num_infected
 
+        num_susceptible, num_infected = state_obj
+        if self.track_immunity():
+            num_infected_range = (self.observation_space.high[1] - self.observation_space.low[1] + 1)
+            idx = num_infected_range * num_susceptible + num_infected
+        else:
+            idx = num_infected
+            
         return idx
     
     def create_iterated_env(self, iterations=4):
