@@ -1,5 +1,7 @@
-import numpy as np
+import math
 import logging
+
+import numpy as np
 
 
 def vaccine_schedule(horizon, milestones):
@@ -75,6 +77,15 @@ def schedule_custom(horizon):
     ]
     return vaccine_schedule(horizon, milestones)
 
+
+def sigmoid(x):
+  return 1 / (1 + math.exp(-x))
+
+def schedule_logistic(horizon, halfway_point, max_vaccinated):
+    time_steps = range(horizon)
+    schedule = [sigmoid(t) for t in time_steps]
+    return schedule
+    
 
 def schedule_even(horizon, num_increments, final_susceptible):
     '''
