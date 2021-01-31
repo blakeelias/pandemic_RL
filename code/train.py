@@ -15,7 +15,7 @@ def train_environment(env, discount_factor, convergence_threshold=0.0001):
     try:
         policy, V = load_pickle(file_name)
         print('Loaded policy')
-        return policy, V, file_name_prefix
+        return policy, V
     except:
         #if not env.P:
         #    env._set_transition_probabilities()
@@ -25,7 +25,7 @@ def train_environment(env, discount_factor, convergence_threshold=0.0001):
                                     initial_value=0,
                                     horizon=env.horizon_effective)
         save_pickle((policy, V), file_name)
-        return policy, V, file_name_prefix
+        return policy, V
 
 
 

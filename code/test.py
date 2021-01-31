@@ -110,7 +110,8 @@ def test_environment(env, policy, V, discount_factor):
     policy_fn = policy_fn_generator(policy)
 
     # TODO: what to do with this? Print it? Do nothing?
-    trajectory(env, policy_fn, discount_factor)
+    total_reward = trajectory_value(env, policy_fn, discount_factor, 1.0)
+    print(f'Trajectory value: {total_reward}')
     
     env.close()
 
@@ -163,7 +164,8 @@ def plot_value_function(env, policy, V):
 
 
 def compare_policies(env, gamma, custom_policies=()):
-    custom_policy_fns = [(name, policy_fn_generator(policy)) for name, policy in custom_policies]
+    b()
+    custom_policy_fns = [(f'custom_policy_{i}', policy_fn_generator(policy)) for i, policy in enumerate(custom_policies)]
     policy_fns = default_policy_fns + custom_policy_fns
     return {policy_name: trajectory_value(env, policy_fn, policy_name, gamma) for policy_name, policy_fn in policy_fns}
     

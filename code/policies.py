@@ -5,7 +5,6 @@ from pdb import set_trace as b
 
 def policy_fn_generator(policy):
     def policy_fn(env, state_idx, time_idx):
-        b()
         return policy[state_idx].argmax()
     return policy_fn
 
@@ -88,7 +87,7 @@ policy_fns_R = [(f'R={R}', policy_fn_R_generator(R)) for R in possible_Rs]
 
 # possible_case_levels = [5, 10, 20, 50, 100, 200, 500, 1000]
 possible_case_levels = [0, 10, 100, 1000]
-policy_fns_case_level = [(f'cases={target_cases}', policy_fn_cases_generator(target_cases)) for target_cases in possible_case_levels]
+policy_fns_case_level = [(f'target_cases={target_cases}', policy_fn_cases_generator(target_cases)) for target_cases in possible_case_levels]
 
 
 # default_policy_fns = policy_fns_R + policy_fns_case_level
