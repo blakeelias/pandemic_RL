@@ -11,7 +11,7 @@ from gym.utils import seeding
 from tqdm import tqdm
 
 from utils import save_pickle, load_pickle, cap_distribution
-from scenarios import US, Test
+from scenarios import US, Test, Test2
 from vaccine_schedule import schedule_even_delay, schedule_custom_delay, schedule_sigmoid
 
 class PandemicEnv(gym.Env):
@@ -32,7 +32,7 @@ class PandemicEnv(gym.Env):
                  init_transition_probs=False,
                  horizon=np.inf,
                  action_frequency=1,
-                 scenario=Test,
+                 scenario=Test2,
                  vaccine_start=0,
                  vaccine_final_susceptible=0,
                  **kwargs):
@@ -213,7 +213,6 @@ class PandemicEnv(gym.Env):
         # Do not allow exceeding hospital capacity
         expected_new_infected = self._expected_new_infected(state, action)
         if expected_new_infected > self.max_infected:
-            # b()
             return -np.inf
         # TODO: replace with:
         #  if Prob(actual_new_cases > self.max_infected) > .05:  return -np.inf
@@ -331,6 +330,7 @@ class PandemicEnv(gym.Env):
 
     
     def transitions(self, state, action, time_idx=None):
+        
         reward = self._reward(state, action, time_idx)
         distr = self._new_infected_distribution(state, action, time_idx)
         num_susceptible, num_infected = self.states[state]
@@ -339,6 +339,9 @@ class PandemicEnv(gym.Env):
         probs = distr.pmf(feasible_num_infected_range)
         done = False
 
+        #if np.isnan(reward) or reward == -np.inf:
+        #    b()
+                    
         if self.track_immunity():
             outcomes = [(
                 probs[i],

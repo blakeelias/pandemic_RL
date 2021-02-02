@@ -21,3 +21,14 @@ class Test:
     hospitalization_rate = 0.1
     cost_per_hospitalization = 50000 # $50k per hospitalization -- average amount billed to insurance (can dig up this reference if needed; it was on this order of magnitude)
     cost_per_case = death_rate * cost_per_death + hospitalization_rate * cost_per_hospitalization
+
+
+class Test2:
+    population = 10000
+    gdp_per_day = 1
+    fraction_gdp_lost = 1
+    death_rate = 0.0
+    cost_per_death = 0
+    hospitalization_rate = 1
+    cost_per_hospitalization = 1
+    cost_per_case = 1

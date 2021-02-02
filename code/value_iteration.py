@@ -47,6 +47,9 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
             A = one_step_lookahead(env, s, V[time_idx, :], discount_factor, time_idx)
             best_action_value = np.max(A)
             best_action = np.argmax(A)
+            #if np.isnan(best_action_value) or best_action_value == -np.inf:
+            #    b()
+
             # Calculate delta across all states seen so far
             delta = max(delta, np.abs(best_action_value - V[time_idx, s]))
             # Update the value function. Ref: Sutton book eq. 4.10. 
@@ -68,6 +71,9 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
     return policy, V
 
 
+def invalid_number(x):
+    return (np.isnan(x) or x == -np.inf)
+
 def one_step_lookahead(env, state, V, discount_factor, time_idx):
     """
     Helper function to calculate the value for all action in a given state.
@@ -82,5 +88,10 @@ def one_step_lookahead(env, state, V, discount_factor, time_idx):
     A = np.zeros(env.nA)
     for a in range(env.nA):
         for prob, next_state, reward, done in env.transitions(state, a, time_idx):
+            if invalid_number(V[next_state]):
+                b()
+            if invalid_number(reward):
+                b()
+            
             A[a] += prob * (reward + discount_factor * V[next_state])
     return A
