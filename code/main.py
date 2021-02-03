@@ -173,7 +173,7 @@ def main(args):
 
         optimized_policy = None
         if args.policy_optimization:
-            optimized_policy, V = train_environment(env, discount_factor)
+            optimized_policy, V = train_environment(env, parameters['planning_horizon'], discount_factor)
             policies[particular_parameters] = optimized_policy
             Vs[particular_parameters] = V
             

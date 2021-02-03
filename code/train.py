@@ -9,9 +9,11 @@ from value_iteration import value_iteration
 from utils import save_pickle, load_pickle
 
 
-def train_environment(env, discount_factor, convergence_threshold=0.0001):
+def train_environment(env, discount_factor, planning_horizon, convergence_threshold=0.0001):
     file_name = env.file_name_prefix + 'policy.pickle'
 
+    total_horizon = env.horizon_effective
+    
     try:
         policy, V = load_pickle(file_name)
         print('Loaded policy')
@@ -23,7 +25,7 @@ def train_environment(env, discount_factor, convergence_threshold=0.0001):
                                     theta=convergence_threshold,
                                     discount_factor=discount_factor ** env.action_frequency,
                                     initial_value=0,
-                                    horizon=env.horizon_effective)
+                                    horizon=planning_horizon)
         save_pickle((policy, V), file_name)
         return policy, V
 
