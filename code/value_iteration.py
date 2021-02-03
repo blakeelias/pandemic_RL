@@ -72,7 +72,9 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
 
 
 def invalid_number(x):
-    return (np.isnan(x) or x == -np.inf)
+    #return (np.isnan(x) or x == -np.inf)
+    return np.isnan(x)
+
 
 def one_step_lookahead(env, state, V, discount_factor, time_idx):
     """
@@ -94,4 +96,5 @@ def one_step_lookahead(env, state, V, discount_factor, time_idx):
                 b()
             
             A[a] += prob * (reward + discount_factor * V[next_state])
+            print(prob, reward, discount_factor, V[next_state])
     return A

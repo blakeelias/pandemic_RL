@@ -2,6 +2,7 @@ from math import floor, ceil, prod
 from pdb import set_trace as b
 import itertools
 import copy
+import sys
 
 import numpy as np
 from scipy.stats import poisson, nbinom, rv_discrete
@@ -213,7 +214,7 @@ class PandemicEnv(gym.Env):
         # Do not allow exceeding hospital capacity
         expected_new_infected = self._expected_new_infected(state, action)
         if expected_new_infected > self.max_infected:
-            return -np.inf
+            return -sys.float_info.max  # use instead of -np.inf, to avoid `nan` issue when multiplying by 0
         # TODO: replace with:
         #  if Prob(actual_new_cases > self.max_infected) > .05:  return -np.inf
         

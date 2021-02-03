@@ -182,8 +182,8 @@ def main(args):
             else:
                 values = compare_policies(env, discount_factor)
 
-        print('Policy Comparison:')
-        print(values)
+            print('Policy Comparison:')
+            print(values)
 
         del env
     # experiment.checkpoint(path="lookup_tables")
