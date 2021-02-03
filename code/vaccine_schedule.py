@@ -83,7 +83,7 @@ def sigmoid(x):
 
 def schedule_sigmoid(horizon, halfway_point, rate, max_vaccinated):
     time_steps = range(horizon)
-    schedule = np.array([max_vaccinated * sigmoid(rate * (t - halfway_point)) for t in time_steps])
+    schedule = 1 - np.array([max_vaccinated * sigmoid(rate * (t - halfway_point)) for t in time_steps])
     return schedule
     
 

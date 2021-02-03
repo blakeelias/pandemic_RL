@@ -121,7 +121,7 @@ class PandemicEnv(gym.Env):
             vaccination_rate,
             1 - self.vaccine_final_susceptible)
         
-        self.transmissibility_schedule = 1 - vaccine_schedule
+        self.transmissibility_schedule = vaccine_schedule
         
         ### Infectiousness:
         #   can go down over time due to better treatments or vaccines
