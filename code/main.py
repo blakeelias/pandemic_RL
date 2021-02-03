@@ -15,7 +15,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'initial_fraction_infected', 'tags'])
+Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'vaccine_schedule', 'initial_fraction_infected', 'tags'])
 
 
 def parse_args():
@@ -84,6 +84,11 @@ def parse_args():
                         default=[1],
                         help='Frequency (in time steps) to allow agent to set a new action')
 
+    parser.add_argument('--vaccine_schedule',
+                        type=str,
+                        nargs='+',
+                        default=['none'])
+    
     parser.add_argument('--vaccine_start',
                         type=float,
                         nargs='+',
@@ -147,6 +152,7 @@ def main(args):
             args.action_frequency,
             args.vaccine_start,
             args.vaccine_final_susceptible,
+            args.vaccine_schedule,
             args.initial_fraction_infected,
             args.tags,
         )

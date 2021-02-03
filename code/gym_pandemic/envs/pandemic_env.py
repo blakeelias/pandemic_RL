@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from utils import save_pickle, load_pickle, cap_distribution
 from scenarios import US, Test, Test2
-from vaccine_schedule import schedule_even_delay, schedule_custom_delay, schedule_sigmoid
+from vaccine_schedule import schedule_even_delay, schedule_custom_delay, schedule_sigmoid, schedule_none
 
 class PandemicEnv(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -36,6 +36,7 @@ class PandemicEnv(gym.Env):
                  scenario=Test2,
                  vaccine_start=0,
                  vaccine_final_susceptible=0,
+                 vaccine_schedule='none',
                  **kwargs):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
@@ -52,6 +53,7 @@ class PandemicEnv(gym.Env):
         self.horizon_effective = ceil(horizon / action_frequency) if horizon < np.inf else horizon
         self.scenario = scenario
         self.kwargs = kwargs
+        self.vaccine_schedule = vaccine_schedule
         
         # Define action and observation space
         # They must be gym.spaces objects
@@ -99,8 +101,8 @@ class PandemicEnv(gym.Env):
         
         self.nS = len(self.states)
 
-        ### Transmissibility:
-        #   goes down over time due to vaccinations
+        ### Vaccination / Transmissibility:
+        #   Transmissibility goes down over time due to vaccinations
         self.vaccine_final_susceptible = vaccine_final_susceptible
         # self.vaccine_start_idx = round(self.horizon_effective * vaccine_start)
         time_til_half_vaccinated = 32
@@ -115,14 +117,16 @@ class PandemicEnv(gym.Env):
             self.vaccine_final_susceptible)   # TODO: make this horizon, not horizon + 1'''
 
         # Vaccine roll-out. Then, 100% immune after horizon is over
-        vaccine_schedule = schedule_sigmoid(
-            self.horizon_effective + 1,
-            time_til_half_vaccinated,
-            vaccination_rate,
-            1 - self.vaccine_final_susceptible)
-        
-        self.transmissibility_schedule = vaccine_schedule
-        
+        if self.vaccine_schedule == 'sigmoid':
+            self.transmissibility_schedule = schedule_sigmoid(
+                self.horizon_effective + 1,
+                time_til_half_vaccinated,
+                vaccination_rate,
+                1 - self.vaccine_final_susceptible)
+            
+        elif self.vaccine_schedule == 'none':
+            self.transmissibility_schedule = schedule_none(self.horizon_effective + 1)
+                
         ### Infectiousness:
         #   can go down over time due to better treatments or vaccines
         #   This could go down due to vaccination
@@ -519,7 +523,7 @@ class PandemicEnv(gym.Env):
         # too long:
         # return f'R_0={self.R_0},distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},vaccine_start_idx={self.vaccine_start_idx},vaccine_final_susceptible={self.vaccine_final_susceptible},custom={self.kwargs}'
         
-        return f'R_0={self.R_0},distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},dynamics={self.dynamics},custom={self.kwargs}'
+        return f'R_0={self.R_0},distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},dynamics={self.dynamics},custom={self.kwargs},vaccine_schedule={self.vaccine_schedule}'
         
         
     def _dynamics_file_name(self, iterations, lookup=False, **kwargs):

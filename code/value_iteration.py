@@ -96,5 +96,4 @@ def one_step_lookahead(env, state, V, discount_factor, time_idx):
                 b()
             
             A[a] += prob * (reward + discount_factor * V[next_state])
-            print(prob, reward, discount_factor, V[next_state])
     return A
