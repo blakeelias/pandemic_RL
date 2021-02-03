@@ -71,6 +71,10 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
     return policy, V
 
 
+def value_iteration_overlapping_horizons(env, theta=0.0001, discount_factor=1.0, initial_value=0, horizon=np.inf):
+    pass
+
+
 def invalid_number(x):
     #return (np.isnan(x) or x == -np.inf)
     return np.isnan(x)

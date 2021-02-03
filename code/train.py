@@ -5,7 +5,7 @@ import gym
 import numpy as np
 
 import gym_pandemic
-from value_iteration import value_iteration
+from value_iteration import value_iteration, value_iteration_overlapping_horizons
 from utils import save_pickle, load_pickle
 
 
@@ -19,13 +19,12 @@ def train_environment(env, discount_factor, planning_horizon, convergence_thresh
         print('Loaded policy')
         return policy, V
     except:
-        #if not env.P:
-        #    env._set_transition_probabilities()
-        policy, V = value_iteration(env,
-                                    theta=convergence_threshold,
-                                    discount_factor=discount_factor ** env.action_frequency,
-                                    initial_value=0,
-                                    horizon=planning_horizon)
+        policy, V = value_iteration_overlapping_horizons(env,
+                                                         theta=convergence_threshold,
+                                                         discount_factor=discount_factor ** env.action_frequency,
+                                                         initial_value=0,
+                                                         total_horizon=total_horizon,
+                                                         planning_horizon=planning_horizon)
         save_pickle((policy, V), file_name)
         return policy, V
 
