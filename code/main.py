@@ -1,6 +1,7 @@
 from itertools import product
 from collections import namedtuple
 from pdb import set_trace as b
+import traceback
 
 import gym
 from tqdm import tqdm
@@ -166,32 +167,45 @@ def main(args):
     discount_factor = 1.0
 
     for i, particular_parameters in enumerate(parameters_sweep):
-        parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
-        print(f'Experiment {i}: {parameters}')
-        
-        env = PandemicEnv(**parameters)
-
-        optimized_policy = None
-        if args.policy_optimization:
-            optimized_policy, V = train_environment(env, parameters['planning_horizon'], discount_factor)
-            policies[particular_parameters] = optimized_policy
-            Vs[particular_parameters] = V
+        try:
+            parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
+            print(f'Experiment {i}: {parameters}')
             
-            print(particular_parameters)
-            # For finite time horizon, these tests are less appropriate
-            # Because the policy is time-varying
-            test_environment(env, optimized_policy, V, discount_factor)
-
-        if args.policy_comparison:
+            env = PandemicEnv(**parameters)
+            
+            optimized_policy = None
             if args.policy_optimization:
-                values = compare_policies(env, discount_factor, custom_policies=[optimized_policy])
-            else:
-                values = compare_policies(env, discount_factor)
+                optimized_policy, V = train_environment(env, parameters['planning_horizon'], discount_factor)
+                policies[particular_parameters] = optimized_policy
+                Vs[particular_parameters] = V
+                
+                print(particular_parameters)
+                # For finite time horizon, these tests are less appropriate
+                # Because the policy is time-varying
+                test_environment(env, optimized_policy, V, discount_factor)
+                
+            if args.policy_comparison:
+                if args.policy_optimization:
+                    values = compare_policies(env, discount_factor, custom_policies=[optimized_policy])
+                else:
+                    values = compare_policies(env, discount_factor)
 
-            print('Policy Comparison:')
-            print(values)
+                print('Policy Comparison:')
+                print(values)
 
-        del env
+            del env
+        except:
+            try:
+                print(f'Exception for parameters={parameters}:')
+                print('-' * 60)
+                traceback.print_exc()
+                print('-' * 60)
+                print('Continuing with next set of parameters...')
+                print('-' * 60)
+            except:
+                print('Exception (could not print...)')
+            continue
+        
     # experiment.checkpoint(path="lookup_tables")
 
 if __name__ == '__main__':
