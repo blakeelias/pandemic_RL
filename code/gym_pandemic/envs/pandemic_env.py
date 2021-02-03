@@ -218,7 +218,7 @@ class PandemicEnv(gym.Env):
         # Do not allow exceeding hospital capacity
         expected_new_infected = self._expected_new_infected(state, action)
         if expected_new_infected > self.max_infected:
-            return -sys.float_info.max  # use instead of -np.inf, to avoid `nan` issue when multiplying by 0
+            return -sys.float_info.max / 1e50  # use instead of -np.inf, to avoid `nan` issue when multiplying by 0
         # TODO: replace with:
         #  if Prob(actual_new_cases > self.max_infected) > .05:  return -np.inf
         
