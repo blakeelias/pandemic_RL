@@ -9,7 +9,7 @@ if "../" not in sys.path:
     sys.path.append("../")
 
 
-def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, horizon=np.inf):
+def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, horizon=np.inf, end_time=np.inf):
     """
     Value Iteration Algorithm.
     
@@ -31,8 +31,10 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
     V = np.zeros([n_steps, env.nS]) * initial_value
     policy = np.zeros([n_steps, env.nS, env.nA])
 
-    time_step = n_decisions
-    while time_step > 0:
+    start_time = end_time - n_steps
+    
+    time_step = end_time
+    while time_step > start_time:
         print(f'time_step = {time_step}')
         # Stopping condition
         delta = 0
@@ -41,25 +43,27 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
         policy_new = np.zeros([env.nS, env.nA])
         
         time_idx = time_step if horizon < np.inf else 0
+        array_idx = time_step - start_time if horizon < np.inf else 0
+        
         # Update each state...
         for s in range(env.nS):
             # Do a one-step lookahead to find the best action
-            A = one_step_lookahead(env, s, V[time_idx, :], discount_factor, time_idx)
+            A = one_step_lookahead(env, s, V[array_idx, :], discount_factor, time_idx)
             best_action_value = np.max(A)
             best_action = np.argmax(A)
             #if np.isnan(best_action_value) or best_action_value == -np.inf:
             #    b()
 
             # Calculate delta across all states seen so far
-            delta = max(delta, np.abs(best_action_value - V[time_idx, s]))
+            delta = max(delta, np.abs(best_action_value - V[array_idx, s]))
             # Update the value function. Ref: Sutton book eq. 4.10. 
             V_new[s] = best_action_value
             # Update the policy to take the best action
             policy_new[s, best_action] = 1.0
 
-        new_time_idx = time_idx - 1 if horizon < np.inf else 0
-        V[new_time_idx, :] = V_new
-        policy[new_time_idx, :, :] = policy_new
+        new_array_idx = array_idx - 1 if horizon < np.inf else 0
+        V[new_array_idx, :] = V_new
+        policy[new_array_idx, :, :] = policy_new
 
         # Check if we can stop 
         if horizon == np.inf and delta < theta:
@@ -79,12 +83,16 @@ def value_iteration_overlapping_horizons(
         total_horizon=np.inf,
         planning_horizon=np.inf):
 
-    if total_horizon == np.inf or planning_horizon=np.inf:
+    if total_horizon == np.inf or planning_horizon == np.inf:
         return value_iteration(env, theta, discount_factor, initial_value, horizon=np.inf)
 
     ### Else: finite horizons on both
 
+    total_horizon = int(total_horizon)
+    planning_horizon = int(planning_horizon)
     
+    if total_horizon % planning_horizon != 0:
+        raise Exception('total_horizon must be a multiple of planning_horizon')
     
     n_steps = total_horizon + 1
     V_final = np.ones([n_steps, env.nS]) * initial_value
@@ -93,10 +101,19 @@ def value_iteration_overlapping_horizons(
     action_period = int(planning_horizon / 2)
     start_idx = 0
 
-    while start_idx + action_period < total_horizon:
-        # Pass in starting time somewhere
-        policy, V = value_iteration(env, theta, discount_factor, initial_value, horizon=planning_horizon) # , start_idx
+    while start_idx + planning_horizon <= total_horizon:
+        end_time = start_idx + planning_horizon
+
+        policy, V = value_iteration(
+            env,
+            theta,
+            discount_factor,
+            initial_value,
+            horizon=planning_horizon,
+            end_time=end_time
+        )
         V_final[start_idx : start_idx + action_period, :] = V[:action_period, :]
+        policy_final[start_idx : start_idx + action_period, :, :] = policy[start_idx : start_idx + action_period, :, :]
         start_idx += planning_horizon
     
     

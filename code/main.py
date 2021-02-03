@@ -16,7 +16,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'vaccine_schedule', 'initial_fraction_infected', 'tags'])
+Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'planning_horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'vaccine_schedule', 'initial_fraction_infected', 'tags'])
 
 
 def parse_args():
@@ -74,6 +74,12 @@ def parse_args():
                         help='"nbinom", "poisson", or "deterministic"')
 
     parser.add_argument('--horizon',
+                        type=float,
+                        nargs='+',
+                        default=[np.inf],
+                        help='Time horizon over which problem is defined.')
+    
+    parser.add_argument('--planning_horizon',
                         type=float,
                         nargs='+',
                         default=[np.inf],
@@ -150,6 +156,7 @@ def main(args):
             args.dynamics,
             args.distr_family,
             args.horizon,
+            args.planning_horizon,
             args.action_frequency,
             args.vaccine_start,
             args.vaccine_final_susceptible,
@@ -175,7 +182,7 @@ def main(args):
             
             optimized_policy = None
             if args.policy_optimization:
-                optimized_policy, V = train_environment(env, parameters['planning_horizon'], discount_factor)
+                optimized_policy, V = train_environment(env, discount_factor, parameters['planning_horizon'])
                 policies[particular_parameters] = optimized_policy
                 Vs[particular_parameters] = V
                 
