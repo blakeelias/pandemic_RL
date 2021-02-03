@@ -71,9 +71,35 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
     return policy, V
 
 
-def value_iteration_overlapping_horizons(env, theta=0.0001, discount_factor=1.0, initial_value=0, horizon=np.inf):
-    pass
+def value_iteration_overlapping_horizons(
+        env,
+        theta=0.0001,
+        discount_factor=1.0,
+        initial_value=0,
+        total_horizon=np.inf,
+        planning_horizon=np.inf):
 
+    if total_horizon == np.inf or planning_horizon=np.inf:
+        return value_iteration(env, theta, discount_factor, initial_value, horizon=np.inf)
+
+    ### Else: finite horizons on both
+
+    
+    
+    n_steps = total_horizon + 1
+    V_final = np.ones([n_steps, env.nS]) * initial_value
+    policy_final = np.zeros([n_steps, env.nS, env.nA])
+
+    action_period = int(planning_horizon / 2)
+    start_idx = 0
+
+    while start_idx + action_period < total_horizon:
+        # Pass in starting time somewhere
+        policy, V = value_iteration(env, theta, discount_factor, initial_value, horizon=planning_horizon) # , start_idx
+        V_final[start_idx : start_idx + action_period, :] = V[:action_period, :]
+        start_idx += planning_horizon
+    
+    
 
 def invalid_number(x):
     #return (np.isnan(x) or x == -np.inf)
