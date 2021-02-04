@@ -74,7 +74,6 @@ def test_environment(env, policy, V, discount_factor):
     value_dict = {f't={t}': V[t, :] for t in range(V.shape[0])}
     value_dict['state'] = range(env.nS)
     df_value = pd.DataFrame(value_dict)
-    b()
     df_value.to_csv(file_name_prefix + 'value.txt')
 
 

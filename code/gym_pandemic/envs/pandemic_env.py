@@ -37,6 +37,7 @@ class PandemicEnv(gym.Env):
                  vaccine_start=0,
                  vaccine_final_susceptible=0,
                  vaccine_schedule='none',
+                 results_dir='../results',
                  **kwargs):
         super(PandemicEnv, self).__init__()
         self.num_population = num_population
@@ -54,6 +55,7 @@ class PandemicEnv(gym.Env):
         self.scenario = scenario
         self.kwargs = kwargs
         self.vaccine_schedule = vaccine_schedule
+        self.results_dir = results_dir
         
         # Define action and observation space
         # They must be gym.spaces objects
@@ -154,7 +156,7 @@ class PandemicEnv(gym.Env):
         # File name
         self.dynamics_param_str = self._param_string(self.action_frequency, **self.kwargs)
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
-        self.file_name_prefix = f'../results/env=({self.dynamics_param_str})/reward=({self.reward_param_str})/'
+        self.file_name_prefix = f'{self.results_dir}/env=({self.dynamics_param_str})/reward=({self.reward_param_str})/'
         
         
     def track_immunity(self):
@@ -218,7 +220,7 @@ class PandemicEnv(gym.Env):
         # Do not allow exceeding hospital capacity
         expected_new_infected = self._expected_new_infected(state, action)
         if expected_new_infected > self.max_infected:
-            return -sys.float_info.max  # use instead of -np.inf, to avoid `nan` issue when multiplying by 0
+            return -sys.float_info.max / 1e50  # use instead of -np.inf, to avoid `nan` issue when multiplying by 0
         # TODO: replace with:
         #  if Prob(actual_new_cases > self.max_infected) > .05:  return -np.inf
         
@@ -523,7 +525,7 @@ class PandemicEnv(gym.Env):
         # too long:
         # return f'R_0={self.R_0},distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},num_states={self.nS},num_actions={self.nA},dynamics={self.dynamics},action_frequency={action_frequency},vaccine_start_idx={self.vaccine_start_idx},vaccine_final_susceptible={self.vaccine_final_susceptible},custom={self.kwargs}'
         
-        return f'R_0={self.R_0},distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},dynamics={self.dynamics},custom={self.kwargs},vaccine_schedule={self.vaccine_schedule}'
+        return f'num_population={self.num_population},R_0={self.R_0},distr_family={self.distr_family},imported_cases_per_step={self.imported_cases_per_step},dynamics={self.dynamics},custom={self.kwargs},vaccine_schedule={self.vaccine_schedule}'
         
         
     def _dynamics_file_name(self, iterations, lookup=False, **kwargs):
