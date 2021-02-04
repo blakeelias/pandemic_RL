@@ -9,7 +9,7 @@ if "../" not in sys.path:
     sys.path.append("../")
 
 
-def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, horizon=np.inf, end_time=np.inf):
+def value_iteration(env, start_time, horizon, theta=0.0001, discount_factor=1.0, initial_value=0, max_steps=100):
     """
     Value Iteration Algorithm.
     
@@ -26,18 +26,21 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
         A tuple (policy, V) of the optimal policy and the optimal value function.
     """
     n_decisions = horizon
-    n_steps = horizon + 1 if horizon < np.inf else 1  # there's 1 more step at the end which has 0 cost
+    n_steps = horizon if horizon < np.inf else 1  # there's 1 more step at the end which has 0 cost
     
-    V = np.zeros([n_steps, env.nS]) * initial_value
+    V = np.zeros([n_steps + 1, env.nS]) * initial_value
     policy = np.zeros([n_steps, env.nS, env.nA])
-
-    start_time = end_time - n_steps
     
+    end_time = start_time + horizon
     time_step = end_time
+
+    accum_steps = 0
+    
     while time_step > start_time:
         print(f'time_step = {time_step}')
         # Stopping condition
         delta = 0
+        accum_steps += 1
 
         V_new = np.zeros(env.nS) * initial_value
         policy_new = np.zeros([env.nS, env.nA])
@@ -64,16 +67,18 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
             # Update the policy to take the best action
             policy_new[s, best_action] = 1.0
 
+        # Advance time step
+        time_step -= 1
         new_array_idx = array_idx - 1 if horizon < np.inf else 0
+
+        # Create new value and policy entries 
         V[new_array_idx, :] = V_new
         policy[new_array_idx, :, :] = policy_new
 
         # Check if we can stop 
-        if horizon == np.inf and delta < theta:
+        if horizon == np.inf and (delta < theta or accum_steps > max_steps):
             break
 
-        # Advance time step
-        time_step -= 1
         
     return policy, V
 
@@ -87,7 +92,10 @@ def value_iteration_overlapping_horizons(
         planning_horizon=np.inf):
 
     if total_horizon == np.inf or planning_horizon == np.inf:
-        return value_iteration(env, theta, discount_factor, initial_value, horizon=np.inf)
+        start_time = 0
+        horizon = np.inf
+        policy, V = value_iteration(env, start_time, horizon, theta, discount_factor, initial_value)
+        return ([policy], [V])
 
     ### Else: finite horizons on both
 
@@ -98,28 +106,36 @@ def value_iteration_overlapping_horizons(
         raise Exception('total_horizon must be a multiple of planning_horizon')
     
     n_steps = total_horizon + 1
-    V_final = np.ones([n_steps, env.nS]) * initial_value
-    policy_final = np.zeros([n_steps, env.nS, env.nA])
+    V_final = np.ones([total_horizon + 1, env.nS]) * initial_value
+    policy_final = np.zeros([total_horizon, env.nS, env.nA])
 
     action_period = int(planning_horizon / 2)
     start_idx = 0
 
+    policies = []
+    Vs = []
+    
     while start_idx + planning_horizon <= total_horizon:
         end_time = start_idx + planning_horizon
 
         policy, V = value_iteration(
             env,
+            start_idx,
+            planning_horizon,
             theta,
             discount_factor,
-            initial_value,
-            horizon=planning_horizon,
-            end_time=end_time
+            initial_value
         )
+
+        policies.append(policy)
+        Vs.append(V)
+        
         V_final[start_idx : start_idx + action_period, :] = V[:action_period, :]
-        policy_final[start_idx : start_idx + action_period, :, :] = policy[start_idx : start_idx + action_period, :, :]
-        start_idx += planning_horizon
-    
-    
+        policy_final[start_idx : start_idx + action_period, :, :] = policy[:action_period, :, :]
+        start_idx += action_period
+
+    return (policies + [policy_final], Vs + [V_final])
+
 
 def invalid_number(x):
     #return (np.isnan(x) or x == -np.inf)

@@ -180,27 +180,30 @@ def main(args):
     discount_factor = 1.0
 
     for i, particular_parameters in enumerate(parameters_sweep):
-
         try:
             parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
             print(f'Experiment {i}: {parameters}')
         
             env = PandemicEnv(**parameters, results_dir=args.results_dir)
             
-            optimized_policy = None
+            policy = None
             if args.policy_optimization:
-                optimized_policy, V = train_environment(env, discount_factor, parameters['planning_horizon'])
-                policies[particular_parameters] = optimized_policy
+                optimized_policies, optimized_Vs = train_environment(env, discount_factor, parameters['planning_horizon'])
+
+                policy = optimized_policies[-1]
+                V = optimized_Vs[-1]
+                
+                policies[particular_parameters] = policy
                 Vs[particular_parameters] = V
                 
                 print(particular_parameters)
                 # For finite time horizon, these tests are less appropriate
                 # Because the policy is time-varying
-                test_environment(env, optimized_policy, V, discount_factor)
+                test_environment(env, policy, V, discount_factor)
                 
             if args.policy_comparison:
                 if args.policy_optimization:
-                    values = compare_policies(env, discount_factor, custom_policies=[optimized_policy])
+                    values = compare_policies(env, discount_factor, custom_policies=[policy])
                 else:
                     values = compare_policies(env, discount_factor)
 

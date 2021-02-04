@@ -15,18 +15,18 @@ def train_environment(env, discount_factor, planning_horizon, convergence_thresh
     total_horizon = env.horizon_effective
     
     try:
-        policy, V = load_pickle(file_name)
+        policies, Vs = load_pickle(file_name)
         print('Loaded policy')
         return policy, V
     except:
-        policy, V = value_iteration_overlapping_horizons(env,
-                                                         theta=convergence_threshold,
-                                                         discount_factor=discount_factor ** env.action_frequency,
-                                                         initial_value=0,
-                                                         total_horizon=total_horizon,
-                                                         planning_horizon=planning_horizon)
-        save_pickle((policy, V), file_name)
-        return policy, V
+        policies, Vs = value_iteration_overlapping_horizons(env,
+                                                            theta=convergence_threshold,
+                                                            discount_factor=discount_factor ** env.action_frequency,
+                                                            initial_value=0,
+                                                            total_horizon=total_horizon,
+                                                            planning_horizon=planning_horizon)
+        save_pickle((policies, Vs), file_name)
+        return policies, Vs
 
 
 
