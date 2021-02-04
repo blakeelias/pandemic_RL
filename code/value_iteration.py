@@ -129,9 +129,15 @@ def value_iteration_overlapping_horizons(
 
         policies.append(policy)
         Vs.append(V)
-        
-        V_final[start_idx : start_idx + action_period, :] = V[:action_period, :]
-        policy_final[start_idx : start_idx + action_period, :, :] = policy[:action_period, :, :]
+
+        is_final_round = (start_idx + planning_horizon)
+        if is_final_round:
+            duration = planning_horizon
+        else:
+            duration = action_period
+            
+        V_final[start_idx : start_idx + duration, :] = V[:duration, :]
+        policy_final[start_idx : start_idx + duration, :, :] = policy[:duration, :, :]
         start_idx += action_period
 
     return (policies + [policy_final], Vs + [V_final])
