@@ -48,7 +48,10 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0, initial_value=0, hor
         # Update each state...
         for s in range(env.nS):
             # Do a one-step lookahead to find the best action
-            A = one_step_lookahead(env, s, V[array_idx, :], discount_factor, time_idx)
+            try:
+                A = one_step_lookahead(env, s, V[array_idx, :], discount_factor, time_idx)
+            except:
+                b()
             best_action_value = np.max(A)
             best_action = np.argmax(A)
             #if np.isnan(best_action_value) or best_action_value == -np.inf:
@@ -141,6 +144,8 @@ def one_step_lookahead(env, state, V, discount_factor, time_idx):
                 b()
             if invalid_number(reward):
                 b()
-            
-            A[a] += prob * (reward + discount_factor * V[next_state])
+            try:
+                A[a] += prob * (reward + discount_factor * V[next_state])
+            except:
+                b()
     return A
