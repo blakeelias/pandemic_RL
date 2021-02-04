@@ -200,6 +200,14 @@ def main(args):
                 # For finite time horizon, these tests are less appropriate
                 # Because the policy is time-varying
                 test_environment(env, policy, V, discount_factor)
+
+                # TODO: test environment with all the partial policies
+                #   (1) display policy
+                #   (2) follow the policy half-way [solid line]
+                #   (3) [optional: dotted line following remainder of policy]
+                #   (4) extended/lengthen policy
+                #   (5) repeat (back to (1))
+                #   ...
                 
             if args.policy_comparison:
                 if args.policy_optimization:

@@ -107,7 +107,7 @@ def value_iteration_overlapping_horizons(
     
     n_steps = total_horizon + 1
     V_final = np.ones([total_horizon + 1, env.nS]) * initial_value
-    policy_final = np.zeros([total_horizon, env.nS, env.nA])
+    policy_final = np.ones([total_horizon, env.nS, env.nA]) * -1  # Empty policy until filled in with policy values
 
     action_period = int(planning_horizon / 2)
     start_idx = 0
@@ -127,21 +127,15 @@ def value_iteration_overlapping_horizons(
             initial_value
         )
 
-        policies.append(policy)
-        Vs.append(V)
+        V_final[start_idx : start_idx + plannig_horizon, :] = V[:planning_horizon, :]
+        policy_final[start_idx : start_idx + planning_horizon, :, :] = policy[:planning_horizon, :, :]
 
-        is_final_round = (start_idx + planning_horizon)
-        if is_final_round:
-            duration = planning_horizon
-        else:
-            duration = action_period
-        # Could even have done this with `duration = planning_horizon` always, since this will get overwritten when needed
-            
-        V_final[start_idx : start_idx + duration, :] = V[:duration, :]
-        policy_final[start_idx : start_idx + duration, :, :] = policy[:duration, :, :]
+        policies.append(policy_final)
+        Vs.append(V_final)
+
         start_idx += action_period
 
-    return (policies + [policy_final], Vs + [V_final])
+    return policies, Vs
 
 
 def invalid_number(x):
