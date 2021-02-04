@@ -135,6 +135,7 @@ def value_iteration_overlapping_horizons(
             duration = planning_horizon
         else:
             duration = action_period
+        # Could even have done this with `duration = planning_horizon` always, since this will get overwritten when needed
             
         V_final[start_idx : start_idx + duration, :] = V[:duration, :]
         policy_final[start_idx : start_idx + duration, :, :] = policy[:duration, :, :]
