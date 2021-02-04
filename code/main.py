@@ -21,6 +21,12 @@ Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion',
 def parse_args():
     parser = argparse.ArgumentParser(description='Boolean command-line')
 
+
+    parser.add_argument('--results_dir',
+                        metavar='results_dir',
+                        type=str,
+                        default='../results',
+                        help='Where to save results, relative to code directory')
     
     parser.add_argument('--num_population',
                         metavar='num_population',
@@ -169,7 +175,7 @@ def main(args):
         parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
         print(f'Experiment {i}: {parameters}')
         
-        env = PandemicEnv(**parameters)
+        env = PandemicEnv(**parameters, results_dir=args.results_dir)
 
         optimized_policy = None
         if args.policy_optimization:
