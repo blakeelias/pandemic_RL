@@ -17,7 +17,7 @@ def train_environment(env, discount_factor, planning_horizon, convergence_thresh
     try:
         policies, Vs = load_pickle(file_name)
         print('Loaded policy')
-        return policy, V
+        return policies, Vs
     except:
         policies, Vs = value_iteration_overlapping_horizons(env,
                                                             theta=convergence_threshold,

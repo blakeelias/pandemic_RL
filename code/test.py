@@ -13,19 +13,32 @@ from value_iteration import one_step_lookahead
 from policies import policy_fn_generator, default_policy_fns
 
 
-def test_environment(env, policy, V, discount_factor):
+def test_environment(env, policy, V, discount_factor, max_time):
     # policy: (time, env.nS, env.nA)
     # V: (time, env.nS)
 
-    file_name_prefix = env.file_name_prefix
+    file_name_prefix = env.file_name_prefix + f'max_time={max_time}_'
     ### Save full policy
-    # (time, env.nS)
     policy_idxs = policy.argmax(axis=-1)
-
-    # (time, env.nS)
-    policy_rs = np.array([[env.actions_r[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
-    policy_contact_rates = np.array([[env.contact_factor[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
-
+    policy_idxs[max_time:, :] = np.nan  # mask out policy beyond time horizon    
+    # policy_idxs: (time, env.nS)
+    
+    policy_rs = np.zeros_like(policy_idxs)
+    policy_contact_rates = np.zeros_like(policy_idxs)
+    # policy_rs: (time, env.nS)
+    # policy_contact_rates: (time, env.nS)
+    for i in range(policy_idxs.shape[0]):
+        for j in range(policy_idxs.shape[1]):
+            try:
+                if np.isnan(policy_idxs[i, j]):
+                    policy_rs[i, j] = np.nan
+                    policy_contact_rates[i, j] = np.nan
+                else:
+                    policy_rs[i, j] = env.actions_r[policy_idxs[i, j]]
+                    policy_contact_rates[i, j] = env.contact_factor[policy_idxs[i, j]]
+            except:
+                b()
+                    
     # Policy with respect to R ideally achieved at the given contact rate (with no influence of vaccination or other factors)
     policy_dict = {f't={t}': policy_rs[t, :] for t in range(policy_rs.shape[0])}
     policy_dict['state'] = range(env.nS)
@@ -53,7 +66,8 @@ def test_environment(env, policy, V, discount_factor):
     # color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.5/env.R_0, 'red'), (1.0/env.R_0, 'white'), (1, 'green')])
 
     # color_map = sns.color_palette("vlag_r", as_cmap=True)
-    ax = sns.heatmap(policy_rs[:-1, :].T, center=1.0, cmap=color_map) # 'RdYlGn')
+    color_map_data = policy_rs[:-1, :].T
+    ax = sns.heatmap(color_map_data, center=1.0, cmap=color_map, mask=np.isnan(color_map_data)) # 'RdYlGn')
     ax.invert_yaxis()
     ax.get_figure().savefig(file_name_prefix + 'policy_R.png')
 

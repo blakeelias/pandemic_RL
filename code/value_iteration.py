@@ -127,7 +127,7 @@ def value_iteration_overlapping_horizons(
             initial_value
         )
 
-        V_final[start_idx : start_idx + plannig_horizon, :] = V[:planning_horizon, :]
+        V_final[start_idx : start_idx + planning_horizon, :] = V[:planning_horizon, :]
         policy_final[start_idx : start_idx + planning_horizon, :, :] = policy[:planning_horizon, :, :]
 
         policies.append(policy_final)

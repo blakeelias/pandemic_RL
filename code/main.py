@@ -172,8 +172,8 @@ def main(args):
         )
     ]
 
-    policies = {}
-    Vs = {}
+    policies_by_param = {}
+    Vs_by_param = {}
 
     
     
@@ -188,18 +188,23 @@ def main(args):
             
             policy = None
             if args.policy_optimization:
-                optimized_policies, optimized_Vs = train_environment(env, discount_factor, parameters['planning_horizon'])
+                planning_horizon = int(parameters['planning_horizon'])
+                optimized_policies, optimized_Vs = train_environment(env, discount_factor, planning_horizon)
 
                 policy = optimized_policies[-1]
                 V = optimized_Vs[-1]
                 
-                policies[particular_parameters] = policy
-                Vs[particular_parameters] = V
+                policies_by_param[particular_parameters] = policy
+                Vs_by_param[particular_parameters] = V
                 
                 print(particular_parameters)
+                
                 # For finite time horizon, these tests are less appropriate
                 # Because the policy is time-varying
-                test_environment(env, policy, V, discount_factor)
+
+                for i, (policy, V) in enumerate(zip(optimized_policies, optimized_Vs)):
+                    max_time = (i + 1) * planning_horizon
+                    test_environment(env, policy, V, discount_factor, max_time)
 
                 # TODO: test environment with all the partial policies
                 #   (1) display policy
