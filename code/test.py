@@ -20,7 +20,7 @@ def test_environment(env, policy, V, discount_factor, max_time):
     file_name_prefix = env.file_name_prefix + f'max_time={max_time}_'
     ### Save full policy
     policy_idxs = policy.argmax(axis=-1)
-    policy_idxs[max_time:, :] = np.nan  # mask out policy beyond time horizon    
+    policy_idxs[max_time:, :] = -1  # mask out policy beyond time horizon    
     # policy_idxs: (time, env.nS)
     
     policy_rs = np.zeros_like(policy_idxs)
@@ -30,7 +30,7 @@ def test_environment(env, policy, V, discount_factor, max_time):
     for i in range(policy_idxs.shape[0]):
         for j in range(policy_idxs.shape[1]):
             try:
-                if np.isnan(policy_idxs[i, j]):
+                if policy_idxs[i, j] == -1:
                     policy_rs[i, j] = np.nan
                     policy_contact_rates[i, j] = np.nan
                 else:
