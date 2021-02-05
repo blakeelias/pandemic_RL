@@ -33,7 +33,7 @@ class PandemicEnv(gym.Env):
                  init_transition_probs=False,
                  horizon=np.inf,
                  action_frequency=1,
-                 scenario=Test2,
+                 scenario=US,
                  vaccine_start=0,
                  vaccine_final_susceptible=0,
                  vaccine_schedule='none',
