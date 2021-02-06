@@ -167,7 +167,7 @@ def main(args):
     policies = {}
     Vs = {}
 
-    
+    policy_evaluation = {}
     
     discount_factor = 1.0
 
@@ -196,6 +196,8 @@ def main(args):
 
             print('Policy Comparison:')
             print(values)
+
+            policy_evaluation[particular_parameters] = values
 
         del env
     # experiment.checkpoint(path="lookup_tables")
