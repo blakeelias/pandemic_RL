@@ -9,7 +9,8 @@ import replicate
 import numpy as np
 
 from train import train_environment
-from test import test_environment, compare_policies
+from test import test_environment
+from policy_comparison import compare_policies
 from gym_pandemic.envs.pandemic_env import PandemicEnv
 from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
