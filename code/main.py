@@ -165,13 +165,15 @@ def main(args):
         )
     ]
 
+    b()
+    
     policies = {}
     Vs = {}
 
     policy_evaluations = {}
     
     discount_factor = 1.0
-
+    
     for i, particular_parameters in enumerate(parameters_sweep):
         parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
         print(f'Experiment {i}: {parameters}')
@@ -204,11 +206,19 @@ def main(args):
             
         del env
 
+    constant_params = parameters # last parameters that were set
+    variable_params = ['cost_per_case', 'cost_of_R=1_lockdown']
+    for param in variable_params:
+        del constant_params[param]
+
+    args_dict = vars(args)
+    
+        
     visualize_evaluation(
         policy_evaluations,
         args.results_dir,
-        'cost_per_case',
-        'cost_of_R=1_lockdown',
+        {variable_params[0]: args_dict[variable_params[0]},
+        {variable_params[1]: args_dict[variable_params[1]},
         constant_params
     )
     # experiment.checkpoint(path="lookup_tables")
