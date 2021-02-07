@@ -217,8 +217,8 @@ def main(args):
     constant_params = parameters # last parameters that were set
     # variable_params = ['cost_per_case', 'cost_of_R=1_lockdown']
     
-    for param in variable_params:
-        del constant_params[param]
+    # for param in variable_params:
+    #     del constant_params[param]
 
     args_dict = vars(args)
     
