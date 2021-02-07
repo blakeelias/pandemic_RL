@@ -168,7 +168,7 @@ def main(args):
     policies = {}
     Vs = {}
 
-    policy_evaluation = {}
+    policy_evaluations = {}
     
     discount_factor = 1.0
 
@@ -177,7 +177,9 @@ def main(args):
         print(f'Experiment {i}: {parameters}')
         
         env = PandemicEnv(**parameters, results_dir=args.results_dir)
-
+        parameters['cost_per_case'] = env.scenario.cost_per_case
+        parameters['cost_of_R=1_lockdown'] = env._cost_of_contact_factor(env.actions_r.index(1.0))
+        
         optimized_policy = None
         if args.policy_optimization:
             optimized_policy, V = train_environment(env, discount_factor)
@@ -198,9 +200,17 @@ def main(args):
             print('Policy Comparison:')
             print(values)
 
-            policy_evaluation[particular_parameters] = values
-
+            policy_evaluations[tuple(parameters.items())] = values
+            
         del env
+
+    visualize_evaluation(
+        policy_evaluations,
+        args.results_dir,
+        'cost_per_case',
+        'cost_of_R=1_lockdown',
+        constant_params
+    )
     # experiment.checkpoint(path="lookup_tables")
 
 if __name__ == '__main__':
