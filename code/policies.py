@@ -5,7 +5,10 @@ from pdb import set_trace as b
 
 def policy_fn_generator(policy):
     def policy_fn(env, state_idx, time_idx):
-        return policy[time_idx, state_idx].argmax()
+        try:
+            return policy[time_idx, state_idx].argmax()
+        except:
+            b()
     return policy_fn
 
 
