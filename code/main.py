@@ -10,7 +10,7 @@ import numpy as np
 
 from train import train_environment
 from test import test_environment
-from policy_comparison import compare_policies
+from policy_comparison import compare_policies, visualize_evaluation
 from policies import default_policy_fns
 from gym_pandemic.envs.pandemic_env import PandemicEnv
 from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
@@ -210,15 +210,18 @@ def main(args):
             print('Policy Comparison:')
             print(values)
 
-            policy_evaluations[tuple(parameters.items())] = values
+            params_key = tuple(sorted(tuple(parameters.items())))
+            policy_evaluations[params_key] = evaluations
             
         del env
 
     constant_params = parameters # last parameters that were set
-    # variable_params = ['cost_per_case', 'cost_of_R=1_lockdown']
     
-    # for param in variable_params:
-    #     del constant_params[param]
+    # variable_params = ['cost_per_case', 'cost_of_R=1_lockdown']
+    variable_params = ['cost_per_case_scale_factor', 'extra_scale']
+    
+    for param in variable_params:
+        del constant_params[param]
 
     args_dict = vars(args)
     
