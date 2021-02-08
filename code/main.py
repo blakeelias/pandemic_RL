@@ -203,15 +203,15 @@ def main(args):
 
         if args.policy_comparison:
             if args.policy_optimization:
-                values, policy_names = compare_policies(env, discount_factor, default_policy_fns, custom_policies=[optimized_policy])
+                policy_names, values = compare_policies(env, discount_factor, default_policy_fns, custom_policies=[optimized_policy])
             else:
-                values, policy_names = compare_policies(env, discount_factor, default_policy_fns)
+                policy_names, values = compare_policies(env, discount_factor, default_policy_fns)
 
             print('Policy Comparison:')
             print(values)
 
             params_key = tuple(sorted(tuple(parameters.items())))
-            policy_evaluations[params_key] = evaluations
+            policy_evaluations[params_key] = values
             
         del env
 

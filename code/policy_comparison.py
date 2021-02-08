@@ -19,7 +19,8 @@ def compare_policies(env, gamma, default_policy_fns, custom_policies=()):
         policy_names = [policy_name for policy_name, policy_fn in policy_fns]
         policy_values = [trajectory_value(env, policy_fn, policy_name, gamma) for policy_name, policy_fn in policy_fns]
 
-        result = dict(list(zip(policy_names, policy_values)))
+        #result = dict(list(zip(policy_names, policy_values)))
+        result = (policy_names, policy_values)
         save_pickle(result, file_path)
         return result
 
@@ -37,7 +38,7 @@ def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_
 
     # num_policies = len(list(policy_evaluations.values())[0].values())
 
-    results_table = np.array((len(param_1_values), len(param_2_values), len(policy_names)))
+    results_table = np.zeros((len(param_1_values), len(param_2_values), len(policy_names)))
     
     for i, param_1 in enumerate(param_1_values):
         for j, param_2 in enumerate(param_2_values):
@@ -46,13 +47,13 @@ def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_
 
             params_key = tuple(sorted(tuple(new_params.items())))
             try:
-                evaluations = policy_evaluations[params_key]
+                values = policy_evaluations[params_key]
             except:
                 b()
                 
-            for k, policy_name in enumerate(zip(policy_names, evaluations)):
+            for k, policy_value in enumerate(values):
                 try:
-                    results_table[i, j, k] = evaluations[policy_name]
+                    results_table[i, j, k] = policy_value
                 except:
                     b()
 
@@ -68,9 +69,7 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     
     file_path = Path(results_dir) / f'policy_evaluations_{param_1_name}_{param_2_name}_{constant_params}.png'
 
-    policy_names = list(list(policy_evaluations.values())[0].keys())
-    
-    table = evaluations_table(policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params)
+    table = evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params)
 
     b()
 
