@@ -77,7 +77,7 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     
     best_policies = table.argmax(axis=-1)
         
-    sns.set(font_scale=0.8)
+    sns.set(font_scale=0.8, rc={'figure.figsize':(10, 6)})
     # dataFrame = pandas.read_csv('LUH2_trans_matrix.csv').set_index(['Unnamed: 0'])
     
     
