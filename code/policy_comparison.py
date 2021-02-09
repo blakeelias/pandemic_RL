@@ -75,13 +75,8 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
 
     table = evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params)
     best_policies = table.argmax(axis=-1)
+    
     n = table.shape[-1]
-
-    best_policies = np.array([
-        [0, 0, 1, 1],
-        [1, 1, 2, 2],
-        [3, 3, 4, 4],
-    ])
         
     sns.set(font_scale=0.8, rc={'figure.figsize':(10, 6)})
     # dataFrame = pandas.read_csv('LUH2_trans_matrix.csv').set_index(['Unnamed: 0'])
@@ -91,7 +86,7 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     # If you still really want to generate a colormap with cubehelix_palette instead,
     # add a cbar_kws={"boundaries": linspace(-1, 1, 4)} to the heatmap invocation
     # to have it generate a discrete colorbar instead of a continous one.
-    myColors = ((0.8, 0.0, 0.0, 1.0), (0.0, 0.8, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0), (0.0, 0.0, 0.0, 1.0), (1.0, 1.0, 1.0, 1.0))
+    myColors = ((1.0, 1.0, 1.0, 1.0), (1.0, 1.0, 0.0, 1.0), (1.0, 0.75, 0.0, 1.0), (1.0, 0.5, 0.0, 1.0), (1.0, 0.0, 0.0, 1.0))
     cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
     
     ax = sns.heatmap(best_policies, cmap=cmap, linewidths=.5, linecolor='lightgray', vmin=0, vmax=n)
