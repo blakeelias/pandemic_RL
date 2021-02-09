@@ -74,9 +74,14 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     file_path = Path(results_dir) / f'policy_evaluations_{param_1_name,param_2_name}.png'  # _{constant_params
 
     table = evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params)
-    
     best_policies = table.argmax(axis=-1)
-    b()
+    n = table.shape[-1]
+
+    best_policies = np.array([
+        [0, 0, 1, 1],
+        [1, 1, 2, 2],
+        [3, 3, 4, 4],
+    ])
         
     sns.set(font_scale=0.8, rc={'figure.figsize':(10, 6)})
     # dataFrame = pandas.read_csv('LUH2_trans_matrix.csv').set_index(['Unnamed: 0'])
@@ -89,16 +94,14 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     myColors = ((0.8, 0.0, 0.0, 1.0), (0.0, 0.8, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0), (0.0, 0.0, 0.0, 1.0), (1.0, 1.0, 1.0, 1.0))
     cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
     
-    ax = sns.heatmap(best_policies, cmap=cmap, linewidths=.5, linecolor='lightgray')
+    ax = sns.heatmap(best_policies, cmap=cmap, linewidths=.5, linecolor='lightgray', vmin=0, vmax=n)
     
     # Manually specify colorbar labelling after it's been generated
     colorbar = ax.collections[0].colorbar
     # colorbar.set_ticks([0.9, 1.7, 2.5, 3.3, 4.1])
 
     r = colorbar.vmax - colorbar.vmin
-    n = table.shape[-1]
     tick_widths = [colorbar.vmin + 0.5 * r / (n) + r * i / (n) for i in range(n)]
-    b()
     colorbar.set_ticks(tick_widths)
     colorbar.set_ticklabels(policy_names)
     
