@@ -77,15 +77,15 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     best_policies = table.argmax(axis=-1)
     
     n = table.shape[-1]
-        
+
+    '''best_policies = np.array([
+        [0, 0, 1, 1],
+        [2, 2, 3, 3],
+        [4, 4, 4, 4],
+    ])'''
+    
     sns.set(font_scale=0.8, rc={'figure.figsize':(10, 6)})
-    # dataFrame = pandas.read_csv('LUH2_trans_matrix.csv').set_index(['Unnamed: 0'])
-    
-    
-    # For only three colors, it's easier to choose them yourself.
-    # If you still really want to generate a colormap with cubehelix_palette instead,
-    # add a cbar_kws={"boundaries": linspace(-1, 1, 4)} to the heatmap invocation
-    # to have it generate a discrete colorbar instead of a continous one.
+
     myColors = ((1.0, 1.0, 1.0, 1.0), (1.0, 1.0, 0.0, 1.0), (1.0, 0.75, 0.0, 1.0), (1.0, 0.5, 0.0, 1.0), (1.0, 0.0, 0.0, 1.0))
     cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
     
@@ -93,8 +93,6 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     
     # Manually specify colorbar labelling after it's been generated
     colorbar = ax.collections[0].colorbar
-    # colorbar.set_ticks([0.9, 1.7, 2.5, 3.3, 4.1])
-
     r = colorbar.vmax - colorbar.vmin
     tick_widths = [colorbar.vmin + 0.5 * r / (n) + r * i / (n) for i in range(n)]
     colorbar.set_ticks(tick_widths)
@@ -107,9 +105,6 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     # Only y-axis labels need their rotation set, x-axis labels already have a rotation of 0
     _, labels = plt.yticks()
     plt.setp(labels, rotation=0)
-    
     plt.savefig(file_path)
-    
-    # save to file_path
     
     return table
