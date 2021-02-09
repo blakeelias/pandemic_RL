@@ -88,7 +88,7 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     best_policies_df.columns = param_2_values
     best_policies_df.index = param_1_values
     
-    sns.set(font_scale=0.8, rc={'figure.figsize':(10, 6)})
+    sns.set(font_scale=0.8, rc={'figure.figsize':(15, 15)})
     myColors = ((1.0, 1.0, 1.0, 1.0), (1.0, 1.0, 0.0, 1.0), (1.0, 0.75, 0.0, 1.0), (1.0, 0.5, 0.0, 1.0), (1.0, 0.0, 0.0, 1.0))
     cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
     
@@ -102,8 +102,8 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     colorbar.set_ticklabels(policy_names)
     
     # X - Y axis labels
-    ax.set_ylabel(param_2_name)
-    ax.set_xlabel(param_1_name)
+    ax.set_ylabel(param_1_name)
+    ax.set_xlabel(param_2_name)
     
     # Only y-axis labels need their rotation set, x-axis labels already have a rotation of 0
     _, labels = plt.yticks()
