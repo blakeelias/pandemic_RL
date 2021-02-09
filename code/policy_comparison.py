@@ -3,6 +3,10 @@ from pdb import set_trace as b
 import copy
 
 import numpy as np
+import matplotlib.pyplot as plt
+import pandas
+import seaborn as sns
+from matplotlib.colors import LinearSegmentedColormap
 
 from policies import policy_fn_generator
 from test import trajectory_value
@@ -67,12 +71,42 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     param_1_values = param_dict_1[param_1_name]
     param_2_values = param_dict_2[param_2_name]
     
-    file_path = Path(results_dir) / f'policy_evaluations_{param_1_name}_{param_2_name}_{constant_params}.png'
+    file_path = Path(results_dir) / f'policy_evaluations_{param_1_name,param_2_name}.png'  # _{constant_params
 
     table = evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params)
-
+    
     b()
 
+    best_policies = table.argmax(axis=-1)
+        
+    sns.set(font_scale=0.8)
+    # dataFrame = pandas.read_csv('LUH2_trans_matrix.csv').set_index(['Unnamed: 0'])
+    
+    
+    # For only three colors, it's easier to choose them yourself.
+    # If you still really want to generate a colormap with cubehelix_palette instead,
+    # add a cbar_kws={"boundaries": linspace(-1, 1, 4)} to the heatmap invocation
+    # to have it generate a discrete colorbar instead of a continous one.
+    myColors = ((0.8, 0.0, 0.0, 1.0), (0.0, 0.8, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0), (0, 0, 0, 1), (1, 1, 1, 1))
+    cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
+    
+    ax = sns.heatmap(best_policies, cmap=cmap, linewidths=.5, linecolor='lightgray')
+    
+    # Manually specify colorbar labelling after it's been generated
+    colorbar = ax.collections[0].colorbar
+    colorbar.set_ticks([0.9, 1.7, 2.5, 3.3, 4.1])
+    colorbar.set_ticklabels(['B', 'A', 'C', 'D', 'E'])
+    
+    # X - Y axis labels
+    ax.set_ylabel(param_2_name)
+    ax.set_xlabel(param_1_name)
+    
+    # Only y-axis labels need their rotation set, x-axis labels already have a rotation of 0
+    _, labels = plt.yticks()
+    plt.setp(labels, rotation=0)
+    
+    plt.savefig(file_path)
+    
     # save to file_path
     
     return table
