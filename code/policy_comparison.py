@@ -75,8 +75,6 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
 
     table = evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params)
     
-    b()
-
     best_policies = table.argmax(axis=-1)
         
     sns.set(font_scale=0.8)
@@ -87,15 +85,19 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     # If you still really want to generate a colormap with cubehelix_palette instead,
     # add a cbar_kws={"boundaries": linspace(-1, 1, 4)} to the heatmap invocation
     # to have it generate a discrete colorbar instead of a continous one.
-    myColors = ((0.8, 0.0, 0.0, 1.0), (0.0, 0.8, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0), (0, 0, 0, 1), (1, 1, 1, 1))
+    myColors = ((0.8, 0.0, 0.0, 1.0), (0.0, 0.8, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0), (0.0, 0.0, 0.0, 1.0), (1.0, 1.0, 1.0, 1.0))
     cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
     
     ax = sns.heatmap(best_policies, cmap=cmap, linewidths=.5, linecolor='lightgray')
     
     # Manually specify colorbar labelling after it's been generated
     colorbar = ax.collections[0].colorbar
-    colorbar.set_ticks([0.9, 1.7, 2.5, 3.3, 4.1])
-    colorbar.set_ticklabels(['B', 'A', 'C', 'D', 'E'])
+    # colorbar.set_ticks([0.9, 1.7, 2.5, 3.3, 4.1])
+
+    r = colorbar.vmax - colorbar.vmin
+    n = table.shape[-1]
+    colorbar.set_ticks([colorbar.vmin + 0.5 * r / (n) + r * i / (n) for i in range(n)])
+    colorbar.set_ticklabels(policy_names)
     
     # X - Y axis labels
     ax.set_ylabel(param_2_name)
