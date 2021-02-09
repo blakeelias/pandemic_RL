@@ -76,6 +76,7 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     table = evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params)
     
     best_policies = table.argmax(axis=-1)
+    b()
         
     sns.set(font_scale=0.8, rc={'figure.figsize':(10, 6)})
     # dataFrame = pandas.read_csv('LUH2_trans_matrix.csv').set_index(['Unnamed: 0'])
@@ -96,7 +97,9 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
 
     r = colorbar.vmax - colorbar.vmin
     n = table.shape[-1]
-    colorbar.set_ticks([colorbar.vmin + 0.5 * r / (n) + r * i / (n) for i in range(n)])
+    tick_widths = [colorbar.vmin + 0.5 * r / (n) + r * i / (n) for i in range(n)]
+    b()
+    colorbar.set_ticks(tick_widths)
     colorbar.set_ticklabels(policy_names)
     
     # X - Y axis labels
