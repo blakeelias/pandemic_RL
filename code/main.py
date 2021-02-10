@@ -247,7 +247,7 @@ def main(args):
                 print('Exception (could not print...)')
             continue
 
-    if args.policy_evaluation:
+    if args.policy_comparison:
         constant_params = parameters # last parameters that were set
         
         # variable_params = ['cost_per_case', 'cost_of_R=1_lockdown']
