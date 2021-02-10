@@ -63,8 +63,17 @@ def test_environment(env, policy, V, discount_factor):
     # color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.5/env.R_0, 'red'), (1.0/env.R_0, 'white'), (1, 'green')])
 
     # color_map = sns.color_palette("vlag_r", as_cmap=True)
+    f, ax = plt.subplots(figsize=(11, 9))
+    plt.tick_params(bottom='on')
+    
     ax = sns.heatmap(policy_rs[:-1, :].T, center=1.0, cmap=color_map) # 'RdYlGn')
     ax.invert_yaxis()
+
+    # Add trajectory plot on to heat map
+    ax2 = plt.twinx()
+    sns.lineplot(data=trajectory.num_infected_t, linewidth=2, ax=ax2)
+    ax.axis('tight')
+
     ax.get_figure().savefig(file_name_prefix + 'policy_R.png')
 
     
