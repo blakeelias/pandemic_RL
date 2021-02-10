@@ -253,7 +253,7 @@ def trajectory_value(env, policy_fn, policy_name, gamma):
         times,
         num_susceptible_t,
         num_infected_t,
-        action_taken_t,
+        actions_taken_t,
         cost_t,
         total_reward
     )
