@@ -199,7 +199,8 @@ def main(args):
             #parameters['cost_of_R=1_lockdown'] = env._cost_of_contact_factor(env.actions_r.index(1.0))
             # TODO: put these back in -- better to have the actual cost rather than a multiplier
         
-            policy = None
+            optimized_policy = None
+            policy_names = None
             if args.policy_optimization:
                 optimized_policies, optimized_Vs = train_environment(env, discount_factor, parameters['planning_horizon'])
 
