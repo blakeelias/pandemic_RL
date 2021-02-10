@@ -57,7 +57,7 @@ def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_
                 
             for k, policy_value in enumerate(values):
                 try:
-                    results_table[i, j, k] = policy_value
+                    results_table[i, j, k] = policy_value.total_reward
                 except:
                     b()
 
@@ -101,7 +101,7 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
 
     ### Heat map
-    ax = sns.heatmap(best_policies_df, cmap=cmap, linewidths=.5, linecolor='lightgray', vmin=0, vmax=n)
+    ax = sns.heatmap(best_policies_df, cmap=cmap, linewidths=.5, linecolor='lightgray', vmin=0, vmax=num_policies)
     
     # Manually specify colorbar labelling after it's been generated
     colorbar = ax.collections[0].colorbar

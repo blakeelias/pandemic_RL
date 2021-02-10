@@ -76,8 +76,6 @@ def policy_fn_cases(env, state_idx, time_idx, target_cases):
     else:
         action = min_action_idx + R_ts.argmin()
 
-    print(f'{num_susceptible}, {num_infected}, {R_ts[action]}, {num_infected * R_ts[action]}')
-        
     return action
 
 

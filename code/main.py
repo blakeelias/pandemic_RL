@@ -200,7 +200,7 @@ def main(args):
             # TODO: put these back in -- better to have the actual cost rather than a multiplier
         
             optimized_policy = None
-            policy_names = None
+            policy_names = []
             if args.policy_optimization:
                 optimized_policies, optimized_Vs = train_environment(env, discount_factor, parameters['planning_horizon'])
 
