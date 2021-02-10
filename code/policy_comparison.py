@@ -74,7 +74,7 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     file_path = Path(results_dir) / f'policy_evaluations_{param_1_name,param_2_name}.png'  # _{constant_params
 
     table = evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params)
-    n = table.shape[-1] # == len(policy_names)
+    num_policies = table.shape[-1] # == len(policy_names)
     
     best_policies = table.argmax(axis=-1)
 
@@ -89,17 +89,24 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     best_policies_df.index = param_1_values
     
     sns.set(font_scale=0.8, rc={'figure.figsize':(15, 15)})
+
+    ### Colors
+    # White for 0-cases policy
+    # Yellow / orange shades for N-cases policies
+    # Red for do-nothing policy
     myColors = ((1.0, 1.0, 1.0, 1.0), (1.0, 1.0, 0.0, 1.0), (1.0, 0.75, 0.0, 1.0), (1.0, 0.5, 0.0, 1.0), (1.0, 0.0, 0.0, 1.0))
-    if len(policy_names) > 5:
+    # Green for optimized policy
+    if num_policies > 5:
         myColors = myColors + ((0.0, 0.0, 0.8, 1.0),)
     cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
-    
+
+    ### Heat map
     ax = sns.heatmap(best_policies_df, cmap=cmap, linewidths=.5, linecolor='lightgray', vmin=0, vmax=n)
     
     # Manually specify colorbar labelling after it's been generated
     colorbar = ax.collections[0].colorbar
     r = colorbar.vmax - colorbar.vmin
-    tick_widths = [colorbar.vmin + 0.5 * r / (n) + r * i / (n) for i in range(n)]
+    tick_widths = [colorbar.vmin + 0.5 * r / (num_policies) + r * i / (num_policies) for i in range(num_policies)]
     colorbar.set_ticks(tick_widths)
     colorbar.set_ticklabels(policy_names)
     
