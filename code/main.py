@@ -10,13 +10,15 @@ import replicate
 import numpy as np
 
 from train import train_environment
-from test import test_environment, compare_policies
+from test import test_environment
+from policy_comparison import compare_policies, visualize_evaluation
+from policies import default_policy_fns
 from gym_pandemic.envs.pandemic_env import PandemicEnv
 from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'dynamics', 'distr_family', 'horizon', 'planning_horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'vaccine_schedule', 'initial_fraction_infected', 'tags'])
+Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'cost_per_case_scale_factor', 'dynamics', 'distr_family', 'horizon', 'planning_horizon', 'action_frequency', 'vaccine_start', 'vaccine_final_susceptible', 'vaccine_schedule', 'initial_fraction_infected', 'tags'])
 
 
 def parse_args():
@@ -62,6 +64,13 @@ def parse_args():
 
     parser.add_argument('--extra_scale',
                         metavar='extra_scale',
+                        type=float,
+                        nargs='+',
+                        default=[1.0],
+                        help='')
+
+    parser.add_argument('--cost_per_case_scale_factor',
+                        metavar='cost_per_case_scale_factor',
                         type=float,
                         nargs='+',
                         default=[1.0],
@@ -159,6 +168,7 @@ def main(args):
             args.imported_cases_per_step_range,
             args.powers,
             args.extra_scale,
+            args.cost_per_case_scale_factor,
             args.dynamics,
             args.distr_family,
             args.horizon,
@@ -175,31 +185,34 @@ def main(args):
     policies = {}
     Vs = {}
 
-    
+    policy_evaluations = {}
     
     discount_factor = 1.0
-
+    
     for i, particular_parameters in enumerate(parameters_sweep):
         try:
             parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
             print(f'Experiment {i}: {parameters}')
         
             env = PandemicEnv(**parameters, results_dir=args.results_dir)
-            
+            #parameters['cost_per_case'] = env.cost_per_case
+            #parameters['cost_of_R=1_lockdown'] = env._cost_of_contact_factor(env.actions_r.index(1.0))
+            # TODO: put these back in -- better to have the actual cost rather than a multiplier
+        
             policy = None
             if args.policy_optimization:
                 optimized_policies, optimized_Vs = train_environment(env, discount_factor, parameters['planning_horizon'])
 
-                policy = optimized_policies[-1]
-                V = optimized_Vs[-1]
+                optimized_policy = optimized_policies[-1]
+                optimized_V = optimized_Vs[-1]
                 
-                policies[particular_parameters] = policy
-                Vs[particular_parameters] = V
+                policies[particular_parameters] = optimized_policy
+                Vs[particular_parameters] = optimized_V
                 
                 print(particular_parameters)
                 # For finite time horizon, these tests are less appropriate
                 # Because the policy is time-varying
-                test_environment(env, policy, V, discount_factor)
+                test_environment(env, optimized_policy, optimized_V, discount_factor)
 
                 # TODO: test environment with all the partial policies
                 #   (1) display policy
@@ -211,13 +224,16 @@ def main(args):
                 
             if args.policy_comparison:
                 if args.policy_optimization:
-                    values = compare_policies(env, discount_factor, custom_policies=[policy])
+                    policy_names, values = compare_policies(env, discount_factor, default_policy_fns, custom_policies=[optimized_policy])
                 else:
-                    values = compare_policies(env, discount_factor)
+                    policy_names, values = compare_policies(env, discount_factor, default_policy_fns)
 
-                print('Policy Comparison:')
-                print(values)
+                    print('Policy Comparison:')
+                    print(values)
 
+                params_key = tuple(sorted(tuple(parameters.items())))
+                policy_evaluations[params_key] = values
+            
             del env
         except:
             try:
@@ -230,7 +246,27 @@ def main(args):
             except:
                 print('Exception (could not print...)')
             continue
+
+    if args.policy_evaluation:
+        constant_params = parameters # last parameters that were set
         
+        # variable_params = ['cost_per_case', 'cost_of_R=1_lockdown']
+        variable_params = ['cost_per_case_scale_factor', 'extra_scale']
+        
+        for param in variable_params:
+            del constant_params[param]
+            
+        args_dict = vars(args)
+        
+        visualize_evaluation(
+            policy_names,
+            policy_evaluations,
+            args.results_dir,
+            {variable_params[0]: args_dict[variable_params[0]]},
+            {variable_params[1]: args_dict[variable_params[1]]},
+            constant_params
+        )
+
     # experiment.checkpoint(path="lookup_tables")
 
 if __name__ == '__main__':

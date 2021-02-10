@@ -28,6 +28,7 @@ class PandemicEnv(gym.Env):
                  imported_cases_per_step=0.5,
                  power=2,
                  scale_factor=100,
+                 cost_per_case_scale_factor=1.0,
                  distr_family='nbinom',
                  dynamics='SIS',
                  init_transition_probs=False,
@@ -40,21 +41,38 @@ class PandemicEnv(gym.Env):
                  results_dir='../results',
                  **kwargs):
         super(PandemicEnv, self).__init__()
+        
+        # States
         self.num_population = num_population
         self.max_infected = int(num_population * hospital_capacity_proportion)
         self.initial_num_infected = int(num_population * initial_fraction_infected)
+
+        # Transitions
         self.R_0 = R_0
         self.imported_cases_per_step = imported_cases_per_step
-        self.power = power
-        self.scale_factor = scale_factor
         self.distr_family = distr_family
         self.dynamics = dynamics
-        self.horizon = int(horizon) if horizon < np.inf else horizon
-        self.action_frequency = action_frequency
-        self.horizon_effective = ceil(horizon / action_frequency) if horizon < np.inf else horizon
-        self.scenario = scenario
-        self.kwargs = kwargs
         self.vaccine_schedule = vaccine_schedule
+        
+        # Actions
+        self.action_frequency = action_frequency
+        
+        # Reward
+        ## Cost of Lockdown
+        self.power = power
+        self.scale_factor = scale_factor
+
+        ## Cost of cases
+        self.scenario = scenario
+        self.cost_per_case = cost_per_case_scale_factor * self.scenario.cost_per_case
+        
+        # Horizon
+        self.horizon = int(horizon) if horizon < np.inf else horizon
+        self.horizon_effective = ceil(horizon / action_frequency) if horizon < np.inf else horizon
+
+
+        self.kwargs = kwargs
+        
         self.results_dir = results_dir
         
         # Define action and observation space
@@ -67,6 +85,7 @@ class PandemicEnv(gym.Env):
         self.actions_r = np.array(
             # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
             [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
+            # [0.8, 0.9, 1.0, 1.1, 1.25] + \
             list(np.arange(1.5, self.R_0, 0.5)) + \
             [self.R_0]
         )
