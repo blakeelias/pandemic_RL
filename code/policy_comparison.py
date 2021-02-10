@@ -90,6 +90,8 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     
     sns.set(font_scale=0.8, rc={'figure.figsize':(15, 15)})
     myColors = ((1.0, 1.0, 1.0, 1.0), (1.0, 1.0, 0.0, 1.0), (1.0, 0.75, 0.0, 1.0), (1.0, 0.5, 0.0, 1.0), (1.0, 0.0, 0.0, 1.0))
+    if len(policy_names) > 5:
+        myColors = myColors + ((0.0, 0.0, 0.8, 1.0),)
     cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
     
     ax = sns.heatmap(best_policies_df, cmap=cmap, linewidths=.5, linecolor='lightgray', vmin=0, vmax=n)
