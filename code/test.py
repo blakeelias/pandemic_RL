@@ -1,5 +1,6 @@
 from pdb import set_trace as b
 from pathlib import Path
+from collections import namedtuple
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,8 @@ from einops import rearrange
 from value_iteration import one_step_lookahead
 from policies import policy_fn_generator, default_policy_fns
 
+
+Trajectory = namedtuple('Trajectory', ['times', 'num_susceptible_t', 'num_infected_t', 'action_taken_t', 'cost_t', 'total_reward'])
 
 def test_environment(env, policy, V, discount_factor):
     # policy: (time, env.nS, env.nA)
@@ -26,6 +29,13 @@ def test_environment(env, policy, V, discount_factor):
     policy_rs = np.array([[env.actions_r[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
     policy_contact_rates = np.array([[env.contact_factor[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
 
+
+    ## Generate Trajectory
+    policy_fn = policy_fn_generator(policy)
+    trajectory = trajectory_value(env, policy_fn, 'optimized_policy', discount_factor)
+    print(f'Trajectory value: {trajectory.total_reward}')
+
+    
     # Policy with respect to R ideally achieved at the given contact rate (with no influence of vaccination or other factors)
     policy_dict = {f't={t}': policy_rs[t, :] for t in range(policy_rs.shape[0])}
     policy_dict['state'] = range(env.nS)
@@ -106,12 +116,6 @@ def test_environment(env, policy, V, discount_factor):
     ax1.set_title('Value Function')
     ax1.bar(range(env.nS), V_start)
     plt.savefig(file_name_prefix + 'value_start.png')
-
-    policy_fn = policy_fn_generator(policy)
-
-    # TODO: what to do with this? Print it? Do nothing?
-    total_reward = trajectory_value(env, policy_fn, discount_factor, 1.0)
-    print(f'Trajectory value: {total_reward}')
     
     env.close()
 
@@ -234,8 +238,18 @@ def trajectory_value(env, policy_fn, policy_name, gamma):
     time_step_days = 4
     
     # TODO: put back these plots?
-
+    
     times = [time_step_days * t for t in range(len(num_susceptible_t))]
+    trajectory = Trajectory(
+        times,
+        num_susceptible_t,
+        num_infected_t,
+        action_taken_t,
+        cost_t,
+        total_reward
+    )
+    
+    '''times = [time_step_days * t for t in range(len(num_susceptible_t))]
     df_susceptible = pd.DataFrame({'time': times, 'num_susceptible': num_susceptible_t})
     df_susceptible.to_csv(file_name_prefix + 'susceptible.txt')
     fig = plt.figure()
@@ -306,7 +320,7 @@ def trajectory_value(env, policy_fn, policy_name, gamma):
     fig.savefig(file_name_prefix + 'cost.png')
 
     
-    print(f'total reward: {total_reward}')
+    print(f'total reward: {total_reward}')'''
     
     
-    return total_reward
+    return trajectory
