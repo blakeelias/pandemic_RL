@@ -62,17 +62,19 @@ def policy_fn_cases(env, state_idx, time_idx, target_cases):
     
     # TODO: allow continuous action space?
 
-    R_ts = np.array([env.R_t(action, time_idx, num_susceptible) for action in range(env.nA)])
+    min_action_idx = 4   # min R = 0.8 (with no immunity)
+    
+    R_ts = np.array([env.R_t(action, time_idx, num_susceptible) for action in range(min_action_idx, env.nA)])
+    
     # Choose action with largest R_t such that R_t <= 1
     # If none satisfy this, pick action with smallest R_t
-
     possible_new_infected = num_infected * R_ts
     valid_actions = np.where(possible_new_infected <= target_cases)[0]
     if valid_actions.shape[0] > 0:
         valid_Rts = R_ts[valid_actions]
-        action = valid_actions[valid_Rts.argmax()]
+        action = min_action_idx + valid_actions[valid_Rts.argmax()]
     else:
-        action = R_ts.argmin()
+        action = min_action_idx + R_ts.argmin()
 
     print(f'{num_susceptible}, {num_infected}, {R_ts[action]}, {num_infected * R_ts[action]}')
         
