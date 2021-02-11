@@ -11,7 +11,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 from tqdm import tqdm
 
-from utils import save_pickle, load_pickle, cap_distribution
+from utils import save_pickle, load_pickle, CappedDistribution
 from scenarios import US, Test, Test2
 from vaccine_schedule import schedule_even_delay, schedule_custom_delay, schedule_sigmoid, schedule_none
 
@@ -340,7 +340,7 @@ class PandemicEnv(gym.Env):
 
         max_infectable = min(num_susceptible, self.max_infected)
         feasible_range = range(max_infectable + 1)
-        return cap_distribution(distr, feasible_range), feasible_range
+        return CappedDistribution(distr, feasible_range), feasible_range
 
     
     def R_t(self, action, time_idx, num_susceptible):

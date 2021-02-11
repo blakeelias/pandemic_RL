@@ -60,9 +60,16 @@ class CappedDistribution:
     def __init__(self, distribution, feasible_range):
         self.distribution = distribution
         self.feasible_range = feasible_range
-
+        self.capped_distribution = None
+        
     def rvs(self):
-        pass
+        # TODO: accept (*args, **kwargs) [e.g. to support `size` parameter]
+        candidate = self.distribution.rvs()
+        ceiling = min(candidate, max(self.feasible_range))
+        floor = max(ceiling, min(self.feasible_range))
+        return floor
 
     def pmf(self, k):
-        pass
+        if not self.capped_distribution:
+            self.capped_distribution = cap_distribution(self.distribution, self.feasible_range)
+        return self.capped_distribution.pmf(k)
