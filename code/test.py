@@ -70,8 +70,9 @@ def test_environment(env, policy, V, discount_factor):
     ax.invert_yaxis()
 
     # Add trajectory plot on to heat map
-    ax2 = plt.twinx()
-    sns.lineplot(data=trajectory.num_infected_t, linewidth=2, ax=ax2)
+    ax2 = ax # .twinx().twiny()
+    # sns.lineplot(data=trajectory.num_infected_t, linewidth=2, ax=ax2)
+    sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax2)  # x=trajectory.times
     ax.axis('tight')
 
     ax.get_figure().savefig(file_name_prefix + 'policy_R.png')
