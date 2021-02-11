@@ -54,3 +54,15 @@ def cap_distribution(distribution, feasible_range):
         return rv_discrete(values=(support, probs))
     except:
         b()
+
+
+class CappedDistribution:
+    def __init__(self, distribution, feasible_range):
+        self.distribution = distribution
+        self.feasible_range = feasible_range
+
+    def rvs(self):
+        pass
+
+    def pmf(self, k):
+        pass
