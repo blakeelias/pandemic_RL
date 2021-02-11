@@ -180,20 +180,18 @@ class PandemicEnv(gym.Env):
         
     def track_immunity(self):
         return self.dynamics == 'SIR'
-
     
     def step(self, action):
-        outcomes = self.transitions(self.state, action, self.time_idx)
-        # outcomes = [(probs[i], feasible_range[i], reward, done) for i in range(len(feasible_range))]
-        outcome_idxs = list(range(len(outcomes)))
-        probs = [outcome[0] for outcome in outcomes]
-        outcome_distr = rv_discrete(values=(outcome_idxs, probs))
-        outcome_idx = outcome_distr.rvs()
-        outcome = outcomes[outcome_idx]
+        reward = self._reward(self.state, action, self.time_idx)
+        distr, support = self._new_infected_distribution(self.state, action, self.time_idx)
+        num_susceptible, num_infected = self.states[self.state]
 
-        self.state = outcome[1]
-        reward = outcome[2]
-        self.done = outcome[3]
+        new_num_infected = distr.rvs()
+        new_num_susceptible = num_susceptible - new_num_infected
+        new_state = self.state_obj_to_idx((new_num_susceptible, new_num_infected))
+        
+        self.state = new_state
+        self.done = False
         
         obs = self.state
         done = self.done
@@ -342,7 +340,7 @@ class PandemicEnv(gym.Env):
 
         max_infectable = min(num_susceptible, self.max_infected)
         feasible_range = range(max_infectable + 1)
-        return cap_distribution(distr, feasible_range)
+        return cap_distribution(distr, feasible_range), feasible_range
 
     
     def R_t(self, action, time_idx, num_susceptible):
@@ -356,12 +354,10 @@ class PandemicEnv(gym.Env):
 
     
     def transitions(self, state, action, time_idx=None):
-        
         reward = self._reward(state, action, time_idx)
-        distr = self._new_infected_distribution(state, action, time_idx)
+        distr, feasible_num_infected_range = self._new_infected_distribution(state, action, time_idx)
         num_susceptible, num_infected = self.states[state]
-        max_infected = min(self.max_infected, num_susceptible)
-        feasible_num_infected_range = list(range(max_infected + 1))
+
         probs = distr.pmf(feasible_num_infected_range)
         done = False
 
