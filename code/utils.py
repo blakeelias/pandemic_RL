@@ -57,6 +57,28 @@ def cap_distribution(distribution, feasible_range):
 
 
 class CappedDistribution:
+'''
+>>> from scipy.stats import poisson
+>>> poisson(5)
+<scipy.stats._distn_infrastructure.rv_frozen object at 0x7f97d80df340>
+>>> poisson(5).pmf(range(10))
+array([0.00673795, 0.03368973, 0.08422434, 0.1403739 , 0.17546737,
+       0.17546737, 0.14622281, 0.10444486, 0.06527804, 0.03626558])
+>>> from utils import CappedDistribution
+>>> d = CappedDistribution(poisson(5), range(1, 9))
+>>> d.pmf(range(10))
+array([0.        , 0.04042768, 0.08422434, 0.1403739 , 0.17546737,
+       0.17546737, 0.14622281, 0.10444486, 0.13337167, 0.        ])
+>>> d.pmf(range(15))
+array([0.        , 0.04042768, 0.08422434, 0.1403739 , 0.17546737,
+       0.17546737, 0.14622281, 0.10444486, 0.13337167, 0.        ,
+       0.        , 0.        , 0.        , 0.        , 0.        ])
+>>> poisson(5).pmf(range(15))
+array([0.00673795, 0.03368973, 0.08422434, 0.1403739 , 0.17546737,
+       0.17546737, 0.14622281, 0.10444486, 0.06527804, 0.03626558,
+       0.01813279, 0.00824218, 0.00343424, 0.00132086, 0.00047174])
+'''
+
     def __init__(self, distribution, feasible_range):
         self.distribution = distribution
         self.feasible_range = feasible_range
