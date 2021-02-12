@@ -35,6 +35,7 @@ def test_environment(env, policy, V, discount_factor):
     ### Save CSVs
     save_policy_csvs(env, policy_rs, policy_contact_rates)
     save_value_csv(env, V)
+    save_trajectory_csv(env, trajectory)
     
     ### Plot full policy
     plot_policy_trajectory(env, policy_rs, trajectory, 'R', center=1.0)
@@ -63,6 +64,11 @@ def save_value_csv(env, V):
     value_dict['state'] = range(env.nS)
     df_value = pd.DataFrame(value_dict)
     df_value.to_csv(env.file_name_prefix + 'value.txt')
+
+
+def save_trajectory_csv(env, trajectory):
+    df = pd.DataFrame(trajectory._asdict())
+    df.to_csv(env.file_name_prefix + 'trajectory.txt')
 
     
 def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0):
