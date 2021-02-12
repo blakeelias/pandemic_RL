@@ -19,36 +19,53 @@ Trajectory = namedtuple('Trajectory', ['times', 'num_susceptible_t', 'num_infect
 def test_environment(env, policy, V, discount_factor):
     # policy: (time, env.nS, env.nA)
     # V: (time, env.nS)
-
-    file_name_prefix = env.file_name_prefix
-    ### Save full policy
-    # (time, env.nS)
+    
+    ### Extract policy
     policy_idxs = policy.argmax(axis=-1)
-
     # (time, env.nS)
     policy_rs = np.array([[env.actions_r[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
+    # (time, env.nS)
     policy_contact_rates = np.array([[env.contact_factor[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
+    # (time, env.nS)
 
-
-    ## Generate Trajectory
+    ### Generate Trajectory
     policy_fn = policy_fn_generator(policy)
     trajectory = trajectory_value(env, policy_fn, 'optimized_policy', discount_factor)
-    print(f'Trajectory value: {trajectory.total_reward}')
+
+    ### Save CSVs
+    save_policy_csvs(env, policy_rs, policy_contact_rates)
+    save_value_csv(env, V)
+    
+    ### Plot full policy
+    plot_policy_trajectory(env, policy_rs, trajectory, 'R', center=1.0)
+    plot_policy_trajectory(env, policy_contact_rates, trajectory, 'contact_rate', center=1.0/2.5)
+    
+    env.close()
 
     
+def save_policy_csvs(env, policy_rs, policy_contact_rates):
     # Policy with respect to R ideally achieved at the given contact rate (with no influence of vaccination or other factors)
     policy_dict = {f't={t}': policy_rs[t, :] for t in range(policy_rs.shape[0])}
     policy_dict['state'] = range(env.nS)
     df_policy = pd.DataFrame(policy_dict)
-    df_policy.to_csv(file_name_prefix + 'policy_R.txt')
+    df_policy.to_csv(env.file_name_prefix + 'policy_R.txt')
 
     # Policy with respect to contact rate achieved
     policy_dict = {f't={t}': policy_contact_rates[t, :] for t in range(policy_contact_rates.shape[0])}
     policy_dict['state'] = range(env.nS)
     df_policy = pd.DataFrame(policy_dict)
-    df_policy.to_csv(file_name_prefix + 'policy_contact_rate.txt')
+    df_policy.to_csv(env.file_name_prefix + 'policy_contact_rate.txt')
 
-    ### Plot full policy
+
+def save_value_csv(env, V):
+    # V: (time, env.nS)
+    value_dict = {f't={t}': V[t, :] for t in range(V.shape[0])}
+    value_dict['state'] = range(env.nS)
+    df_value = pd.DataFrame(value_dict)
+    df_value.to_csv(env.file_name_prefix + 'value.txt')
+
+    
+def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0):
     color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.25, 'red'), (0.5, 'white'), (1, 'green')])
     
     # With respect to R
@@ -66,68 +83,17 @@ def test_environment(env, policy, V, discount_factor):
     f, ax = plt.subplots(figsize=(11, 9))
     plt.tick_params(bottom='on')
     
-    ax = sns.heatmap(policy_rs[:-1, :].T, center=1.0, cmap=color_map) # 'RdYlGn')
+    ax = sns.heatmap(policy_rs[:-1, :].T, center=center, cmap=color_map) # 'RdYlGn')
     ax.invert_yaxis()
 
-    # Add trajectory plot on to heat map
-    ax2 = ax # .twinx().twiny()
-    # sns.lineplot(data=trajectory.num_infected_t, linewidth=2, ax=ax2)
-    sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax2)  # x=trajectory.times
-    ax.axis('tight')
+    if trajectory:
+        # Add trajectory plot on to heat map
+        ax2 = ax # .twinx().twiny()
+        # sns.lineplot(data=trajectory.num_infected_t, linewidth=2, ax=ax2)
+        sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax2)  # x=trajectory.times
+        ax.axis('tight')
 
-    ax.get_figure().savefig(file_name_prefix + 'policy_R.png')
-
-    
-    # With respect to contact rate
-    ax1 = sns.heatmap(policy_contact_rates[:-1, :].T, center=1.0/2.5, cmap=color_map)    
-    # To show policy values: use `annot=True`
-    # Round to integer: `fmt='d'` (gives error for floats)
-    # To hide x axis ticks: `xticklabels=False`
-    # TODO: label x and y axes
-    # TODO: better color scheme
-    ax1.invert_yaxis()
-    ax1.get_figure().savefig(file_name_prefix + 'policy_contact_rate.png')
-
-    
-    ### Save full value function
-    # V: (time, env.nS)
-    value_dict = {f't={t}': V[t, :] for t in range(V.shape[0])}
-    value_dict['state'] = range(env.nS)
-    df_value = pd.DataFrame(value_dict)
-    df_value.to_csv(file_name_prefix + 'value.txt')
-
-
-    ### Plot start policy
-    policy_start = policy[0, :, :] # (env.nS, env.nA)
-    actions_policy = [env.actions_r[policy_start[i].argmax()] for i in range(env.nS)]
-    df_policy_start = pd.DataFrame({'state': range(env.nS), 'action': actions_policy})
-    df_policy_start.to_csv(file_name_prefix + 'policy_start.txt')
-    print('policy')
-    fig = plt.figure()
-    # fig.subplots_adjust(top=0.8)
-    ax1 = fig.add_subplot()
-    ax1.set_ylabel('Action (R)')
-    ax1.set_xlabel('Number of Individuals Infectious ($I_t$)')
-    ax1.set_title('Policy')
-    ax1.bar(range(env.nS), actions_policy)
-    plt.savefig(file_name_prefix + 'policy_start.png')
-
-    
-    ### Plot start value function
-    V_start = V[0, :] # (env.nS,)
-    df_value_start = pd.DataFrame({'state': range(env.nS), 'value': V_start})
-    df_value_start.to_csv(file_name_prefix + 'value_start.txt')
-    print('value function')
-    fig = plt.figure()
-    # fig.subplots_adjust(top=0.8)
-    ax1 = fig.add_subplot()
-    ax1.set_ylabel('Value (Arbitrary Units)')
-    ax1.set_xlabel('Number of Individuals Infectious ($I_t$)')
-    ax1.set_title('Value Function')
-    ax1.bar(range(env.nS), V_start)
-    plt.savefig(file_name_prefix + 'value_start.png')
-    
-    env.close()
+    ax.get_figure().savefig(env.file_name_prefix + f'policy_{policy_type_str}.png')
 
 
 def plot_policy(best_action_idx):
@@ -251,79 +217,5 @@ def trajectory_value(env, policy_fn, policy_name, gamma):
         cost_t,
         total_reward
     )
-    
-    '''times = [time_step_days * t for t in range(len(num_susceptible_t))]
-    df_susceptible = pd.DataFrame({'time': times, 'num_susceptible': num_susceptible_t})
-    df_susceptible.to_csv(file_name_prefix + 'susceptible.txt')
-    fig = plt.figure()
-    # fig.subplots_adjust(top=0.8)
-    ax1 = fig.add_subplot()
-    ax1.set_ylabel('Number Susceptible')
-    ax1.set_xlabel('Time (days)')
-    ax1.set_title('Number of Individuals Susceptible ($S_t$)')
-    ax1.bar(times, num_susceptible_t)
-    fig.savefig(file_name_prefix + 'susceptible.png')
-    
-    # print('num infected')
-    times = [time_step_days * t for t in range(len(num_infected_t))]
-    df_infected = pd.DataFrame({'time': times, 'num_infected': num_infected_t})
-    df_infected.to_csv(file_name_prefix + 'infected.txt')
-    fig = plt.figure()
-    # fig.subplots_adjust(top=0.8)
-    ax1 = fig.add_subplot()
-    ax1.set_ylabel('Number Infected')
-    ax1.set_xlabel('Time (days)')
-    ax1.set_title('Number of Individuals Infected ($I_t$)')
-    ax1.bar(times, num_infected_t)
-    fig.savefig(file_name_prefix + 'infected.png')
-    # Try with Seaborn
-    ax2 = sns.barplot(times, num_infected_t)
-    ax2.set_xticks(times)
-    ax2.set_xticklabels(times)
-    fig2 = ax2.get_figure()
-    fig2.savefig(file_name_prefix + 'infected_sns.png')
-    
-    # print('action taken')
-    times = [time_step_days * t for t in range(len(actions_taken_t))]
-    df_actions = pd.DataFrame({'time': times, 'action_taken': actions_taken_t})
-    df_actions.to_csv(file_name_prefix + 'actions.txt')
-    fig = plt.figure()
-    # fig.subplots_adjust(top=0.8)
-    ax1 = fig.add_subplot()
-    ax1.set_ylabel('Level of Lockdown (Percentage Contact Reduction)')
-    ax1.set_xlabel('Time (days)')
-    ax1.set_title('Intervention Taken')
-    ax1.bar(times, actions_taken_t)
-    fig.savefig(file_name_prefix + 'actions.png')
-
-    # R achieved
-    times = [time_step_days * t for t in range(len(R_t))]
-    df_actions = pd.DataFrame({'time': times, 'action_taken': R_t})
-    df_actions.to_csv(file_name_prefix + 'R_t.txt')
-    fig = plt.figure()
-    # fig.subplots_adjust(top=0.8)
-    ax1 = fig.add_subplot()
-    ax1.set_ylabel('Reproductive Number, $R_t$')
-    ax1.set_xlabel('Time (days)')
-    ax1.set_title('Reproductive Number ($R_t$)')
-    ax1.bar(times, R_t)
-    fig.savefig(file_name_prefix + 'R_t.png')
-
-    # Cost incurred
-    times = [time_step_days * t for t in range(len(cost_t))]
-    df_actions = pd.DataFrame({'time': times, 'cost': cost_t})
-    df_actions.to_csv(file_name_prefix + 'cost.txt')
-    fig = plt.figure()
-    # fig.subplots_adjust(top=0.8)
-    ax1 = fig.add_subplot()
-    ax1.set_ylabel('Cost (USD)')
-    ax1.set_xlabel('Time (days)')
-    ax1.set_title('Costs over Time')
-    ax1.bar(times, cost_t)
-    fig.savefig(file_name_prefix + 'cost.png')
-
-    
-    print(f'total reward: {total_reward}')'''
-    
     
     return trajectory
