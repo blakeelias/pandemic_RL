@@ -83,7 +83,7 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0)
     f, ax = plt.subplots(figsize=(11, 9))
     plt.tick_params(bottom='on')
     
-    ax = sns.heatmap(policy_rs[:-1, :].T, center=center, cmap=color_map) # 'RdYlGn')
+    ax = sns.heatmap(policy[:-1, :].T, center=center, cmap=color_map) # 'RdYlGn')
     ax.invert_yaxis()
 
     if trajectory:
