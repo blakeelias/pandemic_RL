@@ -153,7 +153,7 @@ class PandemicEnv(gym.Env):
         #   This could go down due to vaccination
         #   Right now, being optimistic with the vaccination and assuming those people just never become infectious at all
         #   To be less optimistic, move vaccination from transmissibility and into infectiousness
-        #    (i.e., those people can still get infected, they're just a bit less infectious)
+        #    (i.e., those people can still get infected, they're just a bit less infectious, and have a lower cost per case)
         self.infectious_schedule = [1 for time_idx in range(self.horizon_effective + 1)] if self.horizon < np.inf else None
         
         ### Contact rate:

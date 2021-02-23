@@ -36,10 +36,17 @@ def test_environment(env, policy, V, discount_factor):
     save_policy_csvs(env, policy_rs, policy_contact_rates)
     save_value_csv(env, V)
     save_trajectory_csv(env, trajectory)
+    save_transmissibility_csv(env)
+    # save_cost_per_case_csv(env)
     
-    ### Plot full policy
+    ### Plots
+    # policy + trajectory
     plot_policy_trajectory(env, policy_rs, trajectory, 'R', center=1.0)
     plot_policy_trajectory(env, policy_contact_rates, trajectory, 'contact_rate', center=1.0/2.5)
+
+    # vaccine schedule
+    plot_transmissibility(env)
+    # plot_cost_per_case_csv(env)
     
     env.close()
 
@@ -69,6 +76,17 @@ def save_value_csv(env, V):
 def save_trajectory_csv(env, trajectory):
     df = pd.DataFrame(trajectory._asdict())
     df.to_csv(env.file_name_prefix + 'trajectory.txt')
+
+    
+def save_transmissibility_csv(env):
+    df = pd.DataFrame(env.transmissibility_schedule)
+    df.to_csv(env.file_name_prefix + 'transmissibility_schedule.txt')
+
+    
+def save_cost_per_case_csv(env):
+    raise Exception('Not yet implemented')
+    df = pd.DataFrame(env.cost_per_case)
+    df.to_csv(env.file_name_prefix + 'transmissibility_schedule.txt')
 
     
 def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0):
@@ -109,6 +127,14 @@ def plot_policy(best_action_idx):
     ax.set_xticks(range(int(len(states) / 1)))
     ax.set_xticklabels([state for i, state in enumerate(states) if i % 1 == 0])
     plt.show()
+
+
+def plot_transmissibility(env):
+    plt.clf()
+    transmissibility = env.transmissibility_schedule
+    times = list(range(len(transmissibility)))
+    sns.lineplot(x=times, y=transmissibility)
+    plt.savefig(env.file_name_prefix + f'transmissibility.png')
     
 
 def plot_value_function(env, policy, V):
