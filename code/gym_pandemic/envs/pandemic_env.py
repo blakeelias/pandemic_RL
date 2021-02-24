@@ -139,16 +139,16 @@ class PandemicEnv(gym.Env):
 
         # Vaccine roll-out. Then, 100% immune after horizon is over
         if self.vaccine_schedule == 'sigmoid':
-            self.vaccine_schedule = schedule_sigmoid(
+            self.vaccinated = schedule_sigmoid(
                 self.horizon_effective + 1,
                 time_til_half_vaccinated,
                 vaccination_rate,
                 self.final_vaccinated)           
             
         elif self.vaccine_schedule == 'none':
-            self.vaccine_schedule = schedule_none(self.horizon_effective + 1)
+            self.vaccinated = schedule_none(self.horizon_effective + 1)
 
-        self.transmissibility_schedule = 1 - self.vaccine_schedule
+        self.transmissibility_schedule = 1 - self.vaccinated
 
         print('self.transmissibility_schedule:')
         print(self.transmissibility_schedule)
