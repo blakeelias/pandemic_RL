@@ -36,7 +36,7 @@ class PandemicEnv(gym.Env):
                  action_frequency=1,
                  scenario=US,
                  vaccine_start=0,
-                 vaccine_final_susceptible=0,
+                 final_vaccinated=0,
                  vaccine_schedule='none',
                  results_dir='../results',
                  **kwargs):
@@ -124,10 +124,10 @@ class PandemicEnv(gym.Env):
 
         ### Vaccination / Transmissibility:
         #   Transmissibility goes down over time due to vaccinations
-        self.vaccine_final_susceptible = vaccine_final_susceptible
+        self.final_vaccinated = final_vaccinated
         # self.vaccine_start_idx = round(self.horizon_effective * vaccine_start)
-        time_til_half_vaccinated = 32
-        vaccination_rate = 0.1
+        time_til_half_vaccinated = int(self.horizon_effective * 0.375)
+        vaccination_rate = 0.05
 
         num_steps = 4
         # vaccine_schedule = schedule_custom_delay(self.horizon_effective + 1, self.vaccine_start_idx)   # TODO: make this horizon, not horizon + 1
@@ -139,15 +139,23 @@ class PandemicEnv(gym.Env):
 
         # Vaccine roll-out. Then, 100% immune after horizon is over
         if self.vaccine_schedule == 'sigmoid':
-            self.transmissibility_schedule = schedule_sigmoid(
+            self.vaccine_schedule = schedule_sigmoid(
                 self.horizon_effective + 1,
                 time_til_half_vaccinated,
                 vaccination_rate,
-                1 - self.vaccine_final_susceptible)
+                self.final_vaccinated)           
             
         elif self.vaccine_schedule == 'none':
-            self.transmissibility_schedule = schedule_none(self.horizon_effective + 1)
-                
+            self.vaccine_schedule = schedule_none(self.horizon_effective + 1)
+
+        self.transmissibility_schedule = 1 - self.vaccine_schedule
+
+        print('self.transmissibility_schedule:')
+        print(self.transmissibility_schedule)
+
+        print('self.vaccine_schedule:')
+        print(self.vaccine_schedule)
+
         ### Infectiousness:
         #   can go down over time due to better treatments or vaccines
         #   This could go down due to vaccination

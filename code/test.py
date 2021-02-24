@@ -37,6 +37,7 @@ def test_environment(env, policy, V, discount_factor):
     save_value_csv(env, V)
     save_trajectory_csv(env, trajectory)
     save_transmissibility_csv(env)
+    save_vaccinated_csv(env)
     # save_cost_per_case_csv(env)
     
     ### Plots
@@ -46,6 +47,7 @@ def test_environment(env, policy, V, discount_factor):
 
     # vaccine schedule
     plot_transmissibility(env)
+    plot_vaccinated(env)
     # plot_cost_per_case_csv(env)
     
     env.close()
@@ -81,6 +83,11 @@ def save_trajectory_csv(env, trajectory):
 def save_transmissibility_csv(env):
     df = pd.DataFrame(env.transmissibility_schedule)
     df.to_csv(env.file_name_prefix + 'transmissibility_schedule.txt')
+
+    
+def save_vaccinated_csv(env):
+    df = pd.DataFrame(env.vaccine_schedule)
+    df.to_csv(env.file_name_prefix + 'vaccine_schedule.txt')
 
     
 def save_cost_per_case_csv(env):
@@ -121,6 +128,7 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0)
 
 
 def plot_policy(best_action_idx):
+    plt.clf()
     ax = sns.barplot(list(range(num_states)),
                 [actions[int(best_action_idx[n])] for n in range(num_states)])
     # ax.set(xlabel='common xlabel', ylabel='common ylabel')
@@ -137,7 +145,16 @@ def plot_transmissibility(env):
     plt.savefig(env.file_name_prefix + f'transmissibility.png')
     
 
+def plot_vaccinated(env):
+    plt.clf()
+    vaccinated = env.vaccine_schedule
+    times = list(range(len(vaccinated)))
+    sns.lineplot(x=times, y=vaccinated)
+    plt.savefig(env.file_name_prefix + f'vaccinated.png')
+
+    
 def plot_value_function(env, policy, V):
+    plt.clf()
     state_to_value = {}
     state_to_action = {}
 

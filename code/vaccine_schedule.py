@@ -81,9 +81,9 @@ def schedule_custom(horizon):
 def sigmoid(x):
   return 1 / (1 + math.exp(-x))
 
-def schedule_sigmoid(horizon, halfway_point, rate, max_vaccinated):
+def schedule_sigmoid(horizon, halfway_point, rate, final_vaccinated):
     time_steps = range(horizon)
-    schedule = 1 - np.array([max_vaccinated * sigmoid(rate * (t - halfway_point)) for t in time_steps])
+    schedule = np.array([final_vaccinated * sigmoid(rate * (t - halfway_point)) for t in time_steps])
     return schedule
     
 
@@ -111,7 +111,7 @@ def schedule_none(horizon):
     array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
            1., 1., 1., 1., 1., 1., 1.])
     '''
-    milestones = [(1, 1.0), (horizon, 1.0)]
+    milestones = [(1, 0.0), (horizon, 0.0)]
     return vaccine_schedule(horizon, milestones)
 
 
