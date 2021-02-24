@@ -86,7 +86,7 @@ def save_transmissibility_csv(env):
 
     
 def save_vaccinated_csv(env):
-    df = pd.DataFrame(env.vaccine_schedule)
+    df = pd.DataFrame(env.vaccinated)
     df.to_csv(env.file_name_prefix + 'vaccine_schedule.txt')
 
     
@@ -147,7 +147,7 @@ def plot_transmissibility(env):
 
 def plot_vaccinated(env):
     plt.clf()
-    vaccinated = env.vaccine_schedule
+    vaccinated = env.vaccinated
     times = list(range(len(vaccinated)))
     sns.lineplot(x=times, y=vaccinated)
     plt.savefig(env.file_name_prefix + f'vaccinated.png')
