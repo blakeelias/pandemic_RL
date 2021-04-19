@@ -126,7 +126,7 @@ class PandemicEnv(gym.Env):
         #   Transmissibility goes down over time due to vaccinations
         self.final_vaccinated = final_vaccinated
         # self.vaccine_start_idx = round(self.horizon_effective * vaccine_start)
-        time_til_half_vaccinated = int(self.horizon_effective * 0.375)
+        time_til_half_vaccinated = int(self.horizon_effective * 0.75)
         vaccination_rate = 0.05
 
         num_steps = 4
@@ -153,9 +153,10 @@ class PandemicEnv(gym.Env):
         print('self.transmissibility_schedule:')
         print(self.transmissibility_schedule)
 
-        print('self.vaccine_schedule:')
-        print(self.vaccine_schedule)
+        print('self.vaccinated:')
+        print(self.vaccinated)
 
+                
         ### Infectiousness:
         #   can go down over time due to better treatments or vaccines
         #   This could go down due to vaccination
