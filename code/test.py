@@ -111,20 +111,20 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0)
     # color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.5/env.R_0, 'red'), (1.0/env.R_0, 'white'), (1, 'green')])
 
     # color_map = sns.color_palette("vlag_r", as_cmap=True)
-    f, ax = plt.subplots(figsize=(11, 9))
+    fig, axs = plt.subplots(2, 1, figsize=(11, 9))
     plt.tick_params(bottom='on')
     
-    ax = sns.heatmap(policy[:-1, :].T, center=center, cmap=color_map) # 'RdYlGn')
-    ax.invert_yaxis()
+    axs[0] = sns.heatmap(policy[:-1, :].T, center=center, cmap=color_map) # 'RdYlGn')
+    axs[0].invert_yaxis()
 
     if trajectory:
         # Add trajectory plot on to heat map
-        ax2 = ax # .twinx().twiny()
+        ax2 = axs[0] # .twinx().twiny()
         # sns.lineplot(data=trajectory.num_infected_t, linewidth=2, ax=ax2)
         sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax2)  # x=trajectory.times
-        ax.axis('tight')
+        ax2.axis('tight')
 
-    ax.get_figure().savefig(env.file_name_prefix + f'policy_{policy_type_str}.png')
+    fig.savefig(env.file_name_prefix + f'policy_{policy_type_str}.png')
 
 
 def plot_policy(best_action_idx):
