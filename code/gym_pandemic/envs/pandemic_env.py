@@ -3,6 +3,7 @@ from pdb import set_trace as b
 import itertools
 import copy
 import sys
+import os
 
 import numpy as np
 from scipy.stats import poisson, nbinom, rv_discrete
@@ -74,7 +75,7 @@ class PandemicEnv(gym.Env):
         self.kwargs = kwargs
         
         self.results_dir = results_dir
-        
+        os.makedirs(self.results_dir, exist_ok=True)
         # Define action and observation space
         # They must be gym.spaces objects
         # Here using discrete actions

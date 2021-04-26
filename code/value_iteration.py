@@ -103,6 +103,7 @@ def value_iteration_overlapping_horizons(
     planning_horizon = int(planning_horizon)
     
     if total_horizon % planning_horizon != 0:
+        b()
         raise Exception('total_horizon must be a multiple of planning_horizon')
     
     n_steps = total_horizon + 1
