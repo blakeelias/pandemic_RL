@@ -47,7 +47,7 @@ def test_environment(env, policy, V, discount_factor):
 
     # vaccine schedule
     plot_transmissibility(env)
-    plot_vaccinated(env)
+    # plot_vaccinated(env)
     # plot_cost_per_case_csv(env)
     
     env.close()
@@ -111,19 +111,21 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0)
     # color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.5/env.R_0, 'red'), (1.0/env.R_0, 'white'), (1, 'green')])
 
     # color_map = sns.color_palette("vlag_r", as_cmap=True)
-    fig, axs = plt.subplots(2, 1, figsize=(11, 9))
+    fig, axs = plt.subplots(2, 1, figsize=(11, 9), gridspec_kw={'height_ratios': [1, 3]})
     plt.tick_params(bottom='on')
-    
-    axs[0] = sns.heatmap(policy[:-1, :].T, center=center, cmap=color_map) # 'RdYlGn')
-    axs[0].invert_yaxis()
+
+    axs[1] = sns.heatmap(policy[:-1, :].T, center=center, cmap=color_map) # 'RdYlGn')
+    axs[1].invert_yaxis()
 
     if trajectory:
         # Add trajectory plot on to heat map
-        ax2 = axs[0] # .twinx().twiny()
+        ax2 = axs[1] # .twinx().twiny()
         # sns.lineplot(data=trajectory.num_infected_t, linewidth=2, ax=ax2)
-        sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax2)  # x=trajectory.times
+        sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax2, color='black')  # x=trajectory.times
         ax2.axis('tight')
 
+    axs[0] = plot_vaccinated(env, ax=axs[0])
+        
     fig.savefig(env.file_name_prefix + f'policy_{policy_type_str}.png')
 
 
@@ -145,12 +147,13 @@ def plot_transmissibility(env):
     plt.savefig(env.file_name_prefix + f'transmissibility.png')
     
 
-def plot_vaccinated(env):
-    plt.clf()
+def plot_vaccinated(env, ax=None):
+    #plt.clf()
     vaccinated = env.vaccinated
     times = list(range(len(vaccinated)))
-    sns.lineplot(x=times, y=vaccinated)
-    plt.savefig(env.file_name_prefix + f'vaccinated.png')
+    ax_new = sns.lineplot(x=times, y=vaccinated, ax=ax, color='black')
+    return ax_new
+    # plt.savefig(env.file_name_prefix + f'vaccinated.png')
 
     
 def plot_value_function(env, policy, V):
