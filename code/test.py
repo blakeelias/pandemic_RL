@@ -114,7 +114,7 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0)
     left = 0.1
     bottom = 0.1
     
-    width_0 = 0.8
+    width_0 = 0.72
     height_0 = 0.3
 
     width_1 = 0.9
