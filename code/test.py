@@ -110,27 +110,24 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0)
     # ax.get_figure().savefig(file_name_prefix + 'policy_R.png')
     # color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.5/env.R_0, 'red'), (1.0/env.R_0, 'white'), (1, 'green')])
 
-
     left = 0.1
     bottom = 0.1
     
     width_0 = 0.72
-    height_0 = 0.3
+    height_0 = 0.2
 
     width_1 = 0.9
-    height_1 = 0.6
+    height_1 = 0.55
 
     rect_0 = [left, bottom, width_0, height_0]
-    rect_1 = [left, bottom + height_0, width_1, height_1]
+    rect_1 = [left, bottom + height_0 + 0.1, width_1, height_1]
     
     fig = plt.figure()
 
     ax_0 = plt.axes(rect_0)
     ax_1 = plt.axes(rect_1)
     
-    
     axs = [ax_0, ax_1]
-
     
     # color_map = sns.color_palette("vlag_r", as_cmap=True)
     # fig, axs = plt.subplots(2, 1, figsize=(11, 9), gridspec_kw={'height_ratios': [1, 3]})
