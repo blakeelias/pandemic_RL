@@ -11,10 +11,10 @@ from mpl_toolkits.mplot3d import axes3d
 from einops import rearrange
 
 from value_iteration import one_step_lookahead
-from policies import policy_fn_generator, default_policy_fns
+from policies import policy_fn_generator, default_policy_fns, policy_fn_cases_generator
 
 
-Trajectory = namedtuple('Trajectory', ['times', 'num_susceptible_t', 'num_infected_t', 'action_taken_t', 'cost_t', 'total_reward'])
+Trajectory = namedtuple('Trajectory', ['times', 'num_susceptible_t', 'num_infected_t', 'action_taken_t', 'cost_t', 'total_reward', 'policy_switch_time'])
 
 def test_environment(env, policy, V, discount_factor):
     # policy: (time, env.nS, env.nA)
@@ -28,27 +28,32 @@ def test_environment(env, policy, V, discount_factor):
     policy_contact_rates = np.array([[env.contact_factor[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
     # (time, env.nS)
 
-    ### Generate Trajectory
-    policy_fn = policy_fn_generator(policy)
-    trajectory = trajectory_value(env, policy_fn, 'optimized_policy', discount_factor)
-
     ### Save CSVs
     save_policy_csvs(env, policy_rs, policy_contact_rates)
     save_value_csv(env, V)
-    save_trajectory_csv(env, trajectory)
+
     save_transmissibility_csv(env)
     save_vaccinated_csv(env)
     # save_cost_per_case_csv(env)
     
-    ### Plots
-    # policy + trajectory
-    plot_policy_trajectory(env, policy_rs, trajectory, 'R', center=1.0)
-    plot_policy_trajectory(env, policy_contact_rates, trajectory, 'contact_rate', center=1.0/2.5)
-
     # vaccine schedule
     plot_transmissibility(env)
     # plot_vaccinated(env)
     # plot_cost_per_case_csv(env)
+    
+    policy_switch_times = [0, 8, 16, 32, 64, 96, 128, 134, 160]
+    policy_fn = policy_fn_generator(policy)
+    original_policy_fn = policy_fn_cases_generator(60)
+
+    ### Generate Trajectories
+    for policy_switch_time in policy_switch_times:
+        trajectory = trajectory_value(env, policy_fn, 'optimized_policy', discount_factor, original_policy_fn, policy_switch_time)
+        
+        save_trajectory_csv(env, trajectory)
+        ### Plots
+        # policy + trajectory
+        plot_policy_trajectory(env, policy_rs, trajectory, 'R', center=1.0)
+        plot_policy_trajectory(env, policy_contact_rates, trajectory, 'contact_rate', center=1.0/2.5)
     
     env.close()
 
@@ -145,7 +150,7 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0)
 
     axs[0] = plot_vaccinated(env, ax=axs[0])
         
-    fig.savefig(env.file_name_prefix + f'policy_{policy_type_str}.png')
+    fig.savefig(env.file_name_prefix + f'policy_{policy_type_str}_switch_time_{trajectory.policy_switch_time}.png')
 
 
 def plot_policy(best_action_idx):
@@ -214,7 +219,7 @@ def plot_value_function(env, policy, V):
     plt.show()
     
     
-def trajectory_value(env, policy_fn, policy_name, gamma):
+def trajectory_value(env, policy_fn, policy_name, gamma, original_policy_fn, policy_switch_time=0):
     file_name_prefix = env.file_name_prefix + f'/policy={policy_name}/'
     Path(file_name_prefix).mkdir(parents=True, exist_ok=True)
     
@@ -256,13 +261,14 @@ def trajectory_value(env, policy_fn, policy_name, gamma):
         else:
             num_infected_t.append(new_state)
 
+        current_policy_fn = policy_fn if t >= policy_switch_time else original_policy_fn
         if t % env.action_frequency == 0:
             # Get best action
             # Allowed to take a new action once every {env.action_frequency} steps
             # observation = min(observation, env.nS - 1) # max number infected
             #b()
             state_idx = observation
-            action = policy_fn(env, state_idx, t)
+            action = current_policy_fn(env, state_idx, t)
             
         actions_taken_t.append(env.contact_factor[action])
         observation, reward, done, info = env.step(action)
@@ -289,7 +295,8 @@ def trajectory_value(env, policy_fn, policy_name, gamma):
         num_infected_t,
         actions_taken_t,
         cost_t,
-        total_reward
+        total_reward,
+        policy_switch_time
     )
     
     return trajectory
