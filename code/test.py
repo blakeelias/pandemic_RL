@@ -23,7 +23,7 @@ def test_environment(env, policy, V, discount_factor):
     ### Extract policy
     policy_idxs = policy.argmax(axis=-1)
     # (time, env.nS)
-    policy_rs = np.array([[env.actions_r[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
+    policy_rs = np.array([[env.actions_r[policy_idxs[i, j]] * env.transmissibility_schedule[i] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
     # (time, env.nS)
     policy_contact_rates = np.array([[env.contact_factor[policy_idxs[i, j]] for j in range(policy_idxs.shape[1])] for i in range(policy_idxs.shape[0])])
     # (time, env.nS)
