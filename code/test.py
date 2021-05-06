@@ -241,7 +241,10 @@ def trajectory_value(env, policy_fn, policy_name, gamma):
 
     
     t = 0
-    while t < min(env.horizon, 100):
+    horizon = env.horizon
+    if horizon == np.inf:
+        horizon = 100
+    while t < horizon:
         try:
             new_state = env.states[observation]
         except:

@@ -24,7 +24,7 @@ class PandemicEnv(gym.Env):
     def __init__(self,
                  num_population=10000,
                  hospital_capacity_proportion=0.01,
-                 initial_fraction_infected=0.001,
+                 initial_fraction_infected=0.005,
                  R_0=2.5,
                  imported_cases_per_step=0.5,
                  power=2,
