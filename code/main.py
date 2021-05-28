@@ -195,6 +195,7 @@ def main(args):
             print(f'Experiment {i}: {parameters}')
         
             env = PandemicEnv(**parameters, results_dir=args.results_dir)
+            b()
             #parameters['cost_per_case'] = env.cost_per_case
             #parameters['cost_of_R=1_lockdown'] = env._cost_of_contact_factor(env.actions_r.index(1.0))
             # TODO: put these back in -- better to have the actual cost rather than a multiplier
