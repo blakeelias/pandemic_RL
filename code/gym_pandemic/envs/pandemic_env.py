@@ -341,7 +341,7 @@ class PandemicEnv(gym.Env):
         if self.distr_family == 'poisson':
             distr = poisson(lam)
         elif self.distr_family == 'nbinom':
-            r = 100000000000000.0
+            r = 0.17 * num_infected + 0.001 # 100000000000000.0
             # r = 0.17
             p = lam / (r + lam)
             distr = nbinom(r, 1 - p)
@@ -368,6 +368,8 @@ class PandemicEnv(gym.Env):
         distr, feasible_num_infected_range = self._new_infected_distribution(state, action, time_idx)
         num_susceptible, num_infected = self.states[state]
 
+        b()
+        
         probs = distr.pmf(feasible_num_infected_range)
         done = False
 
