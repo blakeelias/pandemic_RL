@@ -24,6 +24,7 @@ class PandemicEnv(gym.Env):
     def __init__(self,
                  num_population=10000,
                  hospital_capacity_proportion=0.01,
+                 # initial_fraction_infected=0.008,
                  initial_fraction_infected=0.005,
                  R_0=2.5,
                  imported_cases_per_step=0.5,
@@ -368,8 +369,6 @@ class PandemicEnv(gym.Env):
         distr, feasible_num_infected_range = self._new_infected_distribution(state, action, time_idx)
         num_susceptible, num_infected = self.states[state]
 
-        b()
-        
         probs = distr.pmf(feasible_num_infected_range)
         done = False
 

@@ -16,7 +16,9 @@ from policies import policy_fn_generator, default_policy_fns, policy_fn_cases_ge
 
 Trajectory = namedtuple('Trajectory', ['times', 'num_susceptible_t', 'num_infected_t', 'action_taken_t', 'cost_t', 'total_reward', 'policy_switch_time'])
 
-def test_environment(env, policy, V, discount_factor):
+def test_environment(env, policy, V, discount_factor, policy_switch_times=(0, 8, 16, 32, 64, 96, 128, 134, 160)):
+    Path(env.file_name_prefix).mkdir(parents=True, exist_ok=True)
+    
     # policy: (time, env.nS, env.nA)
     # V: (time, env.nS)
     
@@ -41,22 +43,31 @@ def test_environment(env, policy, V, discount_factor):
     # plot_vaccinated(env)
     # plot_cost_per_case_csv(env)
     
-    policy_switch_times = [0, 8, 16, 32, 64, 96, 128, 134, 160]
-    policy_fn = policy_fn_generator(policy)
+    new_policy_fn = policy_fn_generator(policy)
     original_policy_fn = policy_fn_cases_generator(60)
 
     ### Generate Trajectories
     for policy_switch_time in policy_switch_times:
-        trajectory = trajectory_value(env, policy_fn, 'optimized_policy', discount_factor, original_policy_fn, policy_switch_time)
-        
-        save_trajectory_csv(env, trajectory)
-        ### Plots
-        # policy + trajectory
+        print(f'policy_switch_time: {policy_switch_time}')
+        trajectory = trajectory_value(env, new_policy_fn, 'optimized_policy', discount_factor, original_policy_fn, policy_switch_time)
+        b()
         plot_policy_trajectory(env, policy_rs, trajectory, 'R', center=1.0)
-        plot_policy_trajectory(env, policy_contact_rates, trajectory, 'contact_rate', center=1.0/2.5)
-    
+        plot_policy_trajectory(env, policy_contact_rates, trajectory, 'contact_rate', center=1.0/env.R_0)
+        
     env.close()
 
+
+def test_environment_default_policy(env, discount_factor):
+    trajectory = trajectory_value(env, policy_fn, 'optimized_policy', discount_factor, original_policy_fn, policy_switch_time)
+
+    save_trajectory_csv(env, trajectory)
+    ### Plots
+    # policy + trajectory
+    plot_policy_trajectory(env, policy_rs, trajectory, 'R', center=1.0)
+    plot_policy_trajectory(env, policy_contact_rates, trajectory, 'contact_rate', center=1.0/env.R_0)
+    
+    env.close()
+    
     
 def save_policy_csvs(env, policy_rs, policy_contact_rates):
     # Policy with respect to R ideally achieved at the given contact rate (with no influence of vaccination or other factors)
@@ -219,7 +230,7 @@ def plot_value_function(env, policy, V):
     plt.show()
     
     
-def trajectory_value(env, policy_fn, policy_name, gamma, original_policy_fn, policy_switch_time=0):
+def trajectory_value(env, new_policy_fn, policy_name, gamma, original_policy_fn, policy_switch_time=0):
     file_name_prefix = env.file_name_prefix + f'/policy={policy_name}/'
     Path(file_name_prefix).mkdir(parents=True, exist_ok=True)
     
@@ -244,7 +255,6 @@ def trajectory_value(env, policy_fn, policy_name, gamma, original_policy_fn, pol
     # print('{num_susceptible}, {num_infected}, {R_ts[action]}, {num_infected * R_ts[action]}')
     # plot_value_function(env, policy, V)
 
-    
     t = 0
     horizon = env.horizon
     if horizon == np.inf:
@@ -261,7 +271,7 @@ def trajectory_value(env, policy_fn, policy_name, gamma, original_policy_fn, pol
         else:
             num_infected_t.append(new_state)
 
-        current_policy_fn = policy_fn if t >= policy_switch_time else original_policy_fn
+        current_policy_fn = new_policy_fn if t >= policy_switch_time else original_policy_fn
         if t % env.action_frequency == 0:
             # Get best action
             # Allowed to take a new action once every {env.action_frequency} steps
