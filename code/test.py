@@ -16,8 +16,6 @@ from policies import policy_fn_generator, default_policy_fns, policy_fn_cases_ge
 
 Trajectory = namedtuple('Trajectory', ['times', 'num_susceptible_t', 'num_infected_t', 'action_taken_t', 'cost_t', 'total_reward', 'policy_switch_time'])
 
-len_time_step = 4
-
 def test_environment(env, policy, V, discount_factor):
     # policy: (time, env.nS, env.nA)
     # V: (time, env.nS)
@@ -147,7 +145,7 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0)
         # Add trajectory plot on to heat map
         ax2 = axs[1] # .twinx().twiny()
         # sns.lineplot(data=trajectory.num_infected_t, linewidth=2, ax=ax2)
-        sns.lineplot(x=[t * len_time_step for t in list(range(len(trajectory.num_infected_t)))], y=trajectory.num_infected_t, linewidth=2, ax=ax2, color='black')  # x=trajectory.times
+        sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax2, color='black')  # x=trajectory.times
         ax2.axis('tight')
 
     axs[0] = plot_vaccinated(env, ax=axs[0])
@@ -168,7 +166,7 @@ def plot_policy(best_action_idx):
 def plot_transmissibility(env):
     plt.clf()
     transmissibility = env.transmissibility_schedule
-    times = [t * len_time_step for t in list(range(len(transmissibility)))]
+    times = list(range(len(transmissibility)))
     sns.lineplot(x=times, y=transmissibility)
     plt.savefig(env.file_name_prefix + f'transmissibility.png')
     
@@ -176,7 +174,7 @@ def plot_transmissibility(env):
 def plot_vaccinated(env, ax=None):
     #plt.clf()
     vaccinated = env.vaccinated
-    times = [t * len_time_step for t in list(range(len(vaccinated)))]
+    times = list(range(len(vaccinated)))
     ax_new = sns.lineplot(x=times, y=vaccinated, ax=ax, color='black')
     return ax_new
     # plt.savefig(env.file_name_prefix + f'vaccinated.png')
