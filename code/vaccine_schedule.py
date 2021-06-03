@@ -111,8 +111,7 @@ def schedule_none(horizon):
     array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
            1., 1., 1., 1., 1., 1., 1.])
     '''
-    milestones = [(1, 0.0), (horizon, 0.0)]
-    return vaccine_schedule(horizon, milestones)
+    return np.array([0] * horizon)
 
 
 def schedule_custom_delay(horizon, delay_horizon):

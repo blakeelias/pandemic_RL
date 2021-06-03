@@ -188,7 +188,6 @@ def main(args):
     policy_evaluations = {}
     
     discount_factor = 1.0
-    
     for i, particular_parameters in enumerate(parameters_sweep):
         try:
             parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
@@ -222,6 +221,14 @@ def main(args):
                 #   (4) extended/lengthen policy
                 #   (5) repeat (back to (1))
                 #   ...
+            else:
+                print('Running with default policy')
+                # Run with a default policy
+
+                default_policy = np.zeros((int(parameters['horizon']), env.nS, env.nA))
+                default_policy[:, :, 6] = 1.0 # 6: R=1;   -1 Default: fully open
+                optimized_V = np.zeros((int(parameters['horizon']), env.nS))
+                test_environment(env, default_policy, optimized_V, discount_factor, policy_switch_times=(8,))
                 
             if args.policy_comparison:
                 if args.policy_optimization:

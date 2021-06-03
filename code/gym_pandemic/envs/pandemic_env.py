@@ -24,6 +24,7 @@ class PandemicEnv(gym.Env):
     def __init__(self,
                  num_population=10000,
                  hospital_capacity_proportion=0.01,
+                 # initial_fraction_infected=0.008,
                  initial_fraction_infected=0.005,
                  R_0=2.5,
                  imported_cases_per_step=0.5,
@@ -341,7 +342,7 @@ class PandemicEnv(gym.Env):
         if self.distr_family == 'poisson':
             distr = poisson(lam)
         elif self.distr_family == 'nbinom':
-            r = 100000000000000.0
+            r = 0.17 * num_infected + 0.001 # 100000000000000.0
             # r = 0.17
             p = lam / (r + lam)
             distr = nbinom(r, 1 - p)
