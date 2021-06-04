@@ -29,7 +29,7 @@ class PandemicEnv(gym.Env):
                  R_0=2.5,
                  imported_cases_per_step=0.5,
                  power=2,
-                 scale_factor=100,
+                 scale_factor=1,
                  cost_per_case_scale_factor=1.0,
                  distr_family='nbinom',
                  dynamics='SIS',
@@ -43,7 +43,7 @@ class PandemicEnv(gym.Env):
                  results_dir='../results',
                  **kwargs):
         super(PandemicEnv, self).__init__()
-        
+        b()
         # States
         self.num_population = num_population
         self.max_infected = int(num_population * hospital_capacity_proportion)

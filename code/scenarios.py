@@ -1,16 +1,19 @@
-GDP_US = 2e13
+GDP_US = 2e13  #  $20 trillion
 
 class US:
     population = 400000000 # 400 million people -- i.e. approximate US population
     # imported_cases_per_step = 0.1
     # hospital_capacity = 1000000 # 1 million hospital beds -- https://www.aha.org/statistics/fast-facts-us-hospitals
     gdp_per_day = GDP_US / 365.0
-    fraction_gdp_lost = 0.35
+    fraction_gdp_lost = 0.5
     death_rate = 0.01
-    cost_per_life_year = 100000
-    cost_per_death = 1e7 # $10,000,000 per death
+    life_expectancy = 79
+    life_years_lost = 16
+    value_of_life = 9700000 # $9,700,000 per death
+    cost_per_life_year = value_of_life / life_expectancy
+    cost_per_death = life_years_lost * cost_per_life_year
     hospitalization_rate = 0.1
-    cost_per_hospitalization = 50000 # $50k per hospitalization -- average amount billed to insurance (can dig up this reference if needed; it was on this order of magnitude)
+    cost_per_hospitalization = 50000  # $50k per hospitalization -- average amount billed to insurance (can dig up this reference if needed; it was on this order of magnitude)
     cost_per_case = death_rate * cost_per_death + hospitalization_rate * cost_per_hospitalization
 
     age_groups = [
