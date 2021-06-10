@@ -88,7 +88,7 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     best_policies_df.columns = param_2_values
     best_policies_df.index = param_1_values
     
-    sns.set(font_scale=0.8, rc={'figure.figsize':(15, 15)})
+    sns.set(font_scale=0.7, rc={'figure.figsize':(25, 25)})
 
     ### Colors
     # White for 0-cases policy
