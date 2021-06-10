@@ -32,6 +32,7 @@ class PandemicEnv(gym.Env):
                  power=2,
                  extra_scale=1,
                  cost_per_case_scale_factor=1.0,
+                 cost_of_R_1_over_cost_per_case=5.0,
                  distr_family='nbinom',
                  dynamics='SIS',
                  init_transition_probs=False,

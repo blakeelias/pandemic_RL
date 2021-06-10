@@ -20,7 +20,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'cost_per_case_scale_factor', 'dynamics', 'distr_family', 'horizon', 'planning_horizon', 'action_frequency', 'vaccine_start', 'final_vaccinated', 'vaccine_schedule', 'initial_fraction_infected', 'tags'])
+Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'cost_per_case_scale_factor', 'cost_of_R_1_over_cost_per_case', 'dynamics', 'distr_family', 'horizon', 'planning_horizon', 'action_frequency', 'vaccine_start', 'final_vaccinated', 'vaccine_schedule', 'initial_fraction_infected', 'tags'])
 
 
 def parse_args():
@@ -78,6 +78,14 @@ def parse_args():
                         default=[1.0],
                         help='')
 
+    parser.add_argument('--cost_of_R_1_over_cost_per_case',
+                        metavar='cost_of_R_1_over_cost_per_case',
+                        type=float,
+                        nargs='+',
+                        default=[1.0],
+                        help='')
+    
+    
     parser.add_argument('--dynamics',
                         type=str,
                         nargs='+',
@@ -163,6 +171,7 @@ def main(args):
             args.power,
             args.extra_scale,
             args.cost_per_case_scale_factor,
+            args.cost_of_R_1_over_cost_per_case,
             args.dynamics,
             args.distr_family,
             args.horizon,
