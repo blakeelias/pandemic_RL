@@ -8,6 +8,8 @@ from tqdm import tqdm
 import argparse
 import replicate
 import numpy as np
+from matplotlib import pyplot as plt
+import matplotlib.ticker as ticker
 
 from train import train_environment
 from test import test_environment
@@ -55,8 +57,8 @@ def parse_args():
                         nargs='+',
                         default=[0.0, 0.5, 1.0, 5.0, 10.0], help='')
 
-    parser.add_argument('--powers',
-                        metavar='powers',
+    parser.add_argument('--power',
+                        metavar='power',
                         type=float,
                         nargs='+',
                         default=[1.0],
@@ -143,14 +145,6 @@ def parse_args():
     return parser.parse_args()
 
 
-power_scale_factor = {
-    .1: 2000,
-    .25: 700,
-    .5: 275,
-    1.0: 70,
-    1.5: 22,
-}
-
 
 def main(args):
     experiment_parameters = {
@@ -166,7 +160,7 @@ def main(args):
             args.hospital_capacity_proportion,
             args.R_0,
             args.imported_cases_per_step_range,
-            args.powers,
+            args.power,
             args.extra_scale,
             args.cost_per_case_scale_factor,
             args.dynamics,
@@ -186,6 +180,14 @@ def main(args):
     Vs = {}
 
     policy_evaluations = {}
+
+    envs = [
+        PandemicEnv(
+            **combine_dicts(particular_parameters._asdict(), experiment_parameters),
+            results_dir=args.results_dir
+        ) for particular_parameters in parameters_sweep
+    ]
+    plot_cost_curves(envs, f'{args.results_dir}/cost_of_lockdown.png')
     
     discount_factor = 1.0
     for i, particular_parameters in enumerate(parameters_sweep):
@@ -222,13 +224,14 @@ def main(args):
                 #   (5) repeat (back to (1))
                 #   ...
             else:
-                print('Running with default policy')
+                pass
+                # print('Running with default policy')
                 # Run with a default policy
 
-                default_policy = np.zeros((int(parameters['horizon']), env.nS, env.nA))
+                '''default_policy = np.zeros((int(parameters['horizon']), env.nS, env.nA))
                 default_policy[:, :, 6] = 1.0 # 6: R=1;   -1 Default: fully open
                 optimized_V = np.zeros((int(parameters['horizon']), env.nS))
-                test_environment(env, default_policy, optimized_V, discount_factor, policy_switch_times=(8,))
+                test_environment(env, default_policy, optimized_V, discount_factor, policy_switch_times=(8,))'''
                 
             if args.policy_comparison:
                 if args.policy_optimization:
@@ -259,24 +262,48 @@ def main(args):
         constant_params = parameters # last parameters that were set
         
         # variable_params = ['cost_per_case', 'cost_of_R=1_lockdown']
-        variable_params = ['cost_per_case_scale_factor', 'extra_scale']
+        # variable_params = ['cost_per_case_scale_factor', 'extra_scale']
+        variable_params = ['power', 'extra_scale']
         
         for param in variable_params:
             del constant_params[param]
             
         args_dict = vars(args)
         
-        visualize_evaluation(
-            policy_names,
-            policy_evaluations,
-            args.results_dir,
-            {variable_params[0]: args_dict[variable_params[0]]},
-            {variable_params[1]: args_dict[variable_params[1]]},
-            constant_params
-        )
+        try:
+            visualize_evaluation(
+                policy_names,
+                policy_evaluations,
+                args.results_dir,
+                {variable_params[0]: args_dict[variable_params[0]]},
+                {variable_params[1]: args_dict[variable_params[1]]},
+                constant_params
+            )
+        except:
+            b()
 
     # experiment.checkpoint(path="lookup_tables")
 
+def plot_cost_curves(envs, filename):
+    fig, ax = plt.subplots()
+    
+    xs = np.arange(0.05, 1, 0.01)
+    for env in envs:
+        ys = []
+        for x in xs:
+            y = env._cost_of_contact_factor(x)
+            ys.append(y)
+            
+        ax.plot(xs, ys)
+
+    ax.set_xlabel('Contact Factor', fontsize=14)
+    ax.set_ylabel('Cost (Millions of Dollars)', fontsize=14)
+    scale_y = 1e6
+    ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_y))
+    ax.yaxis.set_major_formatter(ticks_y)
+    fig.savefig(filename)
+    fig.clf()
+    
 if __name__ == '__main__':
     args = parse_args()
     main(args)

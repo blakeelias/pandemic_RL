@@ -50,7 +50,6 @@ def test_environment(env, policy, V, discount_factor, policy_switch_times=(0, 8,
     for policy_switch_time in policy_switch_times:
         print(f'policy_switch_time: {policy_switch_time}')
         trajectory = trajectory_value(env, new_policy_fn, 'optimized_policy', discount_factor, original_policy_fn, policy_switch_time)
-        b()
         plot_policy_trajectory(env, policy_rs, trajectory, 'R', center=1.0)
         plot_policy_trajectory(env, policy_contact_rates, trajectory, 'contact_rate', center=1.0/env.R_0)
         
@@ -230,7 +229,10 @@ def plot_value_function(env, policy, V):
     plt.show()
     
     
-def trajectory_value(env, new_policy_fn, policy_name, gamma, original_policy_fn, policy_switch_time=0):
+def trajectory_value(env, new_policy_fn, policy_name, gamma, original_policy_fn=None, policy_switch_time=0):
+    if original_policy_fn is None and policy_switch_time > 0:
+        raise Exception('original_policy_fn cannot be None if policy_switch_time > 0')
+
     file_name_prefix = env.file_name_prefix + f'/policy={policy_name}/'
     Path(file_name_prefix).mkdir(parents=True, exist_ok=True)
     

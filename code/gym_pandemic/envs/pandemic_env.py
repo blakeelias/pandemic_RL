@@ -11,6 +11,7 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 
 from utils import save_pickle, load_pickle, CappedDistribution
 from scenarios import US, Test, Test2
@@ -25,11 +26,11 @@ class PandemicEnv(gym.Env):
                  num_population=10000,
                  hospital_capacity_proportion=0.01,
                  # initial_fraction_infected=0.008,
-                 initial_fraction_infected=0.005,
+                 initial_fraction_infected=0.01,
                  R_0=2.5,
                  imported_cases_per_step=0.5,
                  power=2,
-                 scale_factor=1,
+                 extra_scale=1,
                  cost_per_case_scale_factor=1.0,
                  distr_family='nbinom',
                  dynamics='SIS',
@@ -43,7 +44,6 @@ class PandemicEnv(gym.Env):
                  results_dir='../results',
                  **kwargs):
         super(PandemicEnv, self).__init__()
-        b()
         # States
         self.num_population = num_population
         self.max_infected = int(num_population * hospital_capacity_proportion)
@@ -58,16 +58,17 @@ class PandemicEnv(gym.Env):
         
         # Actions
         self.action_frequency = action_frequency
-        
-        # Reward
-        ## Cost of Lockdown
-        self.power = power
-        self.scale_factor = scale_factor
 
         ## Cost of cases
         self.scenario = scenario
         self.cost_per_case = cost_per_case_scale_factor * self.scenario.cost_per_case
         
+        # Reward
+        ## Cost of Lockdown
+        self.power = power
+        min_contact_factor = 0.05
+        self.scale_factor = extra_scale * self.scenario.gdp_per_day  # / (1.0/(min_contact_factor ** self.power) - 1)
+                
         # Horizon
         self.horizon = int(horizon) if horizon < np.inf else horizon
         self.horizon_effective = ceil(horizon / action_frequency) if horizon < np.inf else horizon
@@ -187,8 +188,8 @@ class PandemicEnv(gym.Env):
         self.dynamics_param_str = self._param_string(self.action_frequency, **self.kwargs)
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
         self.file_name_prefix = f'{self.results_dir}/env=({self.dynamics_param_str})/reward=({self.reward_param_str})/'
-        
-        
+
+                
     def track_immunity(self):
         return self.dynamics == 'SIR'
     
@@ -253,30 +254,33 @@ class PandemicEnv(gym.Env):
         #  if Prob(actual_new_cases > self.max_infected) > .05:  return -np.inf
         
         return -self._cost_of_infections(state, **kwargs) \
-               -self._cost_of_contact_factor(action, **kwargs)
+               -self._cost_of_action(action, **kwargs)
              # -self._cost_of_r_linear(r, self.R_0, self.R_0, **kwargs)
     
-    def _cost_of_contact_factor(self, action, **kwargs):
+    def _cost_of_action(self, action, **kwargs):
         '''
         `action` in [0..self.nA]
         '''
         # `factor_contact` \in (0, 1]
-        factor_contact = self.contact_factor[action] # What percentage of contact are we allowing
-        
-        baseline = 1/(1 ** self.power)
-        actual = 1/(factor_contact ** self.power)
+        contact_factor = self.contact_factor[action] # What percentage of contact are we allowing
+        return self._cost_of_contact_factor(contact_factor)
 
-        cost_of_full_lockdown = self.days_per_step * self.scenario.gdp_per_day * self.scenario.fraction_gdp_lost
+    def _cost_of_contact_factor(self, contact_factor):                
+        baseline = 1/(1 ** self.power)  # == 1
+        actual = 1/(contact_factor ** self.power)
+
+        cost_of_full_lockdown = self.days_per_step * self.scenario.gdp_per_day * self.scenario.fraction_gdp_lost * self.num_population / self.scenario.population
         
         # cost_to_keep_half_home / (1/((num_population/4)**power) - 1/(R_0 ** power))
-        if factor_contact >= 1:
+        if contact_factor >= 1:
             return 0
         else:
             return (actual - baseline) * self.scale_factor / (self.R_0 ** self.power) * cost_of_full_lockdown
             # put back in the factor of self.R_0 ** self.power that's been divided out
             # by dividing the denominator of both baseline and actual by R_0
             # (was previously measured on the scale of 0 to R_0; now on the scale of 0 to 1
-    
+
+        
     def _cost_of_r(self, r, **kwargs):
         baseline = 1/(self.R_0 ** self.power)
         actual = 1/(r ** self.power)
@@ -558,3 +562,5 @@ class PandemicEnv(gym.Env):
         param_str = self._param_string(iterations, **kwargs)
         file_name = f'../results/env=({param_str})/transition_dynamics{"_lookup" if lookup else ""}.pickle'
         return file_name
+
+    
