@@ -190,7 +190,7 @@ def main(args):
     plot_cost_curves(envs, f'{args.results_dir}/cost_of_lockdown.png')
     
     discount_factor = 1.0
-    for i, particular_parameters in enumerate(parameters_sweep):
+    for i, particular_parameters in tqdm(enumerate(parameters_sweep)):
         try:
             parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
             print(f'Experiment {i}: {parameters}')
@@ -239,8 +239,8 @@ def main(args):
                 else:
                     policy_names, values = compare_policies(env, discount_factor, default_policy_fns)
 
-                    print('Policy Comparison:')
-                    print(values)
+                    #print('Policy Comparison:')
+                    #print(values)
 
                 params_key = tuple(sorted(tuple(parameters.items())))
                 policy_evaluations[params_key] = values

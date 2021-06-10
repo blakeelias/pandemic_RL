@@ -152,13 +152,6 @@ class PandemicEnv(gym.Env):
             self.vaccinated = schedule_none(self.horizon_effective + 1)
 
         self.transmissibility_schedule = 1 - self.vaccinated
-
-        print('self.transmissibility_schedule:')
-        print(self.transmissibility_schedule)
-
-        print('self.vaccinated:')
-        print(self.vaccinated)
-
                 
         ### Infectiousness:
         #   can go down over time due to better treatments or vaccines
