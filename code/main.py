@@ -20,7 +20,7 @@ from gym_pandemic.envs.pandemic_immunity_env import PandemicImmunityEnv
 from utils import combine_dicts
 
 
-Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion', 'R_0', 'imported_cases_per_step', 'power', 'extra_scale', 'cost_per_case_scale_factor', 'cost_of_R_1_over_cost_per_case', 'dynamics', 'distr_family', 'horizon', 'planning_horizon', 'action_frequency', 'vaccine_start', 'final_vaccinated', 'vaccine_schedule', 'initial_fraction_infected', 'tags'])
+Params = namedtuple('Params', ['num_population', 'hospital_capacity_proportion', 'R_0', 'imported_cases_per_step', 'power', 'cost_of_R_1_over_cost_per_case', 'dynamics', 'distr_family', 'horizon', 'planning_horizon', 'action_frequency', 'vaccine_start', 'final_vaccinated', 'vaccine_schedule', 'initial_fraction_infected', 'tags'])
 
 
 def parse_args():
@@ -59,20 +59,6 @@ def parse_args():
 
     parser.add_argument('--power',
                         metavar='power',
-                        type=float,
-                        nargs='+',
-                        default=[1.0],
-                        help='')
-
-    parser.add_argument('--extra_scale',
-                        metavar='extra_scale',
-                        type=float,
-                        nargs='+',
-                        default=[1.0],
-                        help='')
-
-    parser.add_argument('--cost_per_case_scale_factor',
-                        metavar='cost_per_case_scale_factor',
                         type=float,
                         nargs='+',
                         default=[1.0],
@@ -169,8 +155,6 @@ def main(args):
             args.R_0,
             args.imported_cases_per_step_range,
             args.power,
-            args.extra_scale,
-            args.cost_per_case_scale_factor,
             args.cost_of_R_1_over_cost_per_case,
             args.dynamics,
             args.distr_family,
@@ -272,7 +256,7 @@ def main(args):
         
         # variable_params = ['cost_per_case', 'cost_of_R=1_lockdown']
         # variable_params = ['cost_per_case_scale_factor', 'extra_scale']
-        variable_params = ['power', 'extra_scale']
+        variable_params = ['power', 'cost_of_R_1_over_cost_per_case']
         
         for param in variable_params:
             del constant_params[param]

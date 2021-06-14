@@ -30,8 +30,6 @@ class PandemicEnv(gym.Env):
                  R_0=2.5,
                  imported_cases_per_step=0.5,
                  power=2,
-                 extra_scale=1,
-                 cost_per_case_scale_factor=1.0,
                  cost_of_R_1_over_cost_per_case=5.0,
                  distr_family='nbinom',
                  dynamics='SIS',
@@ -62,14 +60,21 @@ class PandemicEnv(gym.Env):
 
         ## Cost of cases
         self.scenario = scenario
-        self.cost_per_case = cost_per_case_scale_factor * self.scenario.cost_per_case
+        self.cost_per_case = self.scenario.cost_per_case
         
         # Reward
         ## Cost of Lockdown
         self.power = power
         min_contact_factor = 0.05
-        self.scale_factor = extra_scale * self.scenario.gdp_per_day  # / (1.0/(min_contact_factor ** self.power) - 1)
-                
+        self.scale_factor = self.scenario.gdp_per_day  # / (1.0/(min_contact_factor ** self.power) - 1)
+
+        contact_factor_R_1 = 1.0 / self.R_0
+        cost_of_R_1 = self._cost_of_contact_factor(contact_factor_R_1)
+
+        # Want: cost_of_R_1 * extra_scale / cost_per_case = cost_of_R_1_over_cost_per_case
+        extra_scale = self.cost_per_case * cost_of_R_1_over_cost_per_case / cost_of_R_1
+        self.scale_factor *= extra_scale
+        
         # Horizon
         self.horizon = int(horizon) if horizon < np.inf else horizon
         self.horizon_effective = ceil(horizon / action_frequency) if horizon < np.inf else horizon
