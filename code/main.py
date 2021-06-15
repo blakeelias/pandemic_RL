@@ -177,7 +177,8 @@ def main(args):
     envs = [
         PandemicEnv(
             **combine_dicts(particular_parameters._asdict(), experiment_parameters),
-            results_dir=args.results_dir
+            results_dir=args.results_dir,
+            init_state_table=False
         ) for particular_parameters in parameters_sweep
     ]
     plot_cost_curves(envs, f'{args.results_dir}/cost_of_lockdown.png')

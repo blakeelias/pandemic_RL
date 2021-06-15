@@ -41,6 +41,7 @@ class PandemicEnv(gym.Env):
                  final_vaccinated=0,
                  vaccine_schedule='none',
                  results_dir='../results',
+                 init_state_table=True,
                  **kwargs):
         super(PandemicEnv, self).__init__()
         # States
@@ -121,15 +122,16 @@ class PandemicEnv(gym.Env):
                                                 shape=(2,), dtype=np.uint16)
 
         # Observation: (num_susceptible, num_infected)
-        self.states = list(
-            itertools.product(
-                range(self.observation_space.low[0], self.observation_space.high[0] + 1),
-                range(self.observation_space.low[1], self.observation_space.high[1] + 1),
-            ))
-
-        self._state_to_idx = None
+        if init_state_table:
+            self.states = list(
+                itertools.product(
+                    range(self.observation_space.low[0], self.observation_space.high[0] + 1),
+                    range(self.observation_space.low[1], self.observation_space.high[1] + 1),
+                ))
+            
+            self._state_to_idx = None
         
-        self.nS = len(self.states)
+            self.nS = len(self.states)
 
         ### Vaccination / Transmissibility:
         #   Transmissibility goes down over time due to vaccinations
