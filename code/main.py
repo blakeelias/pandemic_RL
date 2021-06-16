@@ -184,10 +184,10 @@ def main(args):
     plot_cost_curves(envs, f'{args.results_dir}/cost_of_lockdown.png')
     
     discount_factor = 1.0
-    for i, particular_parameters in tqdm(enumerate(parameters_sweep)):
+    for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
         try:
             parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
-            print(f'Experiment {i}: {parameters}')
+            # print(f'Experiment {i}: {parameters}')
         
             env = PandemicEnv(**parameters, results_dir=args.results_dir)
             #parameters['cost_per_case'] = env.cost_per_case

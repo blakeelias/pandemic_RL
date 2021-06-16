@@ -55,10 +55,10 @@ def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_
             except:
                 b()
 
-            for trial in values_trials:
-                for k, policy_value in enumerate(values):
+            for trial_num, trials in enumerate(values_trials):
+                for k, policy_value in enumerate(trials):
                     try:
-                        results_table[i, j, k, trial] = policy_value.total_reward
+                        results_table_raw[i, j, k, trial_num] = policy_value.total_reward
                     except:
                         b()
 
@@ -67,7 +67,7 @@ def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_
     return results_table
     
     
-def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params):
+def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params, num_trials):
     param_1_name = list(param_dict_1.keys())[0]
     param_2_name = list(param_dict_2.keys())[0]
 
@@ -76,7 +76,7 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     
     file_path = Path(results_dir) / f'policy_evaluations_{param_1_name,param_2_name}.png'  # _{constant_params
 
-    table = evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params)
+    table = evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params, num_trials)
     num_policies = table.shape[-1] # == len(policy_names)
     
     best_policies = table.argmax(axis=-1)
