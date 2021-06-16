@@ -228,16 +228,21 @@ def main(args):
                 test_environment(env, default_policy, optimized_V, discount_factor, policy_switch_times=(8,))'''
                 
             if args.policy_comparison:
-                if args.policy_optimization:
-                    policy_names, values = compare_policies(env, discount_factor, default_policy_fns, custom_policies=[optimized_policy])
-                else:
-                    policy_names, values = compare_policies(env, discount_factor, default_policy_fns)
+                num_trials = 5
+                results = []
+                for k in range(num_trials):
+                    if args.policy_optimization:
+                        policy_names, values = compare_policies(env, discount_factor, default_policy_fns, custom_policies=[optimized_policy])
+                    else:
+                        policy_names, values = compare_policies(env, discount_factor, default_policy_fns)
+                        
+                        #print('Policy Comparison:')
+                        #print(values)
 
-                    #print('Policy Comparison:')
-                    #print(values)
-
-                params_key = tuple(sorted(tuple(parameters.items())))
-                policy_evaluations[params_key] = values
+                    # results.append((policy_names, values))
+                    params_key = tuple(sorted(tuple(parameters.items())))
+                    policy_evaluations.setdefault(params_key, [])
+                    policy_evaluations[params_key].append(values)
             
             del env
         except:
@@ -271,7 +276,8 @@ def main(args):
                 args.results_dir,
                 {variable_params[0]: args_dict[variable_params[0]]},
                 {variable_params[1]: args_dict[variable_params[1]]},
-                constant_params
+                constant_params,
+                num_trials
             )
         except:
             b()

@@ -29,7 +29,7 @@ def compare_policies(env, gamma, default_policy_fns, custom_policies=()):
         return result
 
 
-def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params):
+def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params, num_trials):
     param_1_name = list(param_dict_1.keys())[0]
     param_2_name = list(param_dict_2.keys())[0]
 
@@ -42,7 +42,7 @@ def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_
 
     # num_policies = len(list(policy_evaluations.values())[0].values())
 
-    results_table = np.zeros((len(param_1_values), len(param_2_values), len(policy_names)))
+    results_table_raw = np.zeros((len(param_1_values), len(param_2_values), len(policy_names), num_trials))
     
     for i, param_1 in enumerate(param_1_values):
         for j, param_2 in enumerate(param_2_values):
@@ -51,16 +51,19 @@ def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_
 
             params_key = tuple(sorted(tuple(new_params.items())))
             try:
-                values = policy_evaluations[params_key]
+                values_trials = policy_evaluations[params_key]
             except:
                 b()
-                
-            for k, policy_value in enumerate(values):
-                try:
-                    results_table[i, j, k] = policy_value.total_reward
-                except:
-                    b()
 
+            for trial in values_trials:
+                for k, policy_value in enumerate(values):
+                    try:
+                        results_table[i, j, k, trial] = policy_value.total_reward
+                    except:
+                        b()
+
+    results_table = np.average(results_table_raw, axis=-1)
+                        
     return results_table
     
     
