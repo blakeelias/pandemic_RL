@@ -228,7 +228,7 @@ def main(args):
                 test_environment(env, default_policy, optimized_V, discount_factor, policy_switch_times=(8,))'''
                 
             if args.policy_comparison:
-                num_trials = 5
+                num_trials = 100
                 results = []
                 for k in range(num_trials):
                     if args.policy_optimization:

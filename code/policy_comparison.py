@@ -116,6 +116,8 @@ def visualize_evaluation(policy_names, policy_evaluations, results_dir, param_di
     # X - Y axis labels
     ax.set_ylabel(param_1_name)
     ax.set_xlabel(param_2_name)
+
+    plt.tight_layout()
     
     # Only y-axis labels need their rotation set, x-axis labels already have a rotation of 0
     _, labels = plt.yticks()
