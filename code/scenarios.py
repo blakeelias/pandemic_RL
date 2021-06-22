@@ -7,15 +7,18 @@ class US:
     gdp_per_day = GDP_US / 365.0
     fraction_gdp_lost = 0.5
     death_rate = 0.01
+    hospitalization_rate = 0.1
+    death_rate_hospital_overflow = 0.2
     life_expectancy = 79
     life_years_lost = 16
     value_of_life = 9700000 # $9,700,000 per death
     cost_per_life_year = value_of_life / life_expectancy
     cost_per_death = life_years_lost * cost_per_life_year
-    hospitalization_rate = 0.1
+    
     cost_per_hospitalization = 50000  # $50k per hospitalization -- average amount billed to insurance (can dig up this reference if needed; it was on this order of magnitude)
     cost_per_case = death_rate * cost_per_death + hospitalization_rate * cost_per_hospitalization
-
+    cost_per_case_hospital_overflow = death_rate_hospital_overflow * cost_per_death
+    
     age_groups = [
         '<5',
         '5-17',

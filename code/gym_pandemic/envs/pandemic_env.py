@@ -42,11 +42,12 @@ class PandemicEnv(gym.Env):
                  vaccine_schedule='none',
                  results_dir='../results',
                  init_state_table=True,
+                 cap_infected_hospital_capacity=True,
                  **kwargs):
         super(PandemicEnv, self).__init__()
         # States
         self.num_population = num_population
-        self.max_infected = int(num_population * hospital_capacity_proportion)
+        self.max_infected = int(num_population * hospital_capacity_proportion) if cap_infected_hospital_capacity else num_population
         self.initial_num_infected = int(num_population * initial_fraction_infected)
 
         # Transitions
@@ -62,6 +63,7 @@ class PandemicEnv(gym.Env):
         ## Cost of cases
         self.scenario = scenario
         self.cost_per_case = self.scenario.cost_per_case
+        self.cost_per_case_hospital_overflow = self.scenario.cost_per_case_hospital_overflow
         
         # Reward
         ## Cost of Lockdown
