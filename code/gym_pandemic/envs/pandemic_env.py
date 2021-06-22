@@ -64,6 +64,10 @@ class PandemicEnv(gym.Env):
         self.scenario = scenario
         self.cost_per_case = self.scenario.cost_per_case
         self.cost_per_case_hospital_overflow = self.scenario.cost_per_case_hospital_overflow
+
+        print('Costs per case:')
+        print(f' normal: {self.cost_per_case}')
+        print(f' overflow: {self.cost_per_case_hospital_overflow}')
         
         # Reward
         ## Cost of Lockdown

@@ -189,7 +189,6 @@ def main(args):
             parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
             # print(f'Experiment {i}: {parameters}')
         
-            env = PandemicEnv(**parameters, results_dir=args.results_dir)
             #parameters['cost_per_case'] = env.cost_per_case
             #parameters['cost_of_R=1_lockdown'] = env._cost_of_contact_factor(env.actions_r.index(1.0))
             # TODO: put these back in -- better to have the actual cost rather than a multiplier
@@ -197,6 +196,8 @@ def main(args):
             optimized_policy = None
             policy_names = []
             if args.policy_optimization:
+                env = PandemicEnv(**parameters, results_dir=args.results_dir)
+                
                 optimized_policies, optimized_Vs = train_environment(env, discount_factor, parameters['planning_horizon'])
 
                 optimized_policy = optimized_policies[-1]
@@ -228,6 +229,7 @@ def main(args):
                 test_environment(env, default_policy, optimized_V, discount_factor, policy_switch_times=(8,))'''
                 
             if args.policy_comparison:
+                env = PandemicEnv(**parameters, results_dir=args.results_dir, cap_infected_hospital_capacity=False)
                 num_trials = 100
                 results = []
                 for k in range(num_trials):
