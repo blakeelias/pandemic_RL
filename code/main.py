@@ -230,7 +230,7 @@ def main(args):
                 
             if args.policy_comparison:
                 env = PandemicEnv(**parameters, results_dir=args.results_dir, cap_infected_hospital_capacity=False)
-                num_trials = 100
+                num_trials = 10
                 results = []
                 for k in range(num_trials):
                     if args.policy_optimization:

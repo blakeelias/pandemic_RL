@@ -47,7 +47,8 @@ class PandemicEnv(gym.Env):
         super(PandemicEnv, self).__init__()
         # States
         self.num_population = num_population
-        self.max_infected = int(num_population * hospital_capacity_proportion) if cap_infected_hospital_capacity else num_population
+        self.hospital_capacity = int(num_population * hospital_capacity_proportion)
+        self.max_infected = self.hospital_capacity if cap_infected_hospital_capacity else num_population
         self.initial_num_infected = int(num_population * initial_fraction_infected)
 
         # Transitions
@@ -337,7 +338,11 @@ class PandemicEnv(gym.Env):
 
     def _cost_of_infections(self, state, **kwargs):
         num_susceptible, num_infected = self.states[state]
-        return max(num_infected, 0) * self.scenario.cost_per_case
+        num_infected = max(num_infected, 0)
+        capacity = self.hospital_capacity
+        num_infected_within_capacity = min(num_infected, capacity)
+        num_infected_above_capacity = max(num_infected - capacity, 0)
+        return num_infected_within_capacity * self.scenario.cost_per_case + num_infected_above_capacity * self.scenario.cost_per_case_hospital_overflow
 
     def _expected_new_infected(self, state, action, time_idx=None, **kwargs):
         num_susceptible, num_infected = self.states[state]
