@@ -23,7 +23,7 @@ def compare_policies(env, gamma, default_policy_fns, custom_policies=()):
         policy_names = [policy_name for policy_name, policy_fn in policy_fns]
         policy_values = [trajectory_value(env, policy_fn, policy_name, gamma) for policy_name, policy_fn in policy_fns]
 
-        file_name = f'{parameters}_trial_{k}.png'
+        # file_name = f'trial_{k}.png'
         
         #result = dict(list(zip(policy_names, policy_values)))
         result = (policy_names, policy_values)
