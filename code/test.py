@@ -152,8 +152,9 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
     # fig, axs = plt.subplots(2, 1, figsize=(11, 9), gridspec_kw={'height_ratios': [1, 3]})
     plt.tick_params(bottom='on')
 
-    axs[1] = sns.heatmap(policy[:-1, :].T, center=center, cmap=color_map) # 'RdYlGn')
-    axs[1].invert_yaxis()
+    if policy:
+        axs[1] = sns.heatmap(policy[:-1, :].T, center=center, cmap=color_map) # 'RdYlGn')
+        axs[1].invert_yaxis()
 
     if trajectory:
         # Add trajectory plot on to heat map
@@ -165,7 +166,8 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
     axs[0] = plot_vaccinated(env, ax=axs[0])
         
     fig.savefig(env.file_name_prefix + f'policy_{policy_type_str}_switch_time_{trajectory.policy_switch_time}_{extra_str}.png')
-
+    plt.clf()
+    fig.clf()
 
 def plot_policy(best_action_idx):
     plt.clf()
@@ -183,7 +185,6 @@ def plot_transmissibility(env):
     times = list(range(len(transmissibility)))
     sns.lineplot(x=times, y=transmissibility)
     plt.savefig(env.file_name_prefix + f'transmissibility.png')
-    
 
 def plot_vaccinated(env, ax=None):
     #plt.clf()
@@ -192,7 +193,7 @@ def plot_vaccinated(env, ax=None):
     ax_new = sns.lineplot(x=times, y=vaccinated, ax=ax, color='black')
     return ax_new
     # plt.savefig(env.file_name_prefix + f'vaccinated.png')
-
+    
     
 def plot_value_function(env, policy, V):
     plt.clf()

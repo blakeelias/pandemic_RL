@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
 
 from train import train_environment
-from test import test_environment
+from test import test_environment, plot_policy_trajectory
 from policy_comparison import compare_policies, visualize_evaluation
 from policies import default_policy_fns
 from gym_pandemic.envs.pandemic_env import PandemicEnv
@@ -242,7 +242,7 @@ def main(args):
                         #print(values)
 
                     for policy_name, trajectory in zip(policy_names, values):
-                        extra_str = f'policy_{policy_name}_trial_{k}.png'
+                        extra_str = f'trial_{k}.png'
                         # plot_trajectory(trajectory, file_name)
                         policy = None
                         plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / env.R_0, extra_str=extra_str)
