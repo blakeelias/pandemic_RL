@@ -241,6 +241,12 @@ def main(args):
                         #print('Policy Comparison:')
                         #print(values)
 
+                    for policy_name, trajectory in zip(policy_names, values):
+                        extra_str = f'policy_{policy_name}_trial_{k}.png'
+                        # plot_trajectory(trajectory, file_name)
+                        policy = None
+                        plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / env.R_0, extra_str=extra_str)
+                        
                     # results.append((policy_names, values))
                     params_key = tuple(sorted(tuple(parameters.items())))
                     policy_evaluations.setdefault(params_key, [])

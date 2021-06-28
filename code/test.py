@@ -16,11 +16,15 @@ from policies import policy_fn_generator, default_policy_fns, policy_fn_cases_ge
 
 Trajectory = namedtuple('Trajectory', ['times', 'num_susceptible_t', 'num_infected_t', 'action_taken_t', 'cost_t', 'total_reward', 'policy_switch_time'])
 
-def test_environment(env, policy, V, discount_factor, policy_switch_times=(0, 8, 16, 32, 64, 96, 128, 134, 160)):
+def test_environment(env, policy, V=None, discount_factor=1.0, policy_switch_times=(0, 8, 16, 32, 64, 96, 128, 134, 160)):
     Path(env.file_name_prefix).mkdir(parents=True, exist_ok=True)
     
     # policy: (time, env.nS, env.nA)
     # V: (time, env.nS)
+    
+    time, env.nS, env.nA = policy.shape
+    if not V:
+        V = -1 * np.ones((time, env.nS))
     
     ### Extract policy
     policy_idxs = policy.argmax(axis=-1)
@@ -111,7 +115,7 @@ def save_cost_per_case_csv(env):
     df.to_csv(env.file_name_prefix + 'transmissibility_schedule.txt')
 
     
-def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0):
+def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0, extra_str=''):
     color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.25, 'red'), (0.5, 'white'), (1, 'green')])
     
     # With respect to R
@@ -160,7 +164,7 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0)
 
     axs[0] = plot_vaccinated(env, ax=axs[0])
         
-    fig.savefig(env.file_name_prefix + f'policy_{policy_type_str}_switch_time_{trajectory.policy_switch_time}.png')
+    fig.savefig(env.file_name_prefix + f'policy_{policy_type_str}_switch_time_{trajectory.policy_switch_time}_{extra_str}.png')
 
 
 def plot_policy(best_action_idx):
