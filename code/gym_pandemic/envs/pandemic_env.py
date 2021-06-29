@@ -264,7 +264,7 @@ class PandemicEnv(gym.Env):
         return -self._cost_of_infections(state, **kwargs) \
                -self._cost_of_action(action, **kwargs)
              # -self._cost_of_r_linear(r, self.R_0, self.R_0, **kwargs)
-    
+        
     def _cost_of_action(self, action, **kwargs):
         '''
         `action` in [0..self.nA]

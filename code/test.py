@@ -14,7 +14,7 @@ from value_iteration import one_step_lookahead
 from policies import policy_fn_generator, default_policy_fns, policy_fn_cases_generator
 
 
-Trajectory = namedtuple('Trajectory', ['times', 'num_susceptible_t', 'num_infected_t', 'action_taken_t', 'cost_t', 'total_reward', 'policy_switch_time'])
+Trajectory = namedtuple('Trajectory', ['time_idxs', 'time_days', 'states_t', 'actions_t', 'num_susceptible_t', 'num_infected_t', 'contact_factor_t', 'cost_t', 'total_reward', 'policy_switch_time'])
 
 def test_environment(env, policy, V=None, discount_factor=1.0, policy_switch_times=(0, 8, 16, 32, 64, 96, 128, 134, 160)):
     Path(env.file_name_prefix).mkdir(parents=True, exist_ok=True)
@@ -53,7 +53,7 @@ def test_environment(env, policy, V=None, discount_factor=1.0, policy_switch_tim
     ### Generate Trajectories
     for policy_switch_time in policy_switch_times:
         print(f'policy_switch_time: {policy_switch_time}')
-        trajectory = trajectory_value(env, new_policy_fn, 'optimized_policy', discount_factor, original_policy_fn, policy_switch_time)
+        trajectory = trajectory_generator(env, new_policy_fn, 'optimized_policy', discount_factor, original_policy_fn, policy_switch_time)
         plot_policy_trajectory(env, policy_rs, trajectory, 'R', center=1.0)
         plot_policy_trajectory(env, policy_contact_rates, trajectory, 'contact_rate', center=1.0/env.R_0)
         
@@ -61,7 +61,7 @@ def test_environment(env, policy, V=None, discount_factor=1.0, policy_switch_tim
 
 
 def test_environment_default_policy(env, discount_factor):
-    trajectory = trajectory_value(env, policy_fn, 'optimized_policy', discount_factor, original_policy_fn, policy_switch_time)
+    trajectory = trajectory_generator(env, policy_fn, 'optimized_policy', discount_factor, original_policy_fn, policy_switch_time)
 
     save_trajectory_csv(env, trajectory)
     ### Plots
@@ -232,9 +232,26 @@ def plot_value_function(env, policy, V):
     print('Policy')
     ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
     plt.show()
+
+def cost_of_trajectory(trajectory, env, gamma):
+    '''
+    Re-evaluate the cost of a trajectory in a different environment than where the trajectory was generated.
+    Assumes the new environment's "(state, action) -> new_state" dynamics are the same, and that just the reward function R(state, action) is different.
+    '''
     
+    total_reward = 0
     
-def trajectory_value(env, new_policy_fn, policy_name, gamma, original_policy_fn=None, policy_switch_time=0):
+    for state, action, time_idx in zip(trajectory.states_t, trajectory.actions_t, trajectory.times):
+        
+        reward = env._reward(state, action, time_idx)
+
+        total_reward *= gamma
+        total_reward += reward
+        
+    return total_reward
+
+    
+def trajectory_generator(env, new_policy_fn, policy_name, gamma, original_policy_fn=None, policy_switch_time=0):
     if original_policy_fn is None and policy_switch_time > 0:
         raise Exception('original_policy_fn cannot be None if policy_switch_time > 0')
 
@@ -247,9 +264,11 @@ def trajectory_value(env, new_policy_fn, policy_name, gamma, original_policy_fn=
     # Must change to use time-varying policy
 
     # Time Series to Save
+    states_t = []
+    actions_t = []
     num_susceptible_t = []
     num_infected_t = []
-    actions_taken_t = []
+    contact_factor_t = []
     R_t = []
     cost_t = []
     
@@ -278,6 +297,8 @@ def trajectory_value(env, new_policy_fn, policy_name, gamma, original_policy_fn=
         else:
             num_infected_t.append(new_state)
 
+        states_t.append(observation)
+        
         current_policy_fn = new_policy_fn if t >= policy_switch_time else original_policy_fn
         if t % env.action_frequency == 0:
             # Get best action
@@ -286,8 +307,9 @@ def trajectory_value(env, new_policy_fn, policy_name, gamma, original_policy_fn=
             #b()
             state_idx = observation
             action = current_policy_fn(env, state_idx, t)
-            
-        actions_taken_t.append(env.contact_factor[action])
+
+        actions_t.append(action)
+        contact_factor_t.append(env.contact_factor[action])
         observation, reward, done, info = env.step(action)
         cost_t.append(reward)
         R_t.append(env.R_t(action, t, num_susceptible))
@@ -305,12 +327,17 @@ def trajectory_value(env, new_policy_fn, policy_name, gamma, original_policy_fn=
     
     # TODO: put back these plots?
     
-    times = [time_step_days * t for t in range(len(num_susceptible_t))]
+    time_days = [time_step_days * t for t in range(len(num_susceptible_t))]
+    time_idxs = list(range(len(time_days)))
+    
     trajectory = Trajectory(
-        times,
+        time_idxs,
+        time_days,
+        states_t,
+        actions_t,
         num_susceptible_t,
         num_infected_t,
-        actions_taken_t,
+        contact_factor_t,
         cost_t,
         total_reward,
         policy_switch_time

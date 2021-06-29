@@ -9,7 +9,7 @@ import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 
 from policies import policy_fn_generator
-from test import trajectory_value
+from test import trajectory_generator
 from utils import load_pickle, save_pickle
 
 
@@ -21,12 +21,12 @@ def compare_policies(env, gamma, default_policy_fns, custom_policies=()):
         custom_policy_fns = [(f'custom_policy_{i}', policy_fn_generator(policy)) for i, policy in enumerate(custom_policies)]
         policy_fns = default_policy_fns + custom_policy_fns
         policy_names = [policy_name for policy_name, policy_fn in policy_fns]
-        policy_values = [trajectory_value(env, policy_fn, policy_name, gamma) for policy_name, policy_fn in policy_fns]
+        policy_trajectories = [trajectory_generator(env, policy_fn, policy_name, gamma) for policy_name, policy_fn in policy_fns]
 
         # file_name = f'trial_{k}.png'
         
         #result = dict(list(zip(policy_names, policy_values)))
-        result = (policy_names, policy_values)
+        result = (policy_names, policy_trajectories)
         save_pickle(result, file_path)
         return result
 
@@ -53,14 +53,14 @@ def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_
 
             params_key = tuple(sorted(tuple(new_params.items())))
             try:
-                values_trials = policy_evaluations[params_key]
+                trajectories_trials = policy_trajectories[params_key]
             except:
                 b()
 
-            for trial_num, trials in enumerate(values_trials):
-                for k, policy_value in enumerate(trials):
+            for trial_num, trials in enumerate(trajectories_trials):
+                for k, policy_trajectory in enumerate(trials):
                     try:
-                        results_table_raw[i, j, k, trial_num] = policy_value.total_reward
+                        results_table_raw[i, j, k, trial_num] = policy_trajectory.total_reward
                     except:
                         b()
 
