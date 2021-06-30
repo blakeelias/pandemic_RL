@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
 
 from train import train_environment
-from test import test_environment, plot_policy_trajectory
+from test import test_environment, plot_policy_trajectory, cost_of_trajectory
 from policy_comparison import compare_policies, visualize_evaluation
 from policies import default_policy_fns
 from gym_pandemic.envs.pandemic_env import PandemicEnv
@@ -182,8 +182,18 @@ def main(args):
         ) for particular_parameters in parameters_sweep
     ]
     plot_cost_curves(envs, f'{args.results_dir}/cost_of_lockdown.png')
-    
+
     discount_factor = 1.0
+
+    trials_policy_trajectories = []
+    num_trials = 10
+    if not args.policy_optimization:
+        for k in range(num_trials):
+            # Can run each policy just once, in a single environment, then evaluate the trajectory's cost
+            # in all other environments, because they have the same state dynamics (just different reward function)
+            policy_names, trajectories = compare_policies(envs[0], discount_factor, default_policy_fns)
+            trials_policy_trajectories.append((policy_names, trajectories))
+
     for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
         try:
             parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
@@ -230,27 +240,28 @@ def main(args):
                 
             if args.policy_comparison:
                 env = PandemicEnv(**parameters, results_dir=args.results_dir, cap_infected_hospital_capacity=False)
-                num_trials = 10
                 results = []
-                for k in range(num_trials):
-                    if args.policy_optimization:
-                        policy_names, values = compare_policies(env, discount_factor, default_policy_fns, custom_policies=[optimized_policy])
-                    else:
-                        policy_names, values = compare_policies(env, discount_factor, default_policy_fns)
-                        
-                        #print('Policy Comparison:')
-                        #print(values)
 
-                    for policy_name, trajectory in zip(policy_names, values):
+                for k in range(num_trials):
+                    policy_names, trajectories = trials_policy_trajectories[k]
+                    
+                    if args.policy_optimization:
+                        optimized_policy_names, optimized_trajectories = compare_policies(env, discount_factor, [], custom_policies=[optimized_policy])
+                        policy_names += optimized_policy_names
+                        trajectories += optimized_trajectories
+                        
+                    for policy_name, trajectory in zip(policy_names, trajectories):
                         extra_str = f'{policy_name}_trial_{k}.png'
                         # plot_trajectory(trajectory, file_name)
                         policy = None
                         plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / env.R_0, extra_str=extra_str)
-                        
+
+                    trajectory_total_rewards = [cost_of_trajectory(trajectory, env, discount_factor) for trajectory in trajectories]
+
                     # results.append((policy_names, values))
                     params_key = tuple(sorted(tuple(parameters.items())))
                     policy_evaluations.setdefault(params_key, [])
-                    policy_evaluations[params_key].append(values)
+                    policy_evaluations[params_key].append(trajectory_total_rewards)
             
             del env
         except:

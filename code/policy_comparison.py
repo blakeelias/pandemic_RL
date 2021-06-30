@@ -53,14 +53,14 @@ def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_
 
             params_key = tuple(sorted(tuple(new_params.items())))
             try:
-                trajectories_trials = policy_trajectories[params_key]
+                trajectories_trials = policy_total_rewards[params_key]
             except:
                 b()
 
             for trial_num, trials in enumerate(trajectories_trials):
-                for k, policy_trajectory in enumerate(trials):
+                for k, policy_total_reward in enumerate(trials):
                     try:
-                        results_table_raw[i, j, k, trial_num] = policy_trajectory.total_reward
+                        results_table_raw[i, j, k, trial_num] = policy_total_reward
                     except:
                         b()
 

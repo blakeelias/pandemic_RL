@@ -233,7 +233,7 @@ def plot_value_function(env, policy, V):
     ax.plot_wireframe(X, Y, Z_policy, rstride=10, cstride=10)
     plt.show()
 
-def cost_of_trajectory(trajectory, env, gamma):
+def cost_of_trajectory(trajectory, env, discount_factor):
     '''
     Re-evaluate the cost of a trajectory in a different environment than where the trajectory was generated.
     Assumes the new environment's "(state, action) -> new_state" dynamics are the same, and that just the reward function R(state, action) is different.
@@ -245,7 +245,7 @@ def cost_of_trajectory(trajectory, env, gamma):
         
         reward = env._reward(state, action, time_idx)
 
-        total_reward *= gamma
+        total_reward *= discount_factor
         total_reward += reward
         
     return total_reward
