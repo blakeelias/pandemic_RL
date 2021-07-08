@@ -182,9 +182,10 @@ def main(args):
         ) for particular_parameters in parameters_sweep
     ]
     plot_cost_curves(envs, f'{args.results_dir}/cost_of_lockdown.png')
-
+    
     discount_factor = 1.0
-
+    envs[0].init_state_table()
+    
     trials_policy_trajectories = []
     num_trials = 10
     if not args.policy_optimization:
@@ -251,7 +252,7 @@ def main(args):
                         trajectories += optimized_trajectories
                         
                     for policy_name, trajectory in zip(policy_names, trajectories):
-                        extra_str = f'{policy_name}_trial_{k}.png'
+                        extra_str = f'{policy_name}_trial_{k}'
                         # plot_trajectory(trajectory, file_name)
                         policy = None
                         plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / env.R_0, extra_str=extra_str)

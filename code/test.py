@@ -1,4 +1,5 @@
 from pdb import set_trace as b
+import os
 from pathlib import Path
 from collections import namedtuple
 
@@ -164,8 +165,11 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
         ax2.axis('tight')
 
     axs[0] = plot_vaccinated(env, ax=axs[0])
-        
-    fig.savefig(env.file_name_prefix + f'policy_{policy_type_str}_switch_time_{trajectory.policy_switch_time}_{extra_str}.png')
+
+    filename = env.file_name_prefix + f'policy_{policy_type_str}_switch_time_{trajectory.policy_switch_time}_{extra_str}.png'
+    Path(env.file_name_prefix).mkdir(parents=True, exist_ok=True)
+    
+    fig.savefig(filename)
     plt.clf()
     fig.clf()
 
@@ -241,7 +245,7 @@ def cost_of_trajectory(trajectory, env, discount_factor):
     
     total_reward = 0
     
-    for state, action, time_idx in zip(trajectory.states_t, trajectory.actions_t, trajectory.times):
+    for state, action, time_idx in zip(trajectory.states_t, trajectory.actions_t, trajectory.time_idxs):
         
         reward = env._reward(state, action, time_idx)
 

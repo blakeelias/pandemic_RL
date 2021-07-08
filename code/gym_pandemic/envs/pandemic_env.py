@@ -130,16 +130,8 @@ class PandemicEnv(gym.Env):
 
         # Observation: (num_susceptible, num_infected)
         if init_state_table:
-            self.states = list(
-                itertools.product(
-                    range(self.observation_space.low[0], self.observation_space.high[0] + 1),
-                    range(self.observation_space.low[1], self.observation_space.high[1] + 1),
-                ))
+            self.init_state_table()
             
-            self._state_to_idx = None
-        
-            self.nS = len(self.states)
-
         ### Vaccination / Transmissibility:
         #   Transmissibility goes down over time due to vaccinations
         self.final_vaccinated = final_vaccinated
@@ -197,6 +189,18 @@ class PandemicEnv(gym.Env):
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
         self.file_name_prefix = f'{self.results_dir}/env=({self.dynamics_param_str})/reward=({self.reward_param_str})/'
 
+
+    def init_state_table(self):
+        self.states = list(
+            itertools.product(
+                range(self.observation_space.low[0], self.observation_space.high[0] + 1),
+                range(self.observation_space.low[1], self.observation_space.high[1] + 1),
+            ))
+        
+        self._state_to_idx = None
+        
+        self.nS = len(self.states)
+        
                 
     def track_immunity(self):
         return self.dynamics == 'SIR'
