@@ -31,7 +31,7 @@ def compare_policies(env, gamma, default_policy_fns, custom_policies=()):
         return result
 
 
-def evaluations_table(policy_names, policy_evaluations, results_dir, param_dict_1, param_dict_2, constant_params, num_trials):
+def evaluations_table(policy_names, policy_total_rewards, results_dir, param_dict_1, param_dict_2, constant_params, num_trials):
     param_1_name = list(param_dict_1.keys())[0]
     param_2_name = list(param_dict_2.keys())[0]
 
