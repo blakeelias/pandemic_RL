@@ -188,94 +188,94 @@ def main(args):
     
     trials_policy_trajectories = []
     num_trials = 10
+
     if not args.policy_optimization:
-        for k in range(num_trials):
+        print('Running trials in the canonical environment')
+        for k in tqdm(list(range(num_trials))):
             # Can run each policy just once, in a single environment, then evaluate the trajectory's cost
             # in all other environments, because they have the same state dynamics (just different reward function)
             policy_names, trajectories = compare_policies(envs[0], discount_factor, default_policy_fns)
             trials_policy_trajectories.append((policy_names, trajectories))
 
+
+    print('Evaluating policy cost with respect to each reward function')
     for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
-        try:
-            parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
-            # print(f'Experiment {i}: {parameters}')
+        print('Combining param dicts... ', end='')
+        parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
+        print('Done')
+        # print(f'Experiment {i}: {parameters}')
         
-            #parameters['cost_per_case'] = env.cost_per_case
-            #parameters['cost_of_R=1_lockdown'] = env._cost_of_contact_factor(env.actions_r.index(1.0))
-            # TODO: put these back in -- better to have the actual cost rather than a multiplier
+        #parameters['cost_per_case'] = env.cost_per_case
+        #parameters['cost_of_R=1_lockdown'] = env._cost_of_contact_factor(env.actions_r.index(1.0))
+        # TODO: put these back in -- better to have the actual cost rather than a multiplier
         
-            optimized_policy = None
-            policy_names = []
-            if args.policy_optimization:
-                env = PandemicEnv(**parameters, results_dir=args.results_dir)
-                
-                optimized_policies, optimized_Vs = train_environment(env, discount_factor, parameters['planning_horizon'])
-
-                optimized_policy = optimized_policies[-1]
-                optimized_V = optimized_Vs[-1]
-                
-                policies[particular_parameters] = optimized_policy
-                Vs[particular_parameters] = optimized_V
-                
-                print(particular_parameters)
-                # For finite time horizon, these tests are less appropriate
-                # Because the policy is time-varying
-                test_environment(env, optimized_policy, optimized_V, discount_factor)
-
-                # TODO: test environment with all the partial policies
-                #   (1) display policy
-                #   (2) follow the policy half-way [solid line]
-                #   (3) [optional: dotted line following remainder of policy]
-                #   (4) extended/lengthen policy
-                #   (5) repeat (back to (1))
-                #   ...
-            else:
-                pass
-                # print('Running with default policy')
-                # Run with a default policy
-
-                '''default_policy = np.zeros((int(parameters['horizon']), env.nS, env.nA))
-                default_policy[:, :, 6] = 1.0 # 6: R=1;   -1 Default: fully open
-                optimized_V = np.zeros((int(parameters['horizon']), env.nS))
-                test_environment(env, default_policy, optimized_V, discount_factor, policy_switch_times=(8,))'''
-                
-            if args.policy_comparison:
-                env = PandemicEnv(**parameters, results_dir=args.results_dir, cap_infected_hospital_capacity=False)
-                results = []
-
-                for k in range(num_trials):
-                    policy_names, trajectories = trials_policy_trajectories[k]
-                    
-                    if args.policy_optimization:
-                        optimized_policy_names, optimized_trajectories = compare_policies(env, discount_factor, [], custom_policies=[optimized_policy])
-                        policy_names += optimized_policy_names
-                        trajectories += optimized_trajectories
-                        
-                    for policy_name, trajectory in zip(policy_names, trajectories):
-                        extra_str = f'{policy_name}_trial_{k}'
-                        # plot_trajectory(trajectory, file_name)
-                        policy = None
-                        plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / env.R_0, extra_str=extra_str)
-
-                    trajectory_total_rewards = [cost_of_trajectory(trajectory, env, discount_factor) for trajectory in trajectories]
-
-                    # results.append((policy_names, values))
-                    params_key = tuple(sorted(tuple(parameters.items())))
-                    policy_evaluations.setdefault(params_key, [])
-                    policy_evaluations[params_key].append(trajectory_total_rewards)
+        optimized_policy = None
+        policy_names = []
+        if args.policy_optimization:
+            env = PandemicEnv(**parameters, results_dir=args.results_dir)
             
-            del env
-        except:
-            try:
-                print(f'Exception for parameters={parameters}:')
-                print('-' * 60)
-                traceback.print_exc()
-                print('-' * 60)
-                print('Continuing with next set of parameters...')
-                print('-' * 60)
-            except:
-                print('Exception (could not print...)')
-            continue
+            optimized_policies, optimized_Vs = train_environment(env, discount_factor, parameters['planning_horizon'])
+            
+            optimized_policy = optimized_policies[-1]
+            optimized_V = optimized_Vs[-1]
+            
+            policies[particular_parameters] = optimized_policy
+            Vs[particular_parameters] = optimized_V
+            
+            print(particular_parameters)
+            # For finite time horizon, these tests are less appropriate
+            # Because the policy is time-varying
+            test_environment(env, optimized_policy, optimized_V, discount_factor)
+            
+            # TODO: test environment with all the partial policies
+            #   (1) display policy
+            #   (2) follow the policy half-way [solid line]
+            #   (3) [optional: dotted line following remainder of policy]
+            #   (4) extended/lengthen policy
+            #   (5) repeat (back to (1))
+            #   ...
+        else:
+            print('Skipped policy optimization')
+            # print('Running with default policy')
+            # Run with a default policy
+            
+            '''default_policy = np.zeros((int(parameters['horizon']), env.nS, env.nA))
+            default_policy[:, :, 6] = 1.0 # 6: R=1;   -1 Default: fully open
+            optimized_V = np.zeros((int(parameters['horizon']), env.nS))
+            test_environment(env, default_policy, optimized_V, discount_factor, policy_switch_times=(8,))'''
+            
+        if args.policy_comparison:
+            print('Initializing environment... ', end='')
+            env = PandemicEnv(**parameters, results_dir=args.results_dir, cap_infected_hospital_capacity=False)
+            print('Done.')
+            results = []
+            
+            for k in range(num_trials):
+                policy_names, trajectories = trials_policy_trajectories[k]
+                print(f'Trial {k}')
+                if args.policy_optimization:
+                    optimized_policy_names, optimized_trajectories = compare_policies(env, discount_factor, [], custom_policies=[optimized_policy])
+                    policy_names += optimized_policy_names
+                    trajectories += optimized_trajectories
+                        
+                for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
+                    extra_str = f'{policy_name}_trial_{k}'
+                    # plot_trajectory(trajectory, file_name)
+                    policy = None
+                    # put this back?
+                    # was this plotting with policy==None?
+                    # and no policy name included?
+                    # plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / env.R_0, extra_str=extra_str)
+                    
+                trajectory_total_rewards = [cost_of_trajectory(trajectory, env, discount_factor) for trajectory in trajectories]
+
+                # results.append((policy_names, values))
+                params_key = tuple(sorted(tuple(parameters.items())))
+                policy_evaluations.setdefault(params_key, [])
+                policy_evaluations[params_key].append(trajectory_total_rewards)
+            
+        del env
+
 
     if args.policy_comparison:
         constant_params = parameters # last parameters that were set
