@@ -243,7 +243,11 @@ def main(args):
             default_policy[:, :, 6] = 1.0 # 6: R=1;   -1 Default: fully open
             optimized_V = np.zeros((int(parameters['horizon']), env.nS))
             test_environment(env, default_policy, optimized_V, discount_factor, policy_switch_times=(8,))'''
-            
+
+        print('After "else" block')
+        print(f'policy_comparison: {args.policy_comparison}')
+        if True:
+            print(True)
         if args.policy_comparison:
             print('Initializing environment... ', end='')
             env = PandemicEnv(**parameters, results_dir=args.results_dir, cap_infected_hospital_capacity=False)
