@@ -189,15 +189,28 @@ def main(args):
     trials_policy_trajectories = []
     num_trials = 10
 
-    if not args.policy_optimization:
+    # Generate trials
+    if args.policy_comparison:
         print('Running trials in the canonical environment')
         for k in tqdm(list(range(num_trials))):
             # Can run each policy just once, in a single environment, then evaluate the trajectory's cost
             # in all other environments, because they have the same state dynamics (just different reward function)
-            policy_names, trajectories = compare_policies(envs[0], discount_factor, default_policy_fns)
+            policy_names, trajectories = compare_policies(envs[0], discount_factor, default_policy_fns, load_cached=False)
             trials_policy_trajectories.append((policy_names, trajectories))
 
-
+    # Plot trajectories
+    for k in range(num_trials):
+        policy_names, trajectories = trials_policy_trajectories[k]
+        for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
+            extra_str = f'{policy_name}_trial_{k}'
+            # plot_trajectory(trajectory, file_name)
+            policy = None
+            # put this back?
+            # was this plotting with policy==None?
+            # and no policy name included?
+            plot_policy_trajectory(envs[0], policy, trajectory, 'contact_rate', center=1.0 / envs[0].R_0, extra_str=extra_str)
+            
+    
     print('Evaluating policy cost with respect to each reward function')
     for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
         print('Combining param dicts... ', end='')
@@ -258,19 +271,10 @@ def main(args):
                 policy_names, trajectories = trials_policy_trajectories[k]
                 print(f'Trial {k}')
                 if args.policy_optimization:
-                    optimized_policy_names, optimized_trajectories = compare_policies(env, discount_factor, [], custom_policies=[optimized_policy])
+                    optimized_policy_names, optimized_trajectories = compare_policies(env, discount_factor, [], custom_policies=[optimized_policy], load_cached=False)
                     policy_names += optimized_policy_names
                     trajectories += optimized_trajectories
-                        
-                for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
-                    extra_str = f'{policy_name}_trial_{k}'
-                    # plot_trajectory(trajectory, file_name)
-                    policy = None
-                    # put this back?
-                    # was this plotting with policy==None?
-                    # and no policy name included?
-                    # plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / env.R_0, extra_str=extra_str)
-                    
+                                        
                 trajectory_total_rewards = [cost_of_trajectory(trajectory, env, discount_factor) for trajectory in trajectories]
 
                 # results.append((policy_names, values))

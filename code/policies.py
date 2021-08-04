@@ -90,6 +90,7 @@ policy_fns_R = [(f'R={R}', policy_fn_R_generator(R)) for R in possible_Rs]
 
 # possible_case_levels = [5, 10, 20, 50, 100, 200, 500, 1000]
 possible_case_levels = [0, 5, 10, 20, 50, 100]
+# possible_case_levels = [10]
 policy_fns_case_level = [(f'target_cases={target_cases}', policy_fn_cases_generator(target_cases)) for target_cases in possible_case_levels]
 
 

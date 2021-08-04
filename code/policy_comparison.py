@@ -13,10 +13,13 @@ from test import trajectory_generator
 from utils import load_pickle, save_pickle
 
 
-def compare_policies(env, gamma, default_policy_fns, custom_policies=()):
+def compare_policies(env, gamma, default_policy_fns, custom_policies=(), load_cached=True):
     file_path = Path(env.file_name_prefix) / 'policy_evaluations.pickle'
     try:
-        return load_pickle(file_path)
+        if load_cached:
+            return load_pickle(file_path)
+        else:
+            raise Exception() # i.e. skip to `except` clause
     except:
         custom_policy_fns = [(f'custom_policy_{i}', policy_fn_generator(policy)) for i, policy in enumerate(custom_policies)]
         policy_fns = default_policy_fns + custom_policy_fns

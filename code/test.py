@@ -166,10 +166,11 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
 
     axs[0] = plot_vaccinated(env, ax=axs[0])
 
-    filename = env.file_name_prefix + f'policy_{policy_type_str}_switch_time_{trajectory.policy_switch_time}_{extra_str}.png'
-    Path(env.file_name_prefix).mkdir(parents=True, exist_ok=True)
-    
-    fig.savefig(filename)
+    directory = Path(env.file_name_prefix) / f'trajectories_(policy={policy_type_str})_(switch_time={trajectory.policy_switch_time})'
+    file_path = str(Path(directory) / f'{extra_str}.png')
+    Path(directory).mkdir(parents=True, exist_ok=True)
+    print('Created directory')
+    fig.savefig(file_path)
     plt.clf()
     fig.clf()
 
