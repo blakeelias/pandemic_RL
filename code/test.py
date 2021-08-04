@@ -260,8 +260,8 @@ def trajectory_generator(env, new_policy_fn, policy_name, gamma, original_policy
     if original_policy_fn is None and policy_switch_time > 0:
         raise Exception('original_policy_fn cannot be None if policy_switch_time > 0')
 
-    file_name_prefix = env.file_name_prefix + f'/policy={policy_name}/'
-    Path(file_name_prefix).mkdir(parents=True, exist_ok=True)
+    # file_name_prefix = env.file_name_prefix + f'/policy={policy_name}/'
+    # Path(file_name_prefix).mkdir(parents=True, exist_ok=True)
     
     ### Trajectory
     # Step through a trajectory
