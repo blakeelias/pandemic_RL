@@ -13,8 +13,8 @@ from test import trajectory_generator
 from utils import load_pickle, save_pickle
 
 
-def compare_policies(env, gamma, default_policy_fns, custom_policies=(), load_cached=True):
-    file_path = Path(env.file_name_prefix) / 'policy_evaluations.pickle'
+def compare_policies(env, gamma, default_policy_fns, custom_policies=(), load_cached=True, trial_num=0):
+    file_path = Path(env.file_name_prefix) / f'policy_evaluations_trial_{trial_num}.pickle'
     try:
         if load_cached:
             return load_pickle(file_path)

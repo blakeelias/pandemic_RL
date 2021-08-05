@@ -195,7 +195,7 @@ def main(args):
         for k in tqdm(list(range(num_trials))):
             # Can run each policy just once, in a single environment, then evaluate the trajectory's cost
             # in all other environments, because they have the same state dynamics (just different reward function)
-            policy_names, trajectories = compare_policies(envs[0], discount_factor, default_policy_fns, load_cached=False)
+            policy_names, trajectories = compare_policies(envs[0], discount_factor, default_policy_fns, load_cached=True, trial_num=k)
             trials_policy_trajectories.append((policy_names, trajectories))
 
     # Plot trajectories
@@ -271,7 +271,7 @@ def main(args):
                 policy_names, trajectories = trials_policy_trajectories[k]
                 print(f'Trial {k}')
                 if args.policy_optimization:
-                    optimized_policy_names, optimized_trajectories = compare_policies(env, discount_factor, [], custom_policies=[optimized_policy], load_cached=False)
+                    optimized_policy_names, optimized_trajectories = compare_policies(env, discount_factor, [], custom_policies=[optimized_policy], load_cached=True, trial_num=k)
                     policy_names += optimized_policy_names
                     trajectories += optimized_trajectories
                                         
