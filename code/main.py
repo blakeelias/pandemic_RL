@@ -187,7 +187,7 @@ def main(args):
     envs[0].init_state_table()
     
     trials_policy_trajectories = []
-    num_trials = 10
+    num_trials = 100
 
     # Generate trials
     if args.policy_comparison:
