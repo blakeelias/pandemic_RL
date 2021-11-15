@@ -129,8 +129,6 @@ class PandemicEnv(gym.Env):
                                                 shape=(2,), dtype=np.uint16)
 
         # Observation: (num_susceptible, num_infected)
-        if init_state_table:
-            self.init_state_table()
             
         ### Vaccination / Transmissibility:
         #   Transmissibility goes down over time due to vaccinations
@@ -178,18 +176,20 @@ class PandemicEnv(gym.Env):
         #if init_transition_probs:
         #    self._set_transition_probabilities()
             
-        self.state = self.initial_num_infected
         self.done = 0
         self.reward = 0
 
+        # Also sets initial state:
         self.reset()
 
+        
         # File name
         self.dynamics_param_str = self._param_string(self.action_frequency, **self.kwargs)
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
         self.file_name_prefix = f'{self.results_dir}/env=({self.dynamics_param_str})/reward=({self.reward_param_str})/'
 
 
+    '''
     def init_state_table(self):
         self.states = list(
             itertools.product(
@@ -200,7 +200,7 @@ class PandemicEnv(gym.Env):
         self._state_to_idx = None
         
         self.nS = len(self.states)
-        
+    '''
                 
     def track_immunity(self):
         return self.dynamics == 'SIR'
@@ -208,7 +208,7 @@ class PandemicEnv(gym.Env):
     def step(self, action):
         reward = self._reward(self.state, action, self.time_idx)
         distr, support = self._new_infected_distribution(self.state, action, self.time_idx)
-        num_susceptible, num_infected = self.states[self.state]
+        num_susceptible, num_infected = self.state_idx_to_obj(self.state)
 
         new_num_infected = distr.rvs()
         new_num_susceptible = num_susceptible - new_num_infected
@@ -238,10 +238,10 @@ class PandemicEnv(gym.Env):
         else:
             num_susceptible = self.num_population
 
-        state_vector = (num_susceptible, num_infected)
+        state_obj = (num_susceptible, num_infected)
         self.time_idx = 0
         
-        state = self.state_obj_to_idx(state_vector)
+        state = self.state_obj_to_idx(state_obj)
         obs = state
         self.state = state
         
@@ -341,7 +341,7 @@ class PandemicEnv(gym.Env):
         return max(net_cost, 0) # cannot incur negative cost (i.e. make money) by making r > R_0_new
 
     def _cost_of_infections(self, state, **kwargs):
-        num_susceptible, num_infected = self.states[state]
+        num_susceptible, num_infected = self.state_idx_to_obj(state)
         num_infected = max(num_infected, 0)
         capacity = self.hospital_capacity
         num_infected_within_capacity = min(num_infected, capacity)
@@ -349,7 +349,7 @@ class PandemicEnv(gym.Env):
         return num_infected_within_capacity * self.scenario.cost_per_case + num_infected_above_capacity * self.scenario.cost_per_case_hospital_overflow
 
     def _expected_new_infected(self, state, action, time_idx=None, **kwargs):
-        num_susceptible, num_infected = self.states[state]
+        num_susceptible, num_infected = self.state_idx_to_obj(state)
         R_t = self.R_t(action, time_idx, num_susceptible)
         expected_new_infected = (num_infected * R_t) + self.imported_cases_per_step
         return expected_new_infected
@@ -357,7 +357,7 @@ class PandemicEnv(gym.Env):
     def _new_infected_distribution(self, state, action, time_idx=None, **kwargs):
         # distr_family: 'poisson' or 'nbinom' or 'deterministic'
         lam = self._expected_new_infected(state, action, time_idx, **kwargs)
-        num_susceptible, num_infected = self.states[state]
+        num_susceptible, num_infected = self.state_idx_to_obj(state)
         
         if self.distr_family == 'poisson':
             distr = poisson(lam)
@@ -372,7 +372,6 @@ class PandemicEnv(gym.Env):
         max_infectable = min(num_susceptible, self.max_infected)
         feasible_range = range(max_infectable + 1)
         return CappedDistribution(distr, feasible_range), feasible_range
-
     
     def R_t(self, action, time_idx, num_susceptible):
         factor_transmissibility = self.transmissibility_schedule[time_idx] if time_idx else 1
@@ -387,7 +386,7 @@ class PandemicEnv(gym.Env):
     def transitions(self, state, action, time_idx=None):
         reward = self._reward(state, action, time_idx)
         distr, feasible_num_infected_range = self._new_infected_distribution(state, action, time_idx)
-        num_susceptible, num_infected = self.states[state]
+        num_susceptible, num_infected = self.state_idx_to_obj(state)
 
         probs = distr.pmf(feasible_num_infected_range)
         done = False
@@ -549,12 +548,29 @@ class PandemicEnv(gym.Env):
 
         num_susceptible, num_infected = state_obj
         if self.track_immunity():
-            num_infected_range = (self.observation_space.high[1] - self.observation_space.low[1] + 1)
-            idx = num_infected_range * num_susceptible + num_infected
+            num_infected_range_len = (self.observation_space.high[1] - self.observation_space.low[1] + 1)
+            idx = num_infected_range_len * num_susceptible + num_infected
         else:
             idx = num_infected
             
         return idx
+
+
+    def state_idx_to_obj(state_idx):
+        num_susceptible = 0
+        num_infected = 0
+
+        num_infected_range_len = (self.observation_space.high[1] - self.observation_space.low[1] + 1)
+
+        if self.track_immunity():
+            num_susceptible = state_idx // num_infected_range_len
+            num_infected = state_idx % num_infected_range_len
+        else:
+            num_susceptible = self.num_population
+            num_infected = state_idx
+        
+        return (num_susceptible, num_infected)
+
     
     def create_iterated_env(self, iterations=4):
         self._set_iterated_probabilities(iterations=iterations)
