@@ -24,7 +24,7 @@ def policy_fn_R(env, state_idx, time_idx, R_t):
     Chooses the max value of R less than this R_t.
     '''
     
-    state = env.states[state_idx]
+    state = env.state_idx_to_obj(state_idx)
     num_susceptible, num_infected = state
     # susceptible_fraction = num_susceptible / env.num_population
     
@@ -56,7 +56,7 @@ def policy_fn_cases(env, state_idx, time_idx, target_cases):
     Chooses the max value of R such that expected number of cases is less than {target_cases}.
     '''
     
-    state = env.states[state_idx]
+    state = env.state_idx_to_obj(state_idx)
     num_susceptible, num_infected = state
     # susceptible_fraction = num_susceptible / env.num_population
     

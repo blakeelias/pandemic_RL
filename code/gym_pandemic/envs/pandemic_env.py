@@ -41,26 +41,59 @@ class PandemicEnv(gym.Env):
                  final_vaccinated=0,
                  vaccine_schedule='none',
                  results_dir='../results',
-                 init_state_table=True,
                  cap_infected_hospital_capacity=True,
                  **kwargs):
         super(PandemicEnv, self).__init__()
+
+        # Dynamics
+        self.dynamics = dynamics
+        self.R_0 = R_0
+        self.imported_cases_per_step = imported_cases_per_step
+        self.distr_family = distr_family
+        self.vaccine_schedule = vaccine_schedule
+
         # States
         self.num_population = num_population
         self.hospital_capacity = int(num_population * hospital_capacity_proportion)
         self.max_infected = self.hospital_capacity if cap_infected_hospital_capacity else num_population
         self.initial_num_infected = int(num_population * initial_fraction_infected)
 
-        # Transitions
-        self.R_0 = R_0
-        self.imported_cases_per_step = imported_cases_per_step
-        self.distr_family = distr_family
-        self.dynamics = dynamics
-        self.vaccine_schedule = vaccine_schedule
+        ### State space
+        if self.track_immunity():  # i.e., SIR
+            # State: (num_susceptible, num_infected)
+            self.observation_space = spaces.Box(low=np.array([0, 0]),
+                                                high=np.array([
+                                                    self.num_population,
+                                                    self.max_infected
+                                                ]),
+                                                shape=(2,), dtype=np.uint16)
+        else:  # SIS
+            self.observation_space = spaces.Box(low=np.array([self.num_population, 0]),
+                                                high=np.array([
+                                                    self.num_population,
+                                                    self.max_infected
+                                                ]),
+                                                shape=(2,), dtype=np.uint16)
+
+        # Observation: (num_susceptible, num_infected)
+
         
         # Actions
         self.action_frequency = action_frequency
-
+        ### Action space
+        #   in increments of 0.5 up to R_0
+        self.actions_r = np.array(
+            # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
+            [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
+            # [0.8, 0.9, 1.0, 1.1, 1.25] + \
+            list(np.arange(1.5, self.R_0, 0.5)) + \
+            [self.R_0]
+        )
+        self.contact_factor = self.actions_r / self.R_0
+        self.nA = self.actions_r.shape[0]
+        self.action_space = spaces.Discrete(self.nA)
+        
+        
         ## Cost of cases
         self.scenario = scenario
         self.cost_per_case = self.scenario.cost_per_case
@@ -96,40 +129,7 @@ class PandemicEnv(gym.Env):
         # They must be gym.spaces objects
         # Here using discrete actions
 
-        
-        ### Action space
-        #   in increments of 0.5 up to R_0
-        self.actions_r = np.array(
-            # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
-            [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
-            # [0.8, 0.9, 1.0, 1.1, 1.25] + \
-            list(np.arange(1.5, self.R_0, 0.5)) + \
-            [self.R_0]
-        )
-        self.contact_factor = self.actions_r / self.R_0
-        self.nA = self.actions_r.shape[0]
-        self.action_space = spaces.Discrete(self.nA)
-
-        
-        ### State space
-        if self.track_immunity():  # SIR
-            # State: (num_susceptible, num_infected)
-            self.observation_space = spaces.Box(low=np.array([0, 0]),
-                                                high=np.array([
-                                                    self.num_population,
-                                                    self.max_infected
-                                                ]),
-                                                shape=(2,), dtype=np.uint16)
-        else:  # SIS
-            self.observation_space = spaces.Box(low=np.array([self.num_population, 0]),
-                                                high=np.array([
-                                                    self.num_population,
-                                                    self.max_infected
-                                                ]),
-                                                shape=(2,), dtype=np.uint16)
-
-        # Observation: (num_susceptible, num_infected)
-            
+                    
         ### Vaccination / Transmissibility:
         #   Transmissibility goes down over time due to vaccinations
         self.final_vaccinated = final_vaccinated
@@ -188,19 +188,6 @@ class PandemicEnv(gym.Env):
         self.reward_param_str = f'power={self.power},scale_factor={self.scale_factor},horizon={self.horizon}'
         self.file_name_prefix = f'{self.results_dir}/env=({self.dynamics_param_str})/reward=({self.reward_param_str})/'
 
-
-    '''
-    def init_state_table(self):
-        self.states = list(
-            itertools.product(
-                range(self.observation_space.low[0], self.observation_space.high[0] + 1),
-                range(self.observation_space.low[1], self.observation_space.high[1] + 1),
-            ))
-        
-        self._state_to_idx = None
-        
-        self.nS = len(self.states)
-    '''
                 
     def track_immunity(self):
         return self.dynamics == 'SIR'
@@ -556,7 +543,7 @@ class PandemicEnv(gym.Env):
         return idx
 
 
-    def state_idx_to_obj(state_idx):
+    def state_idx_to_obj(self, state_idx):
         num_susceptible = 0
         num_infected = 0
 

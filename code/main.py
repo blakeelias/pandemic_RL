@@ -178,13 +178,11 @@ def main(args):
         PandemicEnv(
             **combine_dicts(particular_parameters._asdict(), experiment_parameters),
             results_dir=args.results_dir,
-            init_state_table=False
         ) for particular_parameters in parameters_sweep
     ]
     plot_cost_curves(envs, f'{args.results_dir}/cost_of_lockdown.png')
     
     discount_factor = 1.0
-    envs[0].init_state_table()
     
     trials_policy_trajectories = []
     num_trials = 100

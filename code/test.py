@@ -205,8 +205,8 @@ def plot_value_function(env, policy, V):
     state_to_value = {}
     state_to_action = {}
 
-    for packed_state in env.states:
-        idx = env.state_to_idx[packed_state]
+    for idx in range(env.nS):
+        idx = env.state_obj_to_idx(packed_state)
         unpacked_state = env._unpack_state(packed_state)
         state_to_value[unpacked_state] = V[idx]
         state_to_action[unpacked_state] = env.actions_r[policy[idx].argmax()]
@@ -292,7 +292,7 @@ def trajectory_generator(env, new_policy_fn, policy_name, gamma, original_policy
         horizon = 100
     while t < horizon:
         try:
-            new_state = env.states[observation]
+            new_state = env.state_idx_to_obj(observation)
         except:
             b()
         if type(new_state) == tuple:
