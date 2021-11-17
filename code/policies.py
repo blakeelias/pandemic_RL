@@ -66,7 +66,7 @@ def policy_fn_cases(env, state_idx, time_idx, target_cases):
     
     R_ts = np.array([env.R_t(action, time_idx, num_susceptible) for action in range(min_action_idx, env.nA)])
     
-    # Choose action with largest R_t such that R_t <= 1
+    # Choose action with largest R_t such that num_cases <= target_cases
     # If none satisfy this, pick action with smallest R_t
     possible_new_infected = num_infected * R_ts
     valid_actions = np.where(possible_new_infected <= target_cases)[0]
@@ -79,10 +79,50 @@ def policy_fn_cases(env, state_idx, time_idx, target_cases):
     return action
 
 
+def policy_fn_time(env, state_idx, time_idx, lockdown_duration, init_cases):
+    '''
+    `lockdown_duration`: How long to push cases down for, before switching to an R=1 strategy. If cases are 0, it will relax to R>1 as long as cases stay at 0, otherwise .
+    Chooses the max value of R such that expected number of cases is less than {target_cases}.
+
+    
+    Note: `lockdown_duration` never needs to be longer than the expected amount of time to get to 0 cases. If it's longer, we will let it do that lockdown anyway, as a minimum.
+    '''
+
+    state = env.state_idx_to_obj(state_idx)
+    num_susceptible, num_infected = state
+    # susceptible_fraction = num_susceptible / env.num_population
+    
+    # TODO: allow continuous action space?
+
+    min_action_idx = 4   # min R = 0.8 (with no immunity)
+
+    if time_idx < lockdown_duration:
+        return min_action_idx
+    
+    R_ts = np.array([env.R_t(action, time_idx, num_susceptible) for action in range(min_action_idx, env.nA)])
+    
+
+    lockdown_Rt = R_ts[0]
+    target_cases = init_cases * (lockdown_Rt ** duration)
+    
+    
+    return policy_fn_cases(env, state_idx, target_cases)
+    
+
+
 def policy_fn_cases_generator(target_cases):
     def policy_fn(env, state_idx, time_idx):
         return policy_fn_cases(env, state_idx, time_idx, target_cases)
     return policy_fn
+
+
+def policy_fn_time_generator(init_cases, lockdown_duration):
+    def policy_fn(env, state_idx, time_idx):
+        return policy_fn_time(env, state_idx, time_idx, lockdown_duration, init_cases)
+    return policy_fn
+
+
+
 
 
 possible_Rs = [0.5, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 2.5]
@@ -96,3 +136,7 @@ policy_fns_case_level = [(f'target_cases={target_cases}', policy_fn_cases_genera
 
 # default_policy_fns = policy_fns_R + policy_fns_case_level
 default_policy_fns = policy_fns_case_level + [('do nothing', policy_fn_do_nothing)]
+
+
+def time_policy_fns(init_cases):
+    return [policy_fns_time_generator(init_cases, lockdown_duration) for lockdown_duration in range(0, 30)]

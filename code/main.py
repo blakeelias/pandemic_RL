@@ -132,6 +132,11 @@ def parse_args():
     parser.add_argument('--no-policy-comparison', dest='policy_comparison', action='store_false')
     parser.set_defaults(policy_comparison=True)
 
+    parser.add_argument('--policy-comparison-time', dest='policy_comparison_time', action='store_true')
+    parser.add_argument('--no-policy-comparison-time', dest='policy_comparison_time', action='store_false')
+    parser.set_defaults(policy_comparison_time=True)
+
+    
     parser.add_argument('--policy-optimization', dest='policy_optimization', action='store_true')
     parser.add_argument('--no-policy-optimization', dest='policy_optimization', action='store_false')
     parser.set_defaults(policy_optimization=False)
@@ -185,7 +190,7 @@ def main(args):
     discount_factor = 1.0
     
     trials_policy_trajectories = []
-    num_trials = 100
+    num_trials = 5  # 100
 
     # Generate trials
     if args.policy_comparison:
@@ -310,6 +315,10 @@ def main(args):
 
     # experiment.checkpoint(path="lookup_tables")
 
+    if args.policy_comparison_time:
+        pass
+
+    
 def plot_cost_curves(envs, filename):
     fig, ax = plt.subplots()
     
