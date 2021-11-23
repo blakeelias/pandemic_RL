@@ -138,5 +138,5 @@ policy_fns_case_level = [(f'target_cases={target_cases}', policy_fn_cases_genera
 default_policy_fns = policy_fns_case_level + [('do nothing', policy_fn_do_nothing)]
 
 
-def time_policy_fns(init_cases):
-    return [policy_fns_time_generator(init_cases, lockdown_duration) for lockdown_duration in range(0, 30)]
+def time_policy_fns(init_cases, max_duration):
+    return [policy_fns_time_generator(init_cases, lockdown_duration) for lockdown_duration in range(max_duration)]
