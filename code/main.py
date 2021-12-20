@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
 
 from train import train_environment
-from test import test_environment, plot_policy_trajectory, cost_of_trajectory
+from test import test_environment
 from policy_comparison import compare_policies, visualize_evaluation
 from policies import default_policy_fns
 from gym_pandemic.envs.pandemic_env import PandemicEnv

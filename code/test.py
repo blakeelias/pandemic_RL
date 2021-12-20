@@ -117,7 +117,7 @@ def save_cost_per_case_csv(env):
 
     
 def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0, extra_str=''):
-    color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.25, 'red'), (0.5, 'white'), (1, 'green')])
+    color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.25, 'red'), (0.5, 'yellow'), (1, 'green')])
     
     # With respect to R
     # ax = sns.heatmap(policy_rs[:-1, :].T, linewidths=0.5, center=1.0, cmap='RdYlGn')
@@ -154,7 +154,10 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
     plt.tick_params(bottom='on')
 
     if policy:
-        axs[1] = sns.heatmap(policy[:-1, :].T, center=center, cmap=color_map) # 'RdYlGn')
+        action_heatmap = np.zeros_like(policy[:-1, :].T)
+        for t in range(len(trajectory.contact_factor_t)):
+            action_heatmap[:, t] = trajectory.contact_factor_t[t]
+        axs[1] = sns.heatmap(action_heatmap, center=center, cmap=color_map) # 'RdYlGn')
         axs[1].invert_yaxis()
 
     if trajectory:
