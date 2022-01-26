@@ -232,19 +232,21 @@ def main(args):
             policy_names, trajectories = compare_policies(envs[0], discount_factor, default_policy_fns, load_cached=True, trial_num=k)
             trials_policy_trajectories.append((policy_names, trajectories))
 
-    # Plot trajectories
-    for k in range(num_trials):
-        policy_names, trajectories = trials_policy_trajectories[k]
-        for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
-            extra_str = f'{policy_name}_trial_{k}'
-            # plot_trajectory(trajectory, file_name)
-            policy = None
-            # put this back?
-            # was this plotting with policy==None?
-            # and no policy name included?
-            plot_policy_trajectory(envs[0], policy, trajectory, 'contact_rate', center=1.0 / envs[0].R_0, extra_str=extra_str)
+        # Plot trajectories
+        for k in range(num_trials):
+            policy_names, trajectories = trials_policy_trajectories[k]
+            for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
+                extra_str = f'{policy_name}_trial_{k}'
+                # plot_trajectory(trajectory, file_name)
+                policy = None
+                # put this back?
+                # was this plotting with policy==None?
+                # and no policy name included?
+                plot_policy_trajectory(envs[0], policy, trajectory, 'contact_rate', center=1.0 / envs[0].R_0, extra_str=extra_str)
             
-    
+
+
+    # Main loop
     print('Evaluating policy cost with respect to each reward function')
     for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
         print('Combining param dicts... ', end='')

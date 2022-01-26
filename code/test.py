@@ -24,7 +24,7 @@ def test_environment(env, policy, V=None, discount_factor=1.0, policy_switch_tim
     # V: (time, env.nS)
     
     time, env.nS, env.nA = policy.shape
-    if not V:
+    if V is None:
         V = -1 * np.ones((time, env.nS))
     
     ### Extract policy
@@ -153,7 +153,7 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
     # fig, axs = plt.subplots(2, 1, figsize=(11, 9), gridspec_kw={'height_ratios': [1, 3]})
     plt.tick_params(bottom='on')
 
-    if policy:
+    if policy is not None:
         action_heatmap = np.zeros_like(policy[:-1, :].T)
         for t in range(len(trajectory.contact_factor_t)):
             action_heatmap[:, t] = trajectory.contact_factor_t[t]
