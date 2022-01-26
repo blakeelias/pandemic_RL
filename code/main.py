@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
 
 from train import train_environment
-from test import test_environment
+from test import test_environment, plot_policy_trajectory, cost_of_trajectory
 from policy_comparison import compare_policies, visualize_evaluation
 from policies import default_policy_fns
 from gym_pandemic.envs.pandemic_env import PandemicEnv
@@ -190,7 +190,7 @@ def main(args):
     discount_factor = 1.0
     
     trials_policy_trajectories = []
-    num_trials = 5  # 100
+    num_trials = 1  # 100
 
     
     ### Run policy-time comparison

@@ -157,16 +157,22 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
         action_heatmap = np.zeros_like(policy[:-1, :].T)
         for t in range(len(trajectory.contact_factor_t)):
             action_heatmap[:, t] = trajectory.contact_factor_t[t]
+
         axs[1] = sns.heatmap(action_heatmap, center=center, cmap=color_map) # 'RdYlGn')
         axs[1].invert_yaxis()
 
     if trajectory:
         # Add trajectory plot on to heat map
-        ax2 = axs[1] # .twinx().twiny()
-        # sns.lineplot(data=trajectory.num_infected_t, linewidth=2, ax=ax2)
-        sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax2, color='black')  # x=trajectory.times
-        ax2.axis('tight')
+        ax1 = axs[1] # .twinx().twiny()
 
+        # sns.lineplot(data=trajectory.num_infected_t, linewidth=2, ax=ax2)
+        plot = sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax1, color='black')  # x=trajectory.times
+        plot.set_xlabel('Time (Days)')
+        plot.set_ylabel('Number of New Infections')
+        plot.set_title('New Infections Over Time')
+        ax1.axis('tight')
+        ax1.set_ylim(0, 1000)
+        
     axs[0] = plot_vaccinated(env, ax=axs[0])
 
     directory = Path(env.file_name_prefix) / f'trajectories_(policy={policy_type_str})_(switch_time={trajectory.policy_switch_time})'
