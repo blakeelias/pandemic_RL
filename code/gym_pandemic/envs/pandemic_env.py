@@ -75,6 +75,9 @@ class PandemicEnv(gym.Env):
                                                 ]),
                                                 shape=(2,), dtype=np.uint16)
 
+        a = self.observation_space.high[0] - self.observation_space.low[0] + 1
+        b = self.observation_space.high[1] - self.observation_space.low[1] + 1
+        self.nS = a * b
         # Observation: (num_susceptible, num_infected)
 
         
