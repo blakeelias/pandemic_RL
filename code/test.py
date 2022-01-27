@@ -148,30 +148,33 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
     ax_1 = plt.axes(rect_1)
     
     axs = [ax_0, ax_1]
+
+    T = len(trajectory.contact_factor_t)
     
     # color_map = sns.color_palette("vlag_r", as_cmap=True)
     # fig, axs = plt.subplots(2, 1, figsize=(11, 9), gridspec_kw={'height_ratios': [1, 3]})
     plt.tick_params(bottom='on')
 
     if policy is not None:
-        action_heatmap = np.zeros_like(policy[:-1, :].T)
-        for t in range(len(trajectory.contact_factor_t)):
-            action_heatmap[:, t] = trajectory.contact_factor_t[t]
-
-        axs[1] = sns.heatmap(action_heatmap, center=center, cmap=color_map) # 'RdYlGn')
+        # Plot full policy heatmap
+        axs[1] = sns.heatmap(policy[:-1, :].T, center=center, cmap=color_map) # 'RdYlGn')
         axs[1].invert_yaxis()
-
+                
     if trajectory:
-        # Add trajectory plot on to heat map
-        ax1 = axs[1] # .twinx().twiny()
+        # Plot infection trajectory
 
-        # sns.lineplot(data=trajectory.num_infected_t, linewidth=2, ax=ax2)
-        plot = sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax1, color='black')  # x=trajectory.times
+        plot = sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax_1, color='black')  # x=trajectory.times
         plot.set_xlabel('Time (Days)')
         plot.set_ylabel('Number of New Infections')
         plot.set_title('New Infections Over Time')
-        ax1.axis('tight')
-        ax1.set_ylim(0, env.max_infected * 1.1)
+        ax_1.axis('tight')
+        ax_1.set_ylim(0, env.max_infected * 1.1)
+        
+        # Plot actions taken
+        for t in range(T):
+            contact_factor = trajectory.contact_factor_t[t]
+            color = color_map(contact_factor)
+            ax_1.axvspan(t, t + 1, facecolor=color, alpha=0.5, zorder=-100)        
         
     axs[0] = plot_vaccinated(env, ax=axs[0])
 
