@@ -133,10 +133,10 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
     left = 0.1
     bottom = 0.1
     
-    width_0 = 0.72
+    width_0 = 0.85
     height_0 = 0.2
 
-    width_1 = 0.9
+    width_1 = width_0
     height_1 = 0.55
 
     rect_0 = [left, bottom, width_0, height_0]
@@ -171,7 +171,7 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
         plot.set_ylabel('Number of New Infections')
         plot.set_title('New Infections Over Time')
         ax1.axis('tight')
-        ax1.set_ylim(0, 1000)
+        ax1.set_ylim(0, env.max_infected * 1.1)
         
     axs[0] = plot_vaccinated(env, ax=axs[0])
 
