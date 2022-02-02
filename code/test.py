@@ -130,7 +130,7 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
     # ax.get_figure().savefig(file_name_prefix + 'policy_R.png')
     # color_map = matplotlib.colors.LinearSegmentedColormap.from_list('lockdown', [(0.0, 'red'), (0.5/env.R_0, 'red'), (1.0/env.R_0, 'white'), (1, 'green')])
 
-    left = 0.1
+    left = 0.125
     bottom = 0.1
     
     width_0 = 0.85
@@ -163,20 +163,24 @@ def plot_policy_trajectory(env, policy, trajectory, policy_type_str, center=1.0,
     if trajectory:
         # Plot infection trajectory
 
-        plot = sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax_1, color='black')  # x=trajectory.times
-        plot.set_xlabel('Time (Days)')
+        # plot = sns.lineplot(x=list(range(len(trajectory.num_infected_t))), y=trajectory.num_infected_t, linewidth=2, ax=ax_1, color='black')  # x=trajectory.times
+        times = trajectory.time_days
+        plot = sns.lineplot(x=times, y=trajectory.num_infected_t, linewidth=2, ax=ax_1, color='black')  # x=trajectory.times
+        # ax_1.axis('tight')
+
+        ax_1.set_xlim(0, times[-1])
+        ax_1.set_ylim(0, env.max_infected * 1.1)
+        
         plot.set_ylabel('Number of New Infections')
         plot.set_title('New Infections Over Time')
-        ax_1.axis('tight')
-        ax_1.set_ylim(0, env.max_infected * 1.1)
         
         # Plot actions taken
         for t in range(T):
             contact_factor = trajectory.contact_factor_t[t]
             color = color_map(contact_factor)
-            ax_1.axvspan(t, t + 1, facecolor=color, alpha=0.5, zorder=-100)        
+            ax_1.axvspan(times[t], times[t] + env.time_step_days, facecolor=color, alpha=0.5, zorder=-100)        
         
-    axs[0] = plot_vaccinated(env, ax=axs[0])
+        axs[0] = plot_vaccinated(env, trajectory, ax=axs[0])
 
     directory = Path(env.file_name_prefix) / f'trajectories_(policy={policy_type_str})_(switch_time={trajectory.policy_switch_time})'
     file_path = str(Path(directory) / f'{extra_str}.png')
@@ -203,14 +207,19 @@ def plot_transmissibility(env):
     sns.lineplot(x=times, y=transmissibility)
     plt.savefig(env.file_name_prefix + f'transmissibility.png')
 
-def plot_vaccinated(env, ax=None):
-    #plt.clf()
-    vaccinated = env.vaccinated
-    times = list(range(len(vaccinated)))
-    ax_new = sns.lineplot(x=times, y=vaccinated, ax=ax, color='black')
-    return ax_new
-    # plt.savefig(env.file_name_prefix + f'vaccinated.png')
     
+def plot_vaccinated(env, trajectory, ax=None):
+    vaccinated = env.vaccinated[:-1]  # one extra entry here...
+    times = trajectory.time_days
+        
+    ax_new = sns.lineplot(x=times, y=vaccinated, ax=ax, color='black')
+    ax_new.set_xlim(0, times[-1])
+    ax_new.set_ylim(-0.05, 1.05)
+    ax_new.set_xlabel('Time (Days)')
+    ax_new.set_ylabel('Portion Vaccinated')
+
+    return ax_new
+        
     
 def plot_value_function(env, policy, V):
     plt.clf()
@@ -344,7 +353,7 @@ def trajectory_generator(env, new_policy_fn, policy_name, gamma, original_policy
     
     # TODO: put back these plots?
     
-    time_days = [time_step_days * t for t in range(len(num_susceptible_t))]
+    time_days = [env.time_step_days * t for t in range(len(num_susceptible_t))]
     time_idxs = list(range(len(time_days)))
     
     trajectory = Trajectory(

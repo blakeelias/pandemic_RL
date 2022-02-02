@@ -42,6 +42,7 @@ class PandemicEnv(gym.Env):
                  vaccine_schedule='none',
                  results_dir='../results',
                  cap_infected_hospital_capacity=True,
+                 time_step_days=4,
                  **kwargs):
         super(PandemicEnv, self).__init__()
 
@@ -51,7 +52,8 @@ class PandemicEnv(gym.Env):
         self.imported_cases_per_step = imported_cases_per_step
         self.distr_family = distr_family
         self.vaccine_schedule = vaccine_schedule
-
+        self.time_step_days = time_step_days
+        
         # States
         self.num_population = num_population
         self.hospital_capacity = int(num_population * hospital_capacity_proportion)
@@ -196,9 +198,10 @@ class PandemicEnv(gym.Env):
         return self.dynamics == 'SIR'
     
     def step(self, action):
-        reward = self._reward(self.state, action, self.time_idx)
-        distr, support = self._new_infected_distribution(self.state, action, self.time_idx)
         num_susceptible, num_infected = self.state_idx_to_obj(self.state)
+
+        distr, support = self._new_infected_distribution(self.state, action, self.time_idx)
+        reward = self._reward(self.state, action, self.time_idx)
 
         new_num_infected = distr.rvs()
         new_num_susceptible = num_susceptible - new_num_infected
@@ -340,14 +343,18 @@ class PandemicEnv(gym.Env):
 
     def _expected_new_infected(self, state, action, time_idx=None, **kwargs):
         num_susceptible, num_infected = self.state_idx_to_obj(state)
+        if num_infected < 10:
+            b()
         R_t = self.R_t(action, time_idx, num_susceptible)
         expected_new_infected = (num_infected * R_t) + self.imported_cases_per_step
         return expected_new_infected
 
     def _new_infected_distribution(self, state, action, time_idx=None, **kwargs):
         # distr_family: 'poisson' or 'nbinom' or 'deterministic'
-        lam = self._expected_new_infected(state, action, time_idx, **kwargs)
+
         num_susceptible, num_infected = self.state_idx_to_obj(state)
+
+        lam = self._expected_new_infected(state, action, time_idx, **kwargs)
         
         if self.distr_family == 'poisson':
             distr = poisson(lam)
