@@ -7,6 +7,8 @@ import os
 
 import numpy as np
 from scipy.stats import poisson, nbinom, rv_discrete
+import pacal
+
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -16,6 +18,7 @@ from matplotlib import pyplot as plt
 from utils import save_pickle, load_pickle, CappedDistribution
 from scenarios import US, Test, Test2
 from vaccine_schedule import schedule_even_delay, schedule_custom_delay, schedule_sigmoid, schedule_none
+
 
 class PandemicEnv(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -351,36 +354,42 @@ class PandemicEnv(gym.Env):
 
     def _new_infected_distribution(self, state, action, time_idx=None, **kwargs):
         # distr_family: 'poisson' or 'nbinom' or 'deterministic'
-
         num_susceptible, num_infected = self.state_idx_to_obj(state)
 
+
+        ### Importation:
+        import_distr = poisson(self.imported_cases_per_step)
+        # import_distr_pacal = pacal.DiscreteDistr(xi=feasible_range,
+        #                                          pi=import_distr.pmf(feasible_range))
+        import_distr_pacal = pacal.Poisson(self.imported_cases_per_step)
+
+
+        ### Community Transmission:
         lam = self._expected_new_infected(state, action, time_idx, **kwargs)
         
         if self.distr_family == 'poisson':
             community_distr = poisson(lam)
+
+            # Slow:
+            community_distr_pacal = pacal.DiscreteDistr(xi=feasible_range,
+                                                        pi=community_distr.pmf(feasible_range))
         elif self.distr_family == 'nbinom':
             r = 0.17 * num_infected + 0.001 # 100000000000000.0
             # r = 0.17
             p = lam / (r + lam)
             community_distr = nbinom(r, 1 - p)
+
+            # Slow:
+            community_distr_pacal = pacal.DiscreteDistr(xi=feasible_range,
+                                                        pi=community_distr.pmf(feasible_range))
         elif self.distr_family == 'deterministic':
             community_distr = rv_discrete(values=([int(lam)], [1.0]))
+            community_distr_pacal = pacal.ConstDistr(c = lam)
 
-        import_distr = poisson(self.imported_cases_per_step)
-
-        # TODO: add these properly using PaCal
-        import pacal
-        # distr = community_distr + import_distr
         
         max_infectable = min(num_susceptible, self.max_infected)
         feasible_range = range(max_infectable + 1)
-
-        community_distr_pacal = pacal.DiscreteDistr(xi=feasible_range,
-                                                    pi=community_distr.pmf(feasible_range))
-
-        import_distr_pacal = pacal.DiscreteDistr(xi=feasible_range,
-                                                 pi=import_distr.pmf(feasible_range))
-
+        
         total_distr_pacal = community_distr_pacal + import_distr_pacal
 
         total_distr = rv_discrete(values=(
