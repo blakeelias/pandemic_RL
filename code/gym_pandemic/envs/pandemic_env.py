@@ -343,10 +343,10 @@ class PandemicEnv(gym.Env):
 
     def _expected_new_infected(self, state, action, time_idx=None, **kwargs):
         num_susceptible, num_infected = self.state_idx_to_obj(state)
-        if num_infected < 10:
-            b()
+        #if num_infected < 10:
+        #    b()
         R_t = self.R_t(action, time_idx, num_susceptible)
-        expected_new_infected = (num_infected * R_t) + self.imported_cases_per_step
+        expected_new_infected = (num_infected * R_t)
         return expected_new_infected
 
     def _new_infected_distribution(self, state, action, time_idx=None, **kwargs):
@@ -357,18 +357,38 @@ class PandemicEnv(gym.Env):
         lam = self._expected_new_infected(state, action, time_idx, **kwargs)
         
         if self.distr_family == 'poisson':
-            distr = poisson(lam)
+            community_distr = poisson(lam)
         elif self.distr_family == 'nbinom':
             r = 0.17 * num_infected + 0.001 # 100000000000000.0
             # r = 0.17
             p = lam / (r + lam)
-            distr = nbinom(r, 1 - p)
+            community_distr = nbinom(r, 1 - p)
         elif self.distr_family == 'deterministic':
-            distr = rv_discrete(values=([int(lam)], [1.0]))
+            community_distr = rv_discrete(values=([int(lam)], [1.0]))
 
+        import_distr = poisson(self.imported_cases_per_step)
+
+        # TODO: add these properly using PaCal
+        import pacal
+        # distr = community_distr + import_distr
+        
         max_infectable = min(num_susceptible, self.max_infected)
         feasible_range = range(max_infectable + 1)
-        return CappedDistribution(distr, feasible_range), feasible_range
+
+        community_distr_pacal = pacal.DiscreteDistr(xi=feasible_range,
+                                                    pi=community_distr.pmf(feasible_range))
+
+        import_distr_pacal = pacal.DiscreteDistr(xi=feasible_range,
+                                                 pi=import_distr.pmf(feasible_range))
+
+        total_distr_pacal = community_distr_pacal + import_distr_pacal
+
+        total_distr = rv_discrete(values=(
+            feasible_range,
+            [total_distr_pacal.pdf(i) for i in feasible_range]
+        ))
+        
+        return CappedDistribution(total_distr, feasible_range), feasible_range
     
     def R_t(self, action, time_idx, num_susceptible):
         factor_transmissibility = self.transmissibility_schedule[time_idx] if time_idx else 1
