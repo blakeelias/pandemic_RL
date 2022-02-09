@@ -326,7 +326,9 @@ def main(args):
         
         # variable_params = ['cost_per_case', 'cost_of_R=1_lockdown']
         # variable_params = ['cost_per_case_scale_factor', 'extra_scale']
-        variable_params = ['power', 'cost_of_R_1_over_cost_per_case']
+
+        # variable_params = ['power', 'cost_of_R_1_over_cost_per_case']
+        variable_params = ['R_0', 'cost_of_R_1_over_cost_per_case']
         
         for param in variable_params:
             del constant_params[param]
