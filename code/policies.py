@@ -223,8 +223,7 @@ policy_fns_R = [(f'R={R}', policy_fn_R_generator(R)) for R in possible_Rs]
 
 
 # This one!
-# possible_case_levels = [0, 20, 100, 500, 1000, 5000, 10000, 20000, 30000, 40000, 50000]
-possible_case_levels = [0]
+possible_case_levels = [0, 20, 100, 500, 1000, 5000, 10000] # [20000, 30000, 40000, 50000]
 
 policy_fns_case_level = [(f'target_cases={target_cases}', policy_fn_cases_generator(target_cases)) for target_cases in possible_case_levels]
 

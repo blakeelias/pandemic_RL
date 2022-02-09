@@ -371,8 +371,11 @@ class PandemicEnv(gym.Env):
             community_distr = poisson(lam)
 
             # Slow:
-            community_distr_pacal = pacal.DiscreteDistr(xi=feasible_range,
-                                                        pi=community_distr.pmf(feasible_range))
+            # community_distr_pacal = pacal.DiscreteDistr(xi=feasible_range,
+            #                                             pi=community_distr.pmf(feasible_range))
+
+            community_distr_pacal = pacal.PoissonDistr(lam)
+            
         elif self.distr_family == 'nbinom':
             r = 0.17 * num_infected + 0.001 # 100000000000000.0
             # r = 0.17
@@ -390,19 +393,23 @@ class PandemicEnv(gym.Env):
         max_infectable = min(num_susceptible, self.max_infected)
         feasible_range = range(max_infectable + 1)
 
-        b()
-        
-        total_distr_pacal = community_distr_pacal + import_distr_pacal
-        total_distr_pmf = np.array([total_distr_pacal.pdf(i) for i in feasible_range])
-        s = sum(total_distr_pmf)
-        total_distr_pmf = total_distr_pmf / s
+        if self.imported_cases_per_step > 0:
+            total_distr_pacal = community_distr_pacal + import_distr_pacal
 
-        b()
+            total_distr_pmf = np.array([total_distr_pacal.pdf(i) for i in feasible_range])
+            s = sum(total_distr_pmf)
+            total_distr_pmf = total_distr_pmf / s
+
+            b()
         
-        total_distr = rv_discrete(values=(
-            feasible_range,
-            total_distr_pmf
-        ))
+            total_distr = rv_discrete(values=(
+                feasible_range,
+                total_distr_pmf
+            ))
+
+        else:
+            total_distr = community_distr
+            
         
         return CappedDistribution(total_distr, feasible_range), feasible_range
     
