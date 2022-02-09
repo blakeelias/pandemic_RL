@@ -361,7 +361,7 @@ class PandemicEnv(gym.Env):
         import_distr = poisson(self.imported_cases_per_step)
         # import_distr_pacal = pacal.DiscreteDistr(xi=feasible_range,
         #                                          pi=import_distr.pmf(feasible_range))
-        import_distr_pacal = pacal.Poisson(self.imported_cases_per_step)
+        import_distr_pacal = pacal.PoissonDistr(self.imported_cases_per_step)
 
 
         ### Community Transmission:
@@ -389,12 +389,19 @@ class PandemicEnv(gym.Env):
         
         max_infectable = min(num_susceptible, self.max_infected)
         feasible_range = range(max_infectable + 1)
+
+        b()
         
         total_distr_pacal = community_distr_pacal + import_distr_pacal
+        total_distr_pmf = np.array([total_distr_pacal.pdf(i) for i in feasible_range])
+        s = sum(total_distr_pmf)
+        total_distr_pmf = total_distr_pmf / s
 
+        b()
+        
         total_distr = rv_discrete(values=(
             feasible_range,
-            [total_distr_pacal.pdf(i) for i in feasible_range]
+            total_distr_pmf
         ))
         
         return CappedDistribution(total_distr, feasible_range), feasible_range
