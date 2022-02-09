@@ -146,6 +146,8 @@ def parse_args():
 
 
 def main(args):
+    contact_factor_resolution_comparison = 0.01
+
     experiment_parameters = {
         'time_lumping': False,
         #'num_population': args['num_population'],
@@ -183,6 +185,7 @@ def main(args):
         PandemicEnv(
             **combine_dicts(particular_parameters._asdict(), experiment_parameters),
             results_dir=args.results_dir,
+            contact_factor_resolution=contact_factor_resolution_comparison, # TODO: This was for policy comparison. Turn back to 0.05 or 0.1 when doing optimization
         ) for particular_parameters in parameters_sweep
     ]
     plot_cost_curves(envs, f'{args.results_dir}/cost_of_lockdown.png')
@@ -299,7 +302,7 @@ def main(args):
             print(True)
         if args.policy_comparison:
             print('Initializing environment... ', end='')
-            env = PandemicEnv(**parameters, results_dir=args.results_dir, cap_infected_hospital_capacity=False)
+            env = PandemicEnv(**parameters, results_dir=args.results_dir, cap_infected_hospital_capacity=False, contact_factor_resolution=contact_factor_resolution_comparison)
             print('Done.')
             results = []
             

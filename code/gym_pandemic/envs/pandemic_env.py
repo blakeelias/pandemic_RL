@@ -46,6 +46,7 @@ class PandemicEnv(gym.Env):
                  results_dir='../results',
                  cap_infected_hospital_capacity=True,
                  time_step_days=4,
+                 contact_factor_resolution=0.1,
                  **kwargs):
         super(PandemicEnv, self).__init__()
 
@@ -90,15 +91,17 @@ class PandemicEnv(gym.Env):
         self.action_frequency = action_frequency
         ### Action space
         #   in increments of 0.5 up to R_0
-        self.actions_r = np.array(
+        '''self.actions_r = np.array(
             # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
             [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25] + \
             # [0.8, 0.9, 1.0, 1.1, 1.25] + \
             list(np.arange(1.5, self.R_0, 0.5)) + \
             [self.R_0]
         )
-        self.contact_factor = self.actions_r / self.R_0
-        self.nA = self.actions_r.shape[0]
+        self.contact_factor = self.actions_r / self.R_0'''
+
+        self.contact_factor = np.arange(0, 1.0, contact_factor_resolution)
+        self.nA = self.contact_factor.shape[0]
         self.action_space = spaces.Discrete(self.nA)
         
         
@@ -415,7 +418,15 @@ class PandemicEnv(gym.Env):
     
     def R_t(self, action, time_idx, num_susceptible):
         factor_transmissibility = self.transmissibility_schedule[time_idx] if time_idx else 1
-        factor_contact = (self.contact_rate_schedule[time_idx] if time_idx else 1) * self.contact_factor[action]
+
+
+        # Contact factor schedule -- removed for now
+        # factor_contact = (self.contact_rate_schedule[time_idx] if time_idx else 1) * self.contact_factor[action]
+        try:
+            factor_contact = self.contact_factor[action]
+        except:
+            b()
+        
         factor_infectious_period = self.infectious_schedule[time_idx] if time_idx else 1
         fraction_susceptible = num_susceptible / self.num_population
         

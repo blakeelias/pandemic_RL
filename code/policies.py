@@ -99,8 +99,8 @@ def policy_fn_cases_simple(env, state_idx, time_idx, target_cases):
     mid_action_idx_3 = (3 * (min_action_idx + max_action_idx)) // 4
 
     # actions = [min_action_idx, mid_action_idx_1, mid_action_idx_2, mid_action_idx_3, max_action_idx]
-    # actions = list(range(0, env.nA))
-    actions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]   
+    actions = list(range(0, env.nA))
+    # actions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]   
 
     
     R_ts = np.array([env.R_t(action, time_idx, num_susceptible) for action in actions])
