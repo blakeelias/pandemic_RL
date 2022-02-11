@@ -145,6 +145,10 @@ def parse_args():
 
 
 
+def plot(comparisons):
+    pass
+
+
 def policy_comparison(experiment_parameters, parameters_sweep):
     contact_factor_resolution_comparison = 0.01
 
@@ -270,11 +274,7 @@ def policy_comparison(experiment_parameters, parameters_sweep):
         except:
             b()
 
-
-        
-
-                
-
+            
 def policy_optimization(experiment_parameters, parameters_sweep):
     # Main loop
     print('Evaluating policy cost with respect to each reward function')
@@ -327,13 +327,6 @@ def policy_optimization(experiment_parameters, parameters_sweep):
 
 
 def main(args):
-    if args.policy_comparison:
-        policy_comparison()
-
-    if args.policy_optimization:
-        policy_optimization()
-
-    
     experiment_parameters = {
         'time_lumping': False,
         #'num_population': args['num_population'],
@@ -379,6 +372,19 @@ def main(args):
     
     discount_factor = 1.0
     
+
+    if args.policy_comparison:
+        comparisons = policy_comparison(experiment_parameters, parameters_sweep)
+
+    if args.policy_optimization:
+        optimizations = policy_optimization(experiment_parameters, parameters_sweep)
+        comparisons += optimizations
+
+
+    plot(comparisons)
+    
+        
+    #### Stuff to remove:
     
     # Main loop
     print('Evaluating policy cost with respect to each reward function')
@@ -454,6 +460,9 @@ def main(args):
             
         del env
 
+
+    ### / Stuff to remove
+    
 
     # experiment.checkpoint(path="lookup_tables")
 
