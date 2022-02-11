@@ -154,6 +154,14 @@ def policy_optimization():
 
 
 def main(args):
+    if args.policy_comparison:
+        policy_comparison()
+
+    if args.policy_optimization:
+        policy_optimization()
+
+        
+    
     experiment_parameters = {
         'time_lumping': False,
         #'num_population': args['num_population'],
