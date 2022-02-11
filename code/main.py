@@ -145,12 +145,185 @@ def parse_args():
 
 
 
-def policy_comparison():
+def policy_comparison(experiment_parameters, parameters_sweep):
     contact_factor_resolution_comparison = 0.01
 
+    trials_policy_trajectories = []
+    num_trials = 1  # 100
+    
+    ### Run policy-time comparison
+    if args.policy_comparison_time:
+        _, init_cases = envs[0].state_idx_to_obj(envs[0].state)
 
-def policy_optimization():
-    pass
+        max_duration = 30
+        policy_fns = time_policy_fns(init_cases, max_duration)
+
+        for env in envs:
+            init_plot(env)
+
+            trials_policy_trajectories = []
+            
+            avg_costs = []
+            for k in range(num_trials):
+                policy = policy_fns[duration]
+                trial_costs = []
+                policy_names, trajectories = compare_policies(env, discount_factor, policy_fns, load_cached=True, trial_num=k)
+                trials_policy_trajectories.append((policy_names, trajectories))
+
+                for duration in range(max_duration):
+                    # cost = evaluate cost
+                    trial_costs.append(cost)
+                avg_cost = sum(trial_costs) / len(trial_costs)
+                avg_costs.append(avg_cost)
+
+            plot(range(max_duration), avg_costs)
+            plt.savefig('avg_costs_[importation_rate={importation_rate}].png')
+
+    
+    # Generate trials
+    if args.policy_comparison:
+        print('Running trials in the canonical environment')
+        for k in tqdm(list(range(num_trials))):
+            # Can run each policy just once, in a single environment, then evaluate the trajectory's cost
+            # in all other environments, because they have the same state dynamics (just different reward function)
+            policy_names, trajectories = compare_policies(envs[0], discount_factor, default_policy_fns, load_cached=True, trial_num=k)
+            trials_policy_trajectories.append((policy_names, trajectories))
+
+        # Plot trajectories
+        for k in range(num_trials):
+            policy_names, trajectories = trials_policy_trajectories[k]
+            for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
+                extra_str = f'{policy_name}_trial_{k}'
+                # plot_trajectory(trajectory, file_name)
+                policy = None
+                # put this back?
+                # was this plotting with policy==None?
+                # and no policy name included?
+                plot_policy_trajectory(envs[0], policy, trajectory, 'contact_rate', center=1.0 / envs[0].R_0, extra_str=extra_str)
+            
+
+
+    for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
+                print('Combining param dicts... ', end='')
+        parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
+        print('Done')
+        # print(f'Experiment {i}: {parameters}')
+        
+        #parameters['cost_per_case'] = env.cost_per_case
+        #parameters['cost_of_R=1_lockdown'] = env._cost_of_contact_factor(env.actions_r.index(1.0))
+        # TODO: put these back in -- better to have the actual cost rather than a multiplier
+        
+        optimized_policy = None
+        policy_names = []
+
+        print('After "else" block')
+        print(f'policy_comparison: {args.policy_comparison}')
+        
+        if args.policy_comparison:
+            print('Initializing environment... ', end='')
+            env = PandemicEnv(**parameters, results_dir=args.results_dir, cap_infected_hospital_capacity=False, contact_factor_resolution=contact_factor_resolution_comparison)
+            print('Done.')
+            results = []
+            
+            for k in range(num_trials):
+                policy_names, trajectories = trials_policy_trajectories[k]
+                print(f'Trial {k}')
+                if args.policy_optimization:
+                    optimized_policy_names, optimized_trajectories = compare_policies(env, discount_factor, [], custom_policies=[optimized_policy], load_cached=True, trial_num=k)
+                    policy_names += optimized_policy_names
+                    trajectories += optimized_trajectories
+                                        
+                trajectory_total_rewards = [cost_of_trajectory(trajectory, env, discount_factor) for trajectory in trajectories]
+
+                # results.append((policy_names, values))
+                params_key = tuple(sorted(tuple(parameters.items())))
+                policy_evaluations.setdefault(params_key, [])
+                policy_evaluations[params_key].append(trajectory_total_rewards)
+            
+        del env
+
+        
+    if args.policy_comparison:
+        constant_params = parameters # last parameters that were set
+        
+        # variable_params = ['cost_per_case', 'cost_of_R=1_lockdown']
+        # variable_params = ['cost_per_case_scale_factor', 'extra_scale']
+
+        # variable_params = ['power', 'cost_of_R_1_over_cost_per_case']
+        variable_params = ['R_0', 'cost_of_R_1_over_cost_per_case']
+        
+        for param in variable_params:
+            del constant_params[param]
+            
+        args_dict = vars(args)
+        
+        try:
+            visualize_evaluation(
+                policy_names,
+                policy_evaluations,
+                args.results_dir,
+                {variable_params[0]: args_dict[variable_params[0]]},
+                {variable_params[1]: args_dict[variable_params[1]]},
+                constant_params,
+                num_trials
+            )
+        except:
+            b()
+
+
+        
+
+                
+
+def policy_optimization(experiment_parameters, parameters_sweep):
+    # Main loop
+    print('Evaluating policy cost with respect to each reward function')
+    for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
+        print('Combining param dicts... ', end='')
+        parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
+        print('Done')
+        # print(f'Experiment {i}: {parameters}')
+        
+        #parameters['cost_per_case'] = env.cost_per_case
+        #parameters['cost_of_R=1_lockdown'] = env._cost_of_contact_factor(env.actions_r.index(1.0))
+        # TODO: put these back in -- better to have the actual cost rather than a multiplier
+        
+        optimized_policy = None
+        policy_names = []
+        if args.policy_optimization:
+            env = PandemicEnv(**parameters, results_dir=args.results_dir)
+            
+            optimized_policies, optimized_Vs = train_environment(env, discount_factor, parameters['planning_horizon'])
+            
+            optimized_policy = optimized_policies[-1]
+            optimized_V = optimized_Vs[-1]
+            
+            policies[particular_parameters] = optimized_policy
+            Vs[particular_parameters] = optimized_V
+            
+            print(particular_parameters)
+            # For finite time horizon, these tests are less appropriate
+            # Because the policy is time-varying
+            test_environment(env, optimized_policy, optimized_V, discount_factor)
+            
+            # TODO: test environment with all the partial policies
+            #   (1) display policy
+            #   (2) follow the policy half-way [solid line]
+            #   (3) [optional: dotted line following remainder of policy]
+            #   (4) extended/lengthen policy
+            #   (5) repeat (back to (1))
+            #   ...
+        else:
+            print('Skipped policy optimization')
+            # print('Running with default policy')
+            # Run with a default policy
+            
+            '''default_policy = np.zeros((int(parameters['horizon']), env.nS, env.nA))
+            default_policy[:, :, 6] = 1.0 # 6: R=1;   -1 Default: fully open
+            optimized_V = np.zeros((int(parameters['horizon']), env.nS))
+            test_environment(env, default_policy, optimized_V, discount_factor, policy_switch_times=(8,))'''
+
+        del env
 
 
 def main(args):
@@ -160,7 +333,6 @@ def main(args):
     if args.policy_optimization:
         policy_optimization()
 
-        
     
     experiment_parameters = {
         'time_lumping': False,
@@ -207,63 +379,7 @@ def main(args):
     
     discount_factor = 1.0
     
-    trials_policy_trajectories = []
-    num_trials = 1  # 100
-
     
-    ### Run policy-time comparison
-    if args.policy_comparison_time:
-        _, init_cases = envs[0].state_idx_to_obj(envs[0].state)
-
-        max_duration = 30
-        policy_fns = time_policy_fns(init_cases, max_duration)
-
-        for env in envs:
-            init_plot(env)
-
-            trials_policy_trajectories = []
-            
-            avg_costs = []
-            for k in range(num_trials):
-                policy = policy_fns[duration]
-                trial_costs = []
-                policy_names, trajectories = compare_policies(env, discount_factor, policy_fns, load_cached=True, trial_num=k)
-                trials_policy_trajectories.append((policy_names, trajectories))
-
-                for duration in range(max_duration):
-                    # cost = evaluate cost
-                    trial_costs.append(cost)
-                avg_cost = sum(trial_costs) / len(trial_costs)
-                avg_costs.append(avg_cost)
-
-            plot(range(max_duration), avg_costs)
-            plt.savefig('avg_costs_[importation_rate={importation_rate}].png')
-
-
-    
-    # Generate trials
-    if args.policy_comparison:
-        print('Running trials in the canonical environment')
-        for k in tqdm(list(range(num_trials))):
-            # Can run each policy just once, in a single environment, then evaluate the trajectory's cost
-            # in all other environments, because they have the same state dynamics (just different reward function)
-            policy_names, trajectories = compare_policies(envs[0], discount_factor, default_policy_fns, load_cached=True, trial_num=k)
-            trials_policy_trajectories.append((policy_names, trajectories))
-
-        # Plot trajectories
-        for k in range(num_trials):
-            policy_names, trajectories = trials_policy_trajectories[k]
-            for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
-                extra_str = f'{policy_name}_trial_{k}'
-                # plot_trajectory(trajectory, file_name)
-                policy = None
-                # put this back?
-                # was this plotting with policy==None?
-                # and no policy name included?
-                plot_policy_trajectory(envs[0], policy, trajectory, 'contact_rate', center=1.0 / envs[0].R_0, extra_str=extra_str)
-            
-
-
     # Main loop
     print('Evaluating policy cost with respect to each reward function')
     for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
@@ -338,33 +454,6 @@ def main(args):
             
         del env
 
-
-    if args.policy_comparison:
-        constant_params = parameters # last parameters that were set
-        
-        # variable_params = ['cost_per_case', 'cost_of_R=1_lockdown']
-        # variable_params = ['cost_per_case_scale_factor', 'extra_scale']
-
-        # variable_params = ['power', 'cost_of_R_1_over_cost_per_case']
-        variable_params = ['R_0', 'cost_of_R_1_over_cost_per_case']
-        
-        for param in variable_params:
-            del constant_params[param]
-            
-        args_dict = vars(args)
-        
-        try:
-            visualize_evaluation(
-                policy_names,
-                policy_evaluations,
-                args.results_dir,
-                {variable_params[0]: args_dict[variable_params[0]]},
-                {variable_params[1]: args_dict[variable_params[1]]},
-                constant_params,
-                num_trials
-            )
-        except:
-            b()
 
     # experiment.checkpoint(path="lookup_tables")
 
