@@ -145,17 +145,31 @@ def parse_args():
 
 
 
-def plot(comparisons):
+def plot(args, comparisons):
     pass
 
 
-def policy_comparison(experiment_parameters, parameters_sweep):
+
+def policy_comparison(args, experiment_parameters, parameters_sweep):
     contact_factor_resolution_comparison = 0.01
 
     trials_policy_trajectories = []
     num_trials = 1  # 100
+
+
+    envs = [
+        PandemicEnv(
+            **combine_dicts(particular_parameters._asdict(), experiment_parameters),
+            results_dir=args.results_dir,
+            cap_infected_hospital_capacity=False,
+            contact_factor_resolution=contact_factor_resolution_comparison,
+        ) for particular_parameters in parameters_sweep
+    ]
+
+    # Policy-time comparison was here
     
     ### Run policy-time comparison
+    '''
     if args.policy_comparison_time:
         _, init_cases = envs[0].state_idx_to_obj(envs[0].state)
 
@@ -182,9 +196,10 @@ def policy_comparison(experiment_parameters, parameters_sweep):
 
             plot(range(max_duration), avg_costs)
             plt.savefig('avg_costs_[importation_rate={importation_rate}].png')
+    '''
 
     
-    # Generate trials
+    # Generate and plot trajectories in canonical environment
     if args.policy_comparison:
         print('Running trials in the canonical environment')
         for k in tqdm(list(range(num_trials))):
@@ -192,10 +207,7 @@ def policy_comparison(experiment_parameters, parameters_sweep):
             # in all other environments, because they have the same state dynamics (just different reward function)
             policy_names, trajectories = compare_policies(envs[0], discount_factor, default_policy_fns, load_cached=True, trial_num=k)
             trials_policy_trajectories.append((policy_names, trajectories))
-
-        # Plot trajectories
-        for k in range(num_trials):
-            policy_names, trajectories = trials_policy_trajectories[k]
+            
             for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
                 extra_str = f'{policy_name}_trial_{k}'
                 # plot_trajectory(trajectory, file_name)
@@ -204,11 +216,10 @@ def policy_comparison(experiment_parameters, parameters_sweep):
                 # was this plotting with policy==None?
                 # and no policy name included?
                 plot_policy_trajectory(envs[0], policy, trajectory, 'contact_rate', center=1.0 / envs[0].R_0, extra_str=extra_str)
-            
 
 
     for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
-                print('Combining param dicts... ', end='')
+        print('Combining param dicts... ', end='')
         parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
         print('Done')
         # print(f'Experiment {i}: {parameters}')
@@ -275,8 +286,19 @@ def policy_comparison(experiment_parameters, parameters_sweep):
             b()
 
             
-def policy_optimization(experiment_parameters, parameters_sweep):
+def policy_optimization(args, experiment_parameters, parameters_sweep):
     # Main loop
+    
+    envs = [
+        PandemicEnv(
+            **combine_dicts(particular_parameters._asdict(), experiment_parameters),
+            results_dir=args.results_dir,
+            cap_infected_hospital_capacity=False,
+            contact_factor_resolution=contact_factor_resolution_comparison, # TODO: This was for policy comparison. Turn back to 0.05 or 0.1 when doing optimization
+        ) for particular_parameters in parameters_sweep
+    ]
+
+    
     print('Evaluating policy cost with respect to each reward function')
     for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
         print('Combining param dicts... ', end='')
@@ -374,10 +396,10 @@ def main(args):
     
 
     if args.policy_comparison:
-        comparisons = policy_comparison(experiment_parameters, parameters_sweep)
+        comparisons = policy_comparison(args, experiment_parameters, parameters_sweep)
 
     if args.policy_optimization:
-        optimizations = policy_optimization(experiment_parameters, parameters_sweep)
+        optimizations = policy_optimization(args, experiment_parameters, parameters_sweep)
         comparisons += optimizations
 
 
