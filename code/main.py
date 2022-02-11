@@ -162,7 +162,7 @@ def sample_trajectories(args, env):
         for k in tqdm(list(range(args.num_trials))):
             # Can run each policy just once, in a single environment, then evaluate the trajectory's cost
             # in all other environments, because they have the same state dynamics (just different reward function)
-            policy_names, trajectories = compare_policies(env, discount_factor, default_policy_fns, load_cached=True, trial_num=k)
+            policy_names, trajectories = compare_policies(env, args.discount_factor, default_policy_fns, load_cached=True, trial_num=k)
             trials_policy_trajectories.append((policy_names, trajectories))
             
             for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
@@ -184,7 +184,7 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
 
     trials_policy_trajectories = []
 
-    '''
+    
     envs = [
         PandemicEnv(
             **combine_dicts(particular_parameters._asdict(), experiment_parameters),
@@ -193,7 +193,6 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
             contact_factor_resolution=contact_factor_resolution_comparison,
         ) for particular_parameters in parameters_sweep
     ]
-    '''
 
     sample_trajectories(args, envs[0])
 
@@ -238,7 +237,7 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
                 '''
 
                 
-                trajectory_total_rewards = [cost_of_trajectory(trajectory, env, discount_factor) for trajectory in trajectories]
+                trajectory_total_rewards = [cost_of_trajectory(trajectory, env, args.discount_factor) for trajectory in trajectories]
 
                 # results.append((policy_names, values))
                 params_key = tuple(sorted(tuple(parameters.items())))
@@ -306,7 +305,7 @@ def policy_optimization(args, experiment_parameters, parameters_sweep):
         if args.policy_optimization:
             env = PandemicEnv(**parameters, results_dir=args.results_dir)
             
-            optimized_policies, optimized_Vs = train_environment(env, discount_factor, parameters['planning_horizon'])
+            optimized_policies, optimized_Vs = train_environment(env, args.discount_factor, parameters['planning_horizon'])
             
             optimized_policy = optimized_policies[-1]
             optimized_V = optimized_Vs[-1]
@@ -317,7 +316,7 @@ def policy_optimization(args, experiment_parameters, parameters_sweep):
             print(particular_parameters)
             # For finite time horizon, these tests are less appropriate
             # Because the policy is time-varying
-            test_environment(env, optimized_policy, optimized_V, discount_factor)
+            test_environment(env, optimized_policy, optimized_V, args.discount_factor)
             
             # TODO: test environment with all the partial policies
             #   (1) display policy
@@ -364,17 +363,9 @@ def main(args):
 
     policy_evaluations = {}
 
-    envs = [
-        PandemicEnv(
-            **combine_dicts(particular_parameters._asdict(), experiment_parameters),
-            results_dir=args.results_dir,
-            cap_infected_hospital_capacity=False,
-            contact_factor_resolution=contact_factor_resolution_comparison, # TODO: This was for policy comparison. Turn back to 0.05 or 0.1 when doing optimization
-        ) for particular_parameters in parameters_sweep
-    ]
-    plot_cost_curves(envs, f'{args.results_dir}/cost_of_lockdown.png')
+    # plot_cost_curves(envs, f'{args.results_dir}/cost_of_lockdown.png')
     
-    discount_factor = 1.0
+    args.discount_factor = 1.0
     
 
     if args.policy_comparison:
