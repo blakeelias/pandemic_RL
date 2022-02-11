@@ -166,39 +166,6 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
         ) for particular_parameters in parameters_sweep
     ]
 
-    # Policy-time comparison was here
-    
-    ### Run policy-time comparison
-    '''
-    if args.policy_comparison_time:
-        _, init_cases = envs[0].state_idx_to_obj(envs[0].state)
-
-        max_duration = 30
-        policy_fns = time_policy_fns(init_cases, max_duration)
-
-        for env in envs:
-            init_plot(env)
-
-            trials_policy_trajectories = []
-            
-            avg_costs = []
-            for k in range(num_trials):
-                policy = policy_fns[duration]
-                trial_costs = []
-                policy_names, trajectories = compare_policies(env, discount_factor, policy_fns, load_cached=True, trial_num=k)
-                trials_policy_trajectories.append((policy_names, trajectories))
-
-                for duration in range(max_duration):
-                    # cost = evaluate cost
-                    trial_costs.append(cost)
-                avg_cost = sum(trial_costs) / len(trial_costs)
-                avg_costs.append(avg_cost)
-
-            plot(range(max_duration), avg_costs)
-            plt.savefig('avg_costs_[importation_rate={importation_rate}].png')
-    '''
-
-    
     # Generate and plot trajectories in canonical environment
     if args.policy_comparison:
         print('Running trials in the canonical environment')
