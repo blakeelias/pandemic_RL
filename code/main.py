@@ -179,12 +179,12 @@ def sample_trajectories(args, env):
 
 
 def policy_comparison(args, experiment_parameters, parameters_sweep):
+    # TODO: Make a command-line arg
     contact_factor_resolution_comparison = 0.01
 
     trials_policy_trajectories = []
-    num_trials = 1  # 100
 
-
+    '''
     envs = [
         PandemicEnv(
             **combine_dicts(particular_parameters._asdict(), experiment_parameters),
@@ -193,6 +193,7 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
             contact_factor_resolution=contact_factor_resolution_comparison,
         ) for particular_parameters in parameters_sweep
     ]
+    '''
 
     sample_trajectories(args, envs[0])
 
@@ -214,18 +215,29 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
         
         if args.policy_comparison:
             print('Initializing environment... ', end='')
-            env = PandemicEnv(**parameters, results_dir=args.results_dir, cap_infected_hospital_capacity=False, contact_factor_resolution=contact_factor_resolution_comparison)
+            env = PandemicEnv(
+                **parameters,
+                results_dir=args.results_dir,
+                cap_infected_hospital_capacity=False,
+                contact_factor_resolution=contact_factor_resolution_comparison
+            )
             print('Done.')
             results = []
             
-            for k in range(num_trials):
+            for k in range(args.num_trials):
                 policy_names, trajectories = trials_policy_trajectories[k]
                 print(f'Trial {k}')
+
+                # TODO: make this work in the new format
+
+                '''
                 if args.policy_optimization:
                     optimized_policy_names, optimized_trajectories = compare_policies(env, discount_factor, [], custom_policies=[optimized_policy], load_cached=True, trial_num=k)
                     policy_names += optimized_policy_names
                     trajectories += optimized_trajectories
-                                        
+                '''
+
+                
                 trajectory_total_rewards = [cost_of_trajectory(trajectory, env, discount_factor) for trajectory in trajectories]
 
                 # results.append((policy_names, values))
@@ -258,12 +270,13 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
                 {variable_params[0]: args_dict[variable_params[0]]},
                 {variable_params[1]: args_dict[variable_params[1]]},
                 constant_params,
-                num_trials
+                args.num_trials
             )
         except:
             b()
 
             
+# TODO: Test this
 def policy_optimization(args, experiment_parameters, parameters_sweep):
     # Main loop
     
