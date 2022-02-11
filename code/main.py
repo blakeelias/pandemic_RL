@@ -145,9 +145,15 @@ def parse_args():
 
 
 
-def main(args):
+def policy_comparison():
     contact_factor_resolution_comparison = 0.01
 
+
+def policy_optimization():
+    pass
+
+
+def main(args):
     experiment_parameters = {
         'time_lumping': False,
         #'num_population': args['num_population'],
