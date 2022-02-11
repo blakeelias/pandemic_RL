@@ -128,6 +128,11 @@ def parse_args():
                         default=[None],
                         help='Custom argument to be recorded in output directory name')
 
+    parser.add_argument('--num_trials',
+                        type=int,
+                        default=1)
+
+    
     parser.add_argument('--policy-comparison', dest='policy_comparison', action='store_true')
     parser.add_argument('--no-policy-comparison', dest='policy_comparison', action='store_false')
     parser.set_defaults(policy_comparison=True)
@@ -150,6 +155,29 @@ def plot(args, comparisons):
 
 
 
+def sample_trajectories(args, env):
+    # Generate and plot trajectories in canonical environment
+    if args.policy_comparison:
+        print('Running trials in the canonical environment')
+        for k in tqdm(list(range(args.num_trials))):
+            # Can run each policy just once, in a single environment, then evaluate the trajectory's cost
+            # in all other environments, because they have the same state dynamics (just different reward function)
+            policy_names, trajectories = compare_policies(env, discount_factor, default_policy_fns, load_cached=True, trial_num=k)
+            trials_policy_trajectories.append((policy_names, trajectories))
+            
+            for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
+                extra_str = f'{policy_name}_trial_{k}'
+                # plot_trajectory(trajectory, file_name)
+                policy = None
+                # put this back?
+                # was this plotting with policy==None?
+                # and no policy name included?
+
+                # TODO: Should the center just be 0.5? 0.75?
+                plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / envs.R_0, extra_str=extra_str)
+
+
+
 def policy_comparison(args, experiment_parameters, parameters_sweep):
     contact_factor_resolution_comparison = 0.01
 
@@ -166,24 +194,7 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
         ) for particular_parameters in parameters_sweep
     ]
 
-    # Generate and plot trajectories in canonical environment
-    if args.policy_comparison:
-        print('Running trials in the canonical environment')
-        for k in tqdm(list(range(num_trials))):
-            # Can run each policy just once, in a single environment, then evaluate the trajectory's cost
-            # in all other environments, because they have the same state dynamics (just different reward function)
-            policy_names, trajectories = compare_policies(envs[0], discount_factor, default_policy_fns, load_cached=True, trial_num=k)
-            trials_policy_trajectories.append((policy_names, trajectories))
-            
-            for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
-                extra_str = f'{policy_name}_trial_{k}'
-                # plot_trajectory(trajectory, file_name)
-                policy = None
-                # put this back?
-                # was this plotting with policy==None?
-                # and no policy name included?
-                plot_policy_trajectory(envs[0], policy, trajectory, 'contact_rate', center=1.0 / envs[0].R_0, extra_str=extra_str)
-
+    sample_trajectories(args, envs[0])
 
     for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
         print('Combining param dicts... ', end='')
