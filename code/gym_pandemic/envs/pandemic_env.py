@@ -4,6 +4,7 @@ import itertools
 import copy
 import sys
 import os
+import time
 
 import numpy as np
 from scipy.stats import poisson, nbinom, rv_discrete
@@ -72,7 +73,7 @@ class PandemicEnv(gym.Env):
                                                     self.num_population,
                                                     self.max_infected
                                                 ]),
-                                                shape=(2,), dtype=np.uint16)
+                                                shape=(2,), dtype=np.uint16)            
         else:  # SIS
             self.observation_space = spaces.Box(low=np.array([self.num_population, 0]),
                                                 high=np.array([

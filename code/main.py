@@ -185,6 +185,7 @@ def main(args):
         PandemicEnv(
             **combine_dicts(particular_parameters._asdict(), experiment_parameters),
             results_dir=args.results_dir,
+            cap_infected_hospital_capacity=False,
             contact_factor_resolution=contact_factor_resolution_comparison, # TODO: This was for policy comparison. Turn back to 0.05 or 0.1 when doing optimization
         ) for particular_parameters in parameters_sweep
     ]
