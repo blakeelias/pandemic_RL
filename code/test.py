@@ -16,7 +16,7 @@ from value_iteration import one_step_lookahead
 from policies import policy_fn_generator, default_policy_fns, policy_fn_cases_generator
 
 
-Trajectory = namedtuple('Trajectory', ['time_idxs', 'time_days', 'states_t', 'actions_t', 'num_susceptible_t', 'num_infected_t', 'contact_factor_t', 'cost_t', 'total_reward', 'policy_switch_time'])
+Trajectory = namedtuple('Trajectory', ['time_idxs', 'time_days', 'states_t', 'actions_t', 'num_susceptible_t', 'num_infected_t', 'contact_factor_t', 'cost_t', 'total_reward'])
 
 def test_environment(env, policy, V=None, discount_factor=1.0, policy_switch_times=(0, 8, 16, 32, 64, 96, 128, 134, 160)):
     Path(env.file_name_prefix).mkdir(parents=True, exist_ok=True)
@@ -279,10 +279,7 @@ def cost_of_trajectory(trajectory, env, discount_factor):
     return total_reward
 
     
-def trajectory_generator(env, new_policy_fn, policy_name, gamma, original_policy_fn=None, policy_switch_time=0):
-    if original_policy_fn is None and policy_switch_time > 0:
-        raise Exception('original_policy_fn cannot be None if policy_switch_time > 0')
-
+def trajectory_generator(env, policy_fn, policy_name, gamma):
     # file_name_prefix = env.file_name_prefix + f'/policy={policy_name}/'
     # Path(file_name_prefix).mkdir(parents=True, exist_ok=True)
     
@@ -329,14 +326,13 @@ def trajectory_generator(env, new_policy_fn, policy_name, gamma, original_policy
 
         states_t.append(observation)
         
-        current_policy_fn = new_policy_fn if t >= policy_switch_time else original_policy_fn
         if t % env.action_frequency == 0:
             # Get best action
             # Allowed to take a new action once every {env.action_frequency} steps
             # observation = min(observation, env.nS - 1) # max number infected
             #b()
             state_idx = observation
-            action = current_policy_fn(env, state_idx, t)
+            action = policy_fn(env, state_idx, t)
 
         actions_t.append(action)
         contact_factor_t.append(env.contact_factor[action])
@@ -368,8 +364,7 @@ def trajectory_generator(env, new_policy_fn, policy_name, gamma, original_policy
         num_infected_t,
         contact_factor_t,
         cost_t,
-        total_reward,
-        policy_switch_time
+        total_reward
     )
     
     return trajectory

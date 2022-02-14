@@ -177,8 +177,10 @@ def sample_trajectories(args, env):
             # was this plotting with policy==None?
             # and no policy name included?
 
+            
+            # TODO: Put back if want to plot particular trajectories:
             # TODO: Should the center just be 0.5? 0.75?
-            plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / env.R_0, extra_str=extra_str)
+            # plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / env.R_0, extra_str=extra_str)
 
     return trials_policy_trajectories
                 
