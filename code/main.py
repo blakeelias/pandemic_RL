@@ -194,7 +194,7 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
         ) for particular_parameters in parameters_sweep
     ]
 
-    sample_trajectories(args, envs[0])
+    # sample_trajectories(args, envs[0])
 
     for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
         print('Combining param dicts... ', end='')
