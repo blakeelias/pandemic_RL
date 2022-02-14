@@ -196,6 +196,94 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
 
     # sample_trajectories(args, envs[0])
 
+
+
+
+    #######   Inserted from `master` branch
+    
+    # Main loop
+    print('Evaluating policy cost with respect to each reward function')
+    for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
+        print('Combining param dicts... ', end='')
+        parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
+        print('Done')
+        # print(f'Experiment {i}: {parameters}')
+        
+        #parameters['cost_per_case'] = env.cost_per_case
+        #parameters['cost_of_R=1_lockdown'] = env._cost_of_contact_factor(env.actions_r.index(1.0))
+        # TODO: put these back in -- better to have the actual cost rather than a multiplier
+        
+        optimized_policy = None
+        policy_names = []
+        if args.policy_optimization:
+            env = PandemicEnv(**parameters, results_dir=args.results_dir)
+            
+            optimized_policies, optimized_Vs = train_environment(env, discount_factor, parameters['planning_horizon'])
+            
+            optimized_policy = optimized_policies[-1]
+            optimized_V = optimized_Vs[-1]
+            
+            policies[particular_parameters] = optimized_policy
+            Vs[particular_parameters] = optimized_V
+            
+            print(particular_parameters)
+            # For finite time horizon, these tests are less appropriate
+            # Because the policy is time-varying
+            test_environment(env, optimized_policy, optimized_V, discount_factor)
+            
+            # TODO: test environment with all the partial policies
+            #   (1) display policy
+            #   (2) follow the policy half-way [solid line]
+            #   (3) [optional: dotted line following remainder of policy]
+            #   (4) extended/lengthen policy
+            #   (5) repeat (back to (1))
+            #   ...
+        else:
+            print('Skipped policy optimization')
+            # print('Running with default policy')
+            # Run with a default policy
+            
+            '''default_policy = np.zeros((int(parameters['horizon']), env.nS, env.nA))
+            default_policy[:, :, 6] = 1.0 # 6: R=1;   -1 Default: fully open
+            optimized_V = np.zeros((int(parameters['horizon']), env.nS))
+            test_environment(env, default_policy, optimized_V, discount_factor, policy_switch_times=(8,))'''
+
+        print('After "else" block')
+        print(f'policy_comparison: {args.policy_comparison}')
+        if True:
+            print(True)
+        if args.policy_comparison:
+            print('Initializing environment... ', end='')
+            env = PandemicEnv(**parameters, results_dir=args.results_dir, cap_infected_hospital_capacity=False, contact_factor_resolution=contact_factor_resolution_comparison)
+            print('Done.')
+            results = []
+            
+            for k in range(num_trials):
+                policy_names, trajectories = trials_policy_trajectories[k]
+                print(f'Trial {k}')
+                if args.policy_optimization:
+                    optimized_policy_names, optimized_trajectories = compare_policies(env, discount_factor, [], custom_policies=[optimized_policy], load_cached=True, trial_num=k)
+                    policy_names += optimized_policy_names
+                    trajectories += optimized_trajectories
+                                        
+                trajectory_total_rewards = [cost_of_trajectory(trajectory, env, discount_factor) for trajectory in trajectories]
+
+                # results.append((policy_names, values))
+                params_key = tuple(sorted(tuple(parameters.items())))
+                policy_evaluations.setdefault(params_key, [])
+                policy_evaluations[params_key].append(trajectory_total_rewards)
+            
+        del env
+
+
+
+
+    ############## / Inserted from `master` branch
+
+
+
+
+    
     for i, particular_parameters in tqdm(list(enumerate(parameters_sweep))):
         print('Combining param dicts... ', end='')
         parameters = combine_dicts(particular_parameters._asdict(), experiment_parameters)
@@ -246,7 +334,9 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
             
         del env
 
+
         
+    # Plot results
     if args.policy_comparison:
         constant_params = parameters # last parameters that were set
         
