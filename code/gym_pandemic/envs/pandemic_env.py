@@ -210,6 +210,8 @@ class PandemicEnv(gym.Env):
         distr, support = self._new_infected_distribution(self.state, action, self.time_idx)
         reward = self._reward(self.state, action, self.time_idx)
 
+        # b()
+        
         new_num_infected = distr.rvs()
         new_num_susceptible = num_susceptible - new_num_infected
         new_state = self.state_obj_to_idx((new_num_susceptible, new_num_infected))

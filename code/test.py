@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 import matplotlib.colors
 from mpl_toolkits.mplot3d import axes3d
 from einops import rearrange
+from tqdm import tqdm
 
 from value_iteration import one_step_lookahead
 from policies import policy_fn_generator, default_policy_fns, policy_fn_cases_generator
@@ -249,6 +250,7 @@ def plot_value_function(env, policy, V):
     ax = fig.add_subplot(111, projection='3d')
 
     #print('Value function')
+
     
     #ax.bar_wireframe(X, Y, Z_value, rstride=10, cstride=10)
     #plt.show()
@@ -311,7 +313,9 @@ def trajectory_generator(env, new_policy_fn, policy_name, gamma, original_policy
     horizon = env.horizon
     if horizon == np.inf:
         horizon = 100
-    while t < horizon:
+
+    print('Starting trial:')
+    for t in tqdm(list(range(horizon))):
         try:
             new_state = env.state_idx_to_obj(observation)
         except:
@@ -346,7 +350,6 @@ def trajectory_generator(env, new_policy_fn, policy_name, gamma, original_policy
         total_reward += gamma_cum * reward
         gamma_cum *= gamma
 
-        t += 1
 
     # Duration of each time step:
     time_step_days = 4

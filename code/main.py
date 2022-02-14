@@ -160,13 +160,16 @@ def sample_trajectories(args, env):
     
     # Generate and plot trajectories in canonical environment
     print('Running trials in the canonical environment')
-    for k in tqdm(list(range(args.num_trials))):
+    # for k in tqdm(list(range(args.num_trials))):
+    for k in range(args.num_trials):
         # Can run each policy just once, in a single environment, then evaluate the trajectory's cost
         # in all other environments, because they have the same state dynamics (just different reward function)
         policy_names, trajectories = compare_policies(env, args.discount_factor, default_policy_fns, load_cached=True, trial_num=k)
         trials_policy_trajectories.append((policy_names, trajectories))
-            
-        for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
+
+        print(f'Running trial {k}')
+        # for policy_name, trajectory in tqdm(zip(policy_names, trajectories)):
+        for policy_name, trajectory in zip(policy_names, trajectories):
             extra_str = f'{policy_name}_trial_{k}'
             # plot_trajectory(trajectory, file_name)
             policy = None
@@ -175,7 +178,7 @@ def sample_trajectories(args, env):
             # and no policy name included?
 
             # TODO: Should the center just be 0.5? 0.75?
-            plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / envs.R_0, extra_str=extra_str)
+            plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / env.R_0, extra_str=extra_str)
 
     return trials_policy_trajectories
                 
@@ -186,7 +189,7 @@ def policy_comparison(args, experiment_parameters, parameters_sweep):
     # TODO: Make a command-line arg
     contact_factor_resolution_comparison = 0.01
 
-    trials_policy_trajectories = []
+    policy_evaluations = {}
     
     # sample_trajectories(args, envs[0])
     
