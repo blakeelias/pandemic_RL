@@ -183,7 +183,6 @@ def sample_trajectories(args, env):
             # plot_policy_trajectory(env, policy, trajectory, 'contact_rate', center=1.0 / env.R_0, extra_str=extra_str)
 
     return trials_policy_trajectories
-                
 
                 
 

@@ -416,8 +416,12 @@ class PandemicEnv(gym.Env):
         else:
             total_distr = community_distr
             
-        
-        return CappedDistribution(total_distr, feasible_range), feasible_range
+
+        # TODO: Put this back if I can make it faster:
+        #   return CappedDistribution(total_distr, feasible_range), feasible_range
+        # For now, not worrying about capping, since I'm using a deterministic community transmission distribution,
+        # and 0 importation
+        return total_distr, feasible_range
     
     def R_t(self, action, time_idx, num_susceptible):
         factor_transmissibility = self.transmissibility_schedule[time_idx] if time_idx else 1
