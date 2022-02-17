@@ -17,6 +17,7 @@ def compare_policies(env, gamma, default_policy_fns, custom_policies=(), load_ca
     file_path = Path(env.file_name_prefix) / f'policy_evaluations_trial_{trial_num}.pickle'
     try:
         if load_cached:
+            print('Loading cached trajectory')
             return load_pickle(file_path)
         else:
             raise Exception() # i.e. skip to `except` clause
