@@ -2,6 +2,7 @@ from itertools import product
 from collections import namedtuple
 from pdb import set_trace as b
 import traceback
+import json
 
 import gym
 from tqdm import tqdm
@@ -146,7 +147,12 @@ def parse_args():
     parser.add_argument('--no-policy-optimization', dest='policy_optimization', action='store_false')
     parser.set_defaults(policy_optimization=False)
     
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    with open('commandline_args.txt', 'r') as f:
+        args.__dict__ = json.load(f)
+
+    return args
 
 
 
