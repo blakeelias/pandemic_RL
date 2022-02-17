@@ -390,9 +390,6 @@ def main(args):
         comparisons += optimizations
 
 
-    plot(comparisons)
-    
-    
 def plot_cost_curves(envs, filename):
     fig, ax = plt.subplots()
     
