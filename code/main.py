@@ -334,6 +334,10 @@ def policy_optimization(args, experiment_parameters, parameters_sweep):
 
 
 def main(args):
+    with open('commandline_args.txt', 'w') as f:
+        json.dump(args.__dict__, f, indent=2)
+
+    
     experiment_parameters = {
         'time_lumping': False,
         #'num_population': args['num_population'],
